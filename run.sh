@@ -24,7 +24,7 @@ parseargsstd "$1" "$2" "$3" "$4"
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
-outstore="ncapdata/localout/"
+outstore="ncapdata/localdata/analysis_vids"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$outstore"
 
@@ -52,22 +52,22 @@ read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
 #preprocess videos:
 
 cd "$userhome/$datastore/" 
-mkdir -p "$userhome/$datastore"analysis_vids
 counter=0
 for i in ./*"$ext" ; do 
 ffmpeg -y -i "$i" -c copy -f "${ext#"."}" needle.h264
 ffmpeg -y -r 40 -i needle.h264 -c copy $(basename "${i/"$ext"}").mp4
-ffmpeg -i $(basename "${i/"$ext"}").mp4 -filter:v "crop=$XS:$XA:$YS:$YA" analysis_vids/$(basename ${i/"$ext"}cropped).mp4  
-echo "file '$(basename "${i/"$ext"}")2.mp4'" >> output.txt
+ffmpeg -i $(basename "${i/"$ext"}").mp4 -filter:v "crop=$XS:$XA:$YS:$YA" $(basename ${i/"$ext"}cropped).mp4  
+echo "file '$(basename "${i/"$ext"}")cropped.mp4'" >> output.txt
 rm needle.h264
 done 
 
-ffmpeg -f concat -i output.txt -vcodec copy -acodec copy $((counter+1))Final.mp4
+ffmpeg -f concat -i output.txt -vcodec copy -acodec copy "analysis_vids/$((counter+1))Final.mp4"
 
 ## Run deeplabcut analysis: 
 cd ../../DeepLabCut/Analysis-tools
 
 python AnalyzeVideos_new.py
+cd "$userhome"
 ## Custom bulk processing. 
 
 ###############################################################################################
