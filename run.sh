@@ -24,7 +24,7 @@ parseargsstd "$1" "$2" "$3" "$4"
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
-outstore="ncapdata/localdata/analysis_vids"
+outstore="ncapdata/localdata/analysis_vids/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$outstore"
 
@@ -74,4 +74,4 @@ cd "$userhome"
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$grouppath" "$resultpath" "mp4"
 
-#cleanup "$datastore" "$outstore"
+cleanup "$datastore" "$outstore"
