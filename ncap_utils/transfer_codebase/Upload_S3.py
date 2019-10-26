@@ -1,5 +1,5 @@
 '''
-Script to upload a file to the relevant amazon S3 bucket 
+Script to upload a video to the relevant amazon S3 bucket 
 '''
 import os
 import sys
@@ -16,7 +16,11 @@ if __name__ == "__main__":
     resultpath = sys.argv[4]
     exclude = sys.argv[5]
     
-    print(foldername,keypath,bucket_name)
+    ## We must do some additional processing for the keypath to handle folder uploads .
+    ##TODO: Reconfigure lambda inputs to handle this instead. 
+    if keypath.split("/")[-1] is "inputs": 
+        keypath = os.path.dirname(keypath)
+
     ## Only reupload analysis results:
     analysis_results = os.listdir(foldername)    
     for filename in analysis_results:
