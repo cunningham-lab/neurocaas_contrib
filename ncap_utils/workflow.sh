@@ -1,5 +1,6 @@
 #!/bin/bash
 ## Get execution directory of script. Assume it lives in ncap_remote
+echo "$0"
 remotedir="$(dirname "$0")"
 
 ## Function to set error handling behavior for the function. 
@@ -19,6 +20,11 @@ accessdir () {
         sudo chmod 777 "$var"
     done
 } 
+
+## Function to log current progress
+log_progress () {
+    output="$(python "$remotedir"/ncap_utils/log.py "$bucketname" "$groupdir" "$dataname" "$resultdir" "$last_command")"
+}
 
 ## Function to create useful global variables from inputs to bash script in known way given command sent by SSM RunCommand as indicated in stackconfig.  
 ## Creates 4 path variables relating to the path of data as referenced in the source S3 bucket [bucketname,inputpath,grouppath,resultpath], and two as will be referenced locally [dataname,configname]. Does handling to ensure that we can manage folder uploads.  
