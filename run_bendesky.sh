@@ -43,7 +43,7 @@ download "$configpath" "$bucketname" "$datastore"
 read -r XS XA YS YA <<< $(jq -r .Coordinates[] "$userhome/$datastore/$configname")
 read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
 
-
+## preprocess videos
 cd "$userhome/$datastore/" 
 counter=0
 for i in ./*"$ext" ; do 

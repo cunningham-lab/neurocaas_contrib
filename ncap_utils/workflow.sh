@@ -49,10 +49,11 @@ parseargsstd () {
 }
 
 ## Function to cleanup after all processing is done. Beware this function, as it will delete all foldernames passed as input and also power down the instance. 
+## Will work even if file does not exist. Shuts down the instance after 1 minute. 
 cleanup () {
     for var in "$@"
     do 
         rm -r -f "$var"
     done 
-    shutdown -h 1
+    shutdown -h 1    
 }
