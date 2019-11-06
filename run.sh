@@ -1,11 +1,5 @@
 #!/bin/bash
 
-## Custom setup for this workflow.
-source .dlamirc
-
-export PATH="/home/ubuntu/anaconda3/bin:$PATH"
-
-source activate dlcami
 ## Import functions for workflow management. 
 ## Get the path to this function: 
 execpath="$0"
