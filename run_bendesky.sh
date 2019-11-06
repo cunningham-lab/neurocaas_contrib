@@ -31,7 +31,6 @@ outstore="ncapdata/localdata/analysis_vids/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$outstore"
 
-###############################################################################################
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
 download "$inputpath" "$bucketname" "$datastore"
 
@@ -39,6 +38,7 @@ download "$inputpath" "$bucketname" "$datastore"
 download "$configpath" "$bucketname" "$datastore"
 
 ###############################################################################################
+## Video preprocessing:
 ## Import variables from the configuration file: 
 read -r XS XA YS YA <<< $(jq -r .Coordinates[] "$userhome/$datastore/$configname")
 read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
@@ -68,4 +68,4 @@ cd "$userhome"
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
-cleanup "$datastore" "$outstore"
+#cleanup "$datastore" "$outstore"
