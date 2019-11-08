@@ -5,7 +5,7 @@ source .dlamirc
 
 export PATH="/home/ubuntu/anaconda3/bin:$PATH"
 
-source activate dlcami
+source activate caiman
 ## Import functions for workflow management. 
 ## Get the path to this function: 
 execpath="$0"
@@ -27,44 +27,30 @@ errorrep
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
-outstore="ncapdata/localdata/analysis_vids/"
+configstore="ncapdata/localconfig/"
+outstore="ncapdata/localout/"
 ## Make local storage locations
-accessdir "$userhome/$datastore" "$userhome/$outstore"
+accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
 
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
 download "$inputpath" "$bucketname" "$datastore"
 
 ## Stereotyped download script for config: 
-download "$configpath" "$bucketname" "$datastore"
+download "$configpath" "$bucketname" "$configstore"
 
 ###############################################################################################
-## Video preprocessing:
-## Import variables from the configuration file: 
-read -r XS XA YS YA <<< $(jq -r .Coordinates[] "$userhome/$datastore/$configname")
-read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
-
-## preprocess videos
-cd "$userhome/$datastore/" 
-counter=0
-for i in ./*"$ext" ; do 
-ffmpeg -y -i "$i" -c copy -f "${ext#"."}" needle.h264
-ffmpeg -y -r 40 -i needle.h264 -c copy $(basename "${i/"$ext"}").mp4
-ffmpeg -i $(basename "${i/"$ext"}").mp4 -filter:v "crop=$XA:$YA:$XS:$YS" $(basename ${i/"$ext"}cropped).mp4  
-echo "file '$(basename "${i/"$ext"}")cropped.mp4'" >> output.txt
-rm needle.h264
-done 
-
-ffmpeg -f concat -i output.txt -vcodec copy -acodec copy "analysis_vids/$((counter+1))Final.mp4"
-
-
-## Run deeplabcut analysis: 
-cd ../../DeepLabCut/Analysis-tools
-
-python AnalyzeVideos_new.py
-cd "$userhome"
 ## Custom bulk processing. 
-
+cd ncap_remote
+export CAIMAN_DATA="/home/ubuntu/caiman_data"
+## For efficiency: 
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+CAIMAN_DATA="$userhome/caiman_data"
+python parse_config.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
+python process.py "$userhome/$configstore/final_pickled" "$userhome/$datastore/$dataname" "$userhome/$outstore"
+cd $userhome
 ###############################################################################################
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
+#cleanup "$datastore" "$outstore"

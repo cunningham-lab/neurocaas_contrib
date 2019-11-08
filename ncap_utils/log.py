@@ -14,8 +14,6 @@ if __name__ == "__main__":
     dataname = sys.argv[3]
     resultsdir = sys.argv[4]
     lastcommand = sys.argv[5]
-    lastcommand_status = sys.argv[6]
-
 
     resultsdir_log = os.path.join(resultsdir,"logs")
 
@@ -39,16 +37,12 @@ if __name__ == "__main__":
     status_dict = json.loads(Object.get()["Body"].read())
 
     ## Get the job status: 
-    #updated_command = ssm_client.list_commands(CommandId = status_dict["command"]) 
-    #status = updated_command["Commands"][0]["Status"]
-    if lastcommand_status == 0:
-        status = "InProgress"
-    else:
-        status = "Failed"
+    try:
+        updated_command = ssm_client.list_commands(CommandId = status_dict["command"]) 
+        status = updated_command["Commands"][0]["Status"]
+    except:
+        status = "NotAvailable"
     status_dict["status"] = status
-
-    print("STATUS:",lastcommand_status)
-
 
     status_dict["reason"] = lastcommand
     

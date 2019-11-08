@@ -11,3 +11,7 @@ download () {
 upload () {
     python "$remotedir/ncap_utils/transfer_codebase/Upload_S3.py" "$1" "$2" "$3" "$4" "$5"
 }
+
+download_folder () {
+    python "$remotedir/ncap_utils/transfer_codebase/Download_S3_folder.py" "$1" "$2" "$3" 
+}

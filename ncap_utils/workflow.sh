@@ -31,7 +31,7 @@ log_progress () {
 
 
 errorrep () {
-    trap 'loc=$abspath; last_command=$current_command; current_command=$BASH_COMMAND; python "$abspath"/ncap_utils/log.py "$bucketname" "$groupdir" "$dataname" "$resultdir" "$BASH_COMMAND" "$?"' DEBUG
+    trap 'loc=$abspath; last_command=$current_command; current_command=$BASH_COMMAND; python "$abspath"/ncap_utils/log.py "$bucketname" "$groupdir" "$dataname" "$resultdir" "$BASH_COMMAND" ' DEBUG
     trap 'echo "\"$BASH_COMMAND\" command filed with exit code $?."' EXIT
 }
 
@@ -49,10 +49,11 @@ parseargsstd () {
 }
 
 ## Function to cleanup after all processing is done. Beware this function, as it will delete all foldernames passed as input and also power down the instance. 
+## Will work even if file does not exist. Shuts down the instance after 1 minute. 
 cleanup () {
     for var in "$@"
     do 
-        rm -r "$var"
+        rm -r -f "$var"
     done 
-    sudo poweroff
+    shutdown -h 1    
 }

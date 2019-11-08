@@ -24,50 +24,34 @@ accessdir "$userhome/$datastore" "$userhome/$outstore"
 
 ###############################################################################################
 ## Custom setup for this workflow.
-source .dlamirc
-
 export PATH="/home/ubuntu/anaconda3/bin:$PATH"
+export CAIMAN_DATA="/home/ubuntu/caiman_data"
+## For efficiency: 
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 
-source activate dlcami
+source activate caiman
 ###############################################################################################
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
-echo "$inputpath" 
-download "$inputpath" "$bucketname" "$datastore"
+echo "$inputpath/$dataname" 
+download_folder "$inputpath/$dataname" "$bucketname" "$datastore"
 
 ## Stereotyped download script for config: 
 echo "$inputpath/$dataname" 
-download "$configpath" "$bucketname" "$datastore"
+download "$inputpath/$configname" "$bucketname" "$datastore"
 
 ###############################################################################################
-## Import variables from the configuration file: 
-read -r XS XA YS YA <<< $(jq -r .Coordinates[] "$userhome/$datastore/$configname")
-read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
+## Additionally, download the cnn model we will use. 
+download "$inputpath/cnn_model_online.h5"
 
-#preprocess videos:
+## Download the configuration dictionary: 
 
-cd "$userhome/$datastore/" 
-counter=0
-for i in ./*"$ext" ; do 
-filenamenoext="$(basename "${i/"$ext"}")"
-ffmpeg -y -i "$i" -c copy -f "${ext#"."}" needle.h264
-ffmpeg -y -r 40 -i needle.h264 -c copy "conv""$filenamenoext".mp4
-ffmpeg -i "conv""$filenamenoext".mp4 -filter:v "crop=$XA:$YA:$XS:$YS" "$filenamenoext""cropped.mp4"  
-echo "file "$filenamenoext"cropped.mp4" >> output.txt
-rm needle.h264
-done 
+## First, initialize the parameter dictionary from downloaded configuration dict.  
 
-ffmpeg -f concat -i output.txt -vcodec copy -acodec copy "analysis_vids/$((counter+1))"$filenamenoext"Final.mp4"
-
-## Run deeplabcut analysis: 
-cd ../../DeepLabCut/Analysis-tools
-
-python AnalyzeVideos_new.py
-cd "$userhome"
-## Custom bulk processing. 
+## 
 
 ###############################################################################################
 ## Stereotyped upload script for the data
+#upload "$outstore" "$bucketname" "$grouppath" "$resultpath" "mp4"
 
-echo "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
-upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
-
+#cleanup "$datastore" "$outstore"
