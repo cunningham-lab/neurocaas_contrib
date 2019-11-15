@@ -1,12 +1,12 @@
 {
-  "status": "FAILED",
+  "status": "SUCCESS",
   "cpu_usage": [
-    "25"
+    "26"
   ],
   "stdout": "pending",
   "instance": "i-0e8af538e123816fc",
   "reason": [
-    "cd DeepLabCut/Analysis-tools"
+    "cd \"$userhome\""
   ],
   "command": "4f8fedc0-2239-450c-909b-0353587f5725",
   "stderr": [

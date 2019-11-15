@@ -25,7 +25,7 @@ errorlog
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
-outstore="ncapdata/localdata/analysis_vids/"
+outstore="ncapdata/localout/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$outstore"
 
@@ -41,7 +41,7 @@ modelpath=$(cat "$userhome/$datastore/$configname" | jq '.modeldata.modelpath' |
 configpath=$(cat "$userhome/$datastore/$configname" | jq '.modeldata.configpath' | sed 's/"//g')
 
 ## place python myconfig_analysis file and modelfolder in the right location.
-aws s3 sync "s3://""$bucketname"/"$modelpath" "$userhome/DeepLabCut/pose-tensorflow/models/"
+aws s3 sync "s3://""$bucketname"/"$modelpath" "$userhome/DeepLabCut/pose-tensorflow/models/"$(basename "$modelpath")""
 aws s3 cp "s3://""$bucketname"/"$configpath" "$userhome/DeepLabCut/myconfig_analysis.py"
 ## Replace the video location in the config folder. 
 python "ncap_remote/substitute_config.py"
@@ -52,8 +52,13 @@ python "ncap_remote/substitute_config.py"
 cd DeepLabCut/Analysis-tools
 
 python AnalyzeVideos.py
+cd "$userhome"/"$datastore"
+
+find -iname "*.h5" -exec cp {} "$userhome"/"$outstore" \;
+find -iname "*.pickle" -exec cp {} "$userhome"/"$outstore" \;
+
+## Copy:
 cd "$userhome"
-## Custom bulk processing. 
 
 ###############################################################################################
 ## Stereotyped upload script for the data

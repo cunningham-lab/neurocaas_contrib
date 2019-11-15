@@ -8,8 +8,6 @@ if __name__ == "__main__":
             if "videofolder" in line:
                 #print(line)
                 print("videofolder = \"/home/ubuntu/ncapdata/localdata/\"")
-            elif "videotype" in line:
-                print("videotype = \" mpg\"")
             else:
                 print(line)
 

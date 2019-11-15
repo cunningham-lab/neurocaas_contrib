@@ -26,10 +26,6 @@ errorlog () {
     writepath="$abspath/ncap_utils/statusdict.json"
     tmp=$(mktemp)
     trap 'last_command=$current_command; current_command=$BASH_COMMAND; cat "$writepath" | jq --arg reason "$last_command" '"'"'.reason = [$reason]'"'"' > "$tmp" && mv "$tmp" "$writepath"' DEBUG	
-    ## Get the last command for debugging.
-    #trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-    ## echo an error message before exiting. 
-    #trap 'echo "\"${current_command}\" command filed with exit code $?."' EXIT
 }
 
 errorlog_init () {
@@ -67,7 +63,7 @@ errorlog_background () {
     do
     sleep 10
     system_monitor
-    aws s3 cp  "$writepath" "$homepath"
+    aws s3 cp  "$writepath" "$homepath" --only-show-errors
     done
 }
 
