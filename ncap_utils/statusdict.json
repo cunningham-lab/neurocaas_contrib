@@ -1,33 +1,12 @@
 {
-  "status": "SUCCESS",
+  "status": "FAILED",
   "cpu_usage": [
-    "2"
+    "25"
   ],
-  "stdout": [
-    "[2700, 2700]\n",
-    "[2800, 2800]\n",
-    "[2900, 2900]\n",
-    "No clusters to stop\n",
-    "Completed 2.8 KiB/2.8 KiB (44.8 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 3.0 KiB/3.0 KiB (47.3 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 3.3 KiB/3.3 KiB (30.0 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 3.5 KiB/3.5 KiB (20.9 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 3.7 KiB/3.7 KiB (13.3 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Starting CNMF\n",
-    "Completed 4.0 KiB/4.0 KiB (45.5 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.3 KiB/4.3 KiB (47.5 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.5 KiB/4.5 KiB (15.0 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.7 KiB/4.7 KiB (67.4 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.0 KiB/5.0 KiB (53.1 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.2 KiB/5.2 KiB (80.9 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.4 KiB/5.4 KiB (58.7 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.6 KiB/5.6 KiB (16.2 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.6 KiB/5.6 KiB (44.6 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.9 KiB/5.9 KiB (85.1 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n"
-  ],
+  "stdout": "pending",
   "instance": "i-0e8af538e123816fc",
   "reason": [
-    "upload \"$outstore\" \"$bucketname\" \"$groupdir\" \"$resultdir\" \"mp4\""
+    "cd DeepLabCut/Analysis-tools"
   ],
   "command": "4f8fedc0-2239-450c-909b-0353587f5725",
   "stderr": [
