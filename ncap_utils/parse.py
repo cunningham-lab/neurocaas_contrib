@@ -4,4 +4,7 @@ import sys
 var = sys.argv[1]
 
 
-print(re.findall('.+/inputs',var)[0])
+try:
+    print(re.findall('.+/inputs',var)[0])
+except:
+    raise NotImplementedError(var)

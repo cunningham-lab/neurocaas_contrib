@@ -47,14 +47,15 @@ read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
 cd "$userhome/$datastore/" 
 counter=0
 for i in ./*"$ext" ; do 
+filenamenoext="$(basename "${i/"$ext"}")"
 ffmpeg -y -i "$i" -c copy -f "${ext#"."}" needle.h264
-ffmpeg -y -r 40 -i needle.h264 -c copy $(basename "${i/"$ext"}").mp4
-ffmpeg -i $(basename "${i/"$ext"}").mp4 -filter:v "crop=$XA:$YA:$XS:$YS" $(basename ${i/"$ext"}cropped).mp4  
-echo "file '$(basename "${i/"$ext"}")cropped.mp4'" >> output.txt
+ffmpeg -y -r 40 -i needle.h264 -c copy "conv""$filenamenoext".mp4
+ffmpeg -i "conv""$filenamenoext".mp4 -filter:v "crop=$XA:$YA:$XS:$YS" "$filenamenoext""cropped.mp4"  
+echo "file "$filenamenoext"cropped.mp4" >> output.txt
 rm needle.h264
 done 
 
-ffmpeg -f concat -i output.txt -vcodec copy -acodec copy "analysis_vids/$((counter+1))Final.mp4"
+ffmpeg -f concat -i output.txt -vcodec copy -acodec copy "analysis_vids/$((counter+1))"$filenamenoext"Final.mp4"
 
 
 ## Run deeplabcut analysis: 
