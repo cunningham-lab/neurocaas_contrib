@@ -1,11 +1,5 @@
 #!/bin/bash
 
-## Custom setup for this workflow.
-source .dlamirc
-
-export PATH="/home/ubuntu/anaconda3/bin:$PATH"
-
-source activate caiman
 ## Import functions for workflow management. 
 ## Get the path to this function: 
 execpath="$0"
@@ -20,9 +14,15 @@ source "$scriptpath/transfer.sh"
 errorlog
 
 ## Declare variables: bucketname,inputpath,groupdir,resultdir,dataname,configname given standard arguments to bin script.
-parseargsstd "$1" "$2" "$3" "$4"
+#parseargsstd "$1" "$2" "$3" "$4"
 
-errorrep
+#errorrep
+## Custom setup for this workflow.
+source .dlamirc
+
+export PATH="/home/ubuntu/anaconda3/bin:$PATH"
+
+source activate caiman
 
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
@@ -53,4 +53,4 @@ cd $userhome
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
-#cleanup "$datastore" "$outstore"
+cleanup "$datastore" "$outstore"
