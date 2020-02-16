@@ -1,35 +1,39 @@
 {
   "status": "SUCCESS",
   "cpu_usage": [
-    "26"
+    "25"
   ],
-  "stdout": "pending",
-  "instance": "i-0e8af538e123816fc",
+  "stdout": [
+    "execpath\n",
+    "ncap_remote/ncap_utils SCRIPTPATH\n",
+    "ncap_remote/run_epi.sh\n",
+    "epi-ncap/cunninghamlabEPI/results/debugjob2020-02-16 17:26:31.311058/logs/DATASET_NAME:dataset1.json_STATUS.txt\n",
+    "Completed 242 Bytes/242 Bytes (6.6 KiB/s) with 1 file(s) remaining\rdownload: s3://epi-ncap/cunninghamlabEPI/results/debugjob2020-02-16 17:26:31.311058/logs/DATASET_NAME:dataset1.json_STATUS.txt to ncap_remote/ncap_utils/statusdict.json\n",
+    "Completed 258 Bytes/258 Bytes (4.5 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://epi-ncap/cunninghamlabEPI/results/debugjob2020-02-16 17:26:31.311058/logs/DATASET_NAME:dataset1.json_STATUS.txt\n",
+    "5626, is the pid of the background process\n",
+    "execpath\n",
+    "/home/ubuntu/ncap_remote/run_epi_internal.sh\n",
+    "1\n"
+  ],
+  "instance": "i-026233ba7d3985058",
   "reason": [
-    "cd \"$userhome\""
+    "aws s3 sync ./ \"s3://$bucketname/$groupdir/$resultdir/\""
   ],
-  "command": "4f8fedc0-2239-450c-909b-0353587f5725",
+  "command": "2248dae1-fbb1-4111-bb67-14fb3d031413",
   "stderr": [
-    "      279861 [cnmf.py:                 fit():521][19904] Updating spatial ...\n",
-    "      279861 [spatial.py:update_spatial_components():183][19904] Computing support of spatial components\n",
-    "      279882 [spatial.py:determine_search_location():940][19904] dilate in parallel...\n",
-    "      282280 [spatial.py:update_spatial_components():215][19904] Memory mapping\n",
-    "      282281 [spatial.py:update_spatial_components():221][19904] Updating Spatial Components using lasso lars\n",
-    "      283178 [spatial.py:update_spatial_components():254][19904] thresholding components\n",
-    "      283236 [spatial.py:update_spatial_components():278][19904] Computing residuals\n",
-    "      283569 [spatial.py:update_spatial_components():306][19904] Updating done in 3s\n",
-    "      283569 [spatial.py:update_spatial_components():309][19904] Removing created tempfiles\n",
-    "      283584 [params.py:                 set():835][19904] Changing key p in group temporal from 0 to 1\n",
-    "      283584 [cnmf.py:                 fit():526][19904] update temporal ...\n",
-    "      283603 [temporal.py:update_temporal_components():201][19904] Generating residuals\n",
-    "      284018 [temporal.py:update_temporal_components():215][19904] entering the deconvolution \n",
-    "      284027 [temporal.py:    update_iteration():385][19904] 2 out of total 2 temporal components updated\n",
-    "      284028 [temporal.py:    update_iteration():398][19904] stopping: overall temporal component not changing significantly\n",
-    "      284034 [components_evaluation.py:estimate_components_quality():697][19904] Component evaluation in parallel\n",
-    "2019-11-15 02:35:05.476774: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA\n",
-    "2019-11-15 02:35:06.001597: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500000000 Hz\n",
-    "2019-11-15 02:35:06.005147: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x563690eb6320 executing computations on platform Host. Devices:\n",
-    "2019-11-15 02:35:06.005175: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>\n"
+    "2020-02-16 22:26:34.846980: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libnvinfer.so.6'; dlerror: libnvinfer.so.6: cannot open shared object file: No such file or directory\n",
+    "2020-02-16 22:26:34.847056: W tensorflow/stream_executor/platform/default/dso_loader.cc:55] Could not load dynamic library 'libnvinfer_plugin.so.6'; dlerror: libnvinfer_plugin.so.6: cannot open shared object file: No such file or directory\n",
+    "2020-02-16 22:26:34.847066: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:30] Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.\n",
+    "2020-02-16 22:26:36.417718: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcuda.so.1\n",
+    "2020-02-16 22:26:36.419535: E tensorflow/stream_executor/cuda/cuda_driver.cc:351] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected\n",
+    "2020-02-16 22:26:36.419564: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (ip-172-31-2-66): /proc/driver/nvidia/version does not exist\n",
+    "2020-02-16 22:26:36.419845: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 AVX512F FMA\n",
+    "2020-02-16 22:26:36.428046: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500000000 Hz\n",
+    "2020-02-16 22:26:36.428312: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x5604be0bd7a0 initialized for platform Host (this does not guarantee that XLA will be used). Devices:\n",
+    "2020-02-16 22:26:36.428753: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version\n",
+    "WARNING:tensorflow:From /home/ubuntu/anaconda3/envs/epi/lib/python3.6/site-packages/tensorflow_probability/python/bijectors/masked_autoregressive.py:310: AffineScalar.__init__ (from tensorflow_probability.python.bijectors.affine_scalar) is deprecated and will be removed after 2020-01-01.\n",
+    "Instructions for updating:\n",
+    "`AffineScalar` bijector is deprecated; please use `tfb.Shift(loc)(tfb.Scale(...))` instead.\n"
   ],
-  "input": "peterkagroupCAIMAN/inputs/example_template/test_full.zip"
+  "input": "cunninghamlabEPI/inputs/epidata/dataset1.json"
 }
