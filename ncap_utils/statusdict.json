@@ -1,5 +1,5 @@
 {
-  "status": "SUCCESS",
+  "status": "FAILED",
   "cpu_usage": [
     "25"
   ],
@@ -17,7 +17,7 @@
   ],
   "instance": "i-026233ba7d3985058",
   "reason": [
-    "aws s3 sync ./ \"s3://$bucketname/$groupdir/$resultdir/\""
+    "accessdir \"$userhome/$datastore\" \"$userhome/$configstore\" \"$userhome/$outstore\""
   ],
   "command": "2248dae1-fbb1-4111-bb67-14fb3d031413",
   "stderr": [
