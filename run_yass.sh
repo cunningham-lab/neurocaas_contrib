@@ -56,7 +56,7 @@ download "$yassgeompath" "$bucketname" "$datastore"
 
 cd "$userhome/$datastore"
 
-source activate yass3
+source activate yass
 
 yass sort config.yaml
 #export CAIMAN_DATA="/home/ubuntu/caiman_data"
