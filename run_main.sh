@@ -32,7 +32,7 @@ background_pid=$!
 echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
-bash /home/ubuntu/ncap_remote/run_caiman.sh
+bash /home/ubuntu/ncap_remote/run_yass.sh
 ##############################################
 errorlog_final
 kill "$background_pid"
