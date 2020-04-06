@@ -28,7 +28,7 @@ source activate epi
 userhome="/home/ubuntu"
 datastore="epi/scripts/localdata/"
 configstore="epi/scripts/localconfig/"
-outstore="epi/scripts/data/lds_linear2D_freq_mu=0.00E+00_6.25E-02_6.28E+00_3.95E-01/"
+outstore="epi/scripts/data/lds_2D_linear2D_freq/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
 
@@ -44,12 +44,12 @@ cd epi/scripts
 
 bash lds_hp_search_ncap.sh "$userhome"/"$datastore""$dataname"
 
-export resultsstore=data/lds_linear2D_freq_mu=0.00E+00_6.25E-02_6.28E+00_3.95E-01
+export resultsstore=data/lds_2D_linear2D_freq
 
 ## copy the output to our results directory: 
 cd $resultsstore 
 echo  "results aimed at" "s3://$bucketname/$groupdir/$resultdir/"
-aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/"
+aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/per_hp"
 
 cd $userhome
 ###############################################################################################
