@@ -1,35 +1,40 @@
 {
   "status": "SUCCESS",
   "cpu_usage": [
-    "26"
+    "12"
   ],
-  "stdout": "pending",
-  "instance": "i-0e8af538e123816fc",
+  "stdout": [
+    "Completed 3.0 KiB/3.0 KiB (54.2 KiB/s) with 1 file(s) remaining\rdownload: s3://dlc-ncap/ctnncapdevDLC/inputs/myconfig_analysis.py to DeepLabCut/myconfig_analysis.py\n",
+    "Starting evaluation\n",
+    "../pose-tensorflow/models/social_NewJul8-trainset95shuffle1\n",
+    "['snapshot-850000' 'snapshot-900000' 'snapshot-950000' 'snapshot-1000000'\n",
+    " 'snapshot-1030000']\n",
+    "Starting\n",
+    "Loading config\n",
+    "Config done loading\n",
+    "Loading  TempTrial14cropped.mp4\n",
+    "Duration of video [s]:  10.0 , recorded with  30.0 fps!\n",
+    "Overall # of frames:  310 with cropped frame dimensions:  [300, 300]\n",
+    "Starting to extract posture\n",
+    "SET]TING UO ITERATION\n",
+    "Detected frames:  300\n",
+    "Saving results...\n",
+    "Evaluation took 35.0 seconds.\n",
+    "ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000includingmetadata.pickle ncapdata/localout/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000includingmetadata.pickle\n",
+    "ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000.h5 ncapdata/localout/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000.h5\n",
+    "Completed 1.5 KiB/1.5 KiB (21.0 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://dlc-ncap/ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/logs/DATASET_NAME:TempTrial14cropped.mp4_STATUS.txt\n",
+    "/var/lib/amazon/ssm/i-05822b5fddc81979e/document/orchestration/9f9362d2-47bf-4976-8463-2317992e9b03/awsrunShellScript/0.awsrunShellScript/_script.sh\n"
+  ],
+  "instance": "i-05822b5fddc81979e",
   "reason": [
-    "cd \"$userhome\""
+    "echo in test branch."
   ],
-  "command": "4f8fedc0-2239-450c-909b-0353587f5725",
+  "command": "9f9362d2-47bf-4976-8463-2317992e9b03",
   "stderr": [
-    "      279861 [cnmf.py:                 fit():521][19904] Updating spatial ...\n",
-    "      279861 [spatial.py:update_spatial_components():183][19904] Computing support of spatial components\n",
-    "      279882 [spatial.py:determine_search_location():940][19904] dilate in parallel...\n",
-    "      282280 [spatial.py:update_spatial_components():215][19904] Memory mapping\n",
-    "      282281 [spatial.py:update_spatial_components():221][19904] Updating Spatial Components using lasso lars\n",
-    "      283178 [spatial.py:update_spatial_components():254][19904] thresholding components\n",
-    "      283236 [spatial.py:update_spatial_components():278][19904] Computing residuals\n",
-    "      283569 [spatial.py:update_spatial_components():306][19904] Updating done in 3s\n",
-    "      283569 [spatial.py:update_spatial_components():309][19904] Removing created tempfiles\n",
-    "      283584 [params.py:                 set():835][19904] Changing key p in group temporal from 0 to 1\n",
-    "      283584 [cnmf.py:                 fit():526][19904] update temporal ...\n",
-    "      283603 [temporal.py:update_temporal_components():201][19904] Generating residuals\n",
-    "      284018 [temporal.py:update_temporal_components():215][19904] entering the deconvolution \n",
-    "      284027 [temporal.py:    update_iteration():385][19904] 2 out of total 2 temporal components updated\n",
-    "      284028 [temporal.py:    update_iteration():398][19904] stopping: overall temporal component not changing significantly\n",
-    "      284034 [components_evaluation.py:estimate_components_quality():697][19904] Component evaluation in parallel\n",
-    "2019-11-15 02:35:05.476774: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA\n",
-    "2019-11-15 02:35:06.001597: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500000000 Hz\n",
-    "2019-11-15 02:35:06.005147: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x563690eb6320 executing computations on platform Host. Devices:\n",
-    "2019-11-15 02:35:06.005175: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>\n"
+    "\r  0%|          | 0/310 [00:00<?, ?it/s]\r  3%|▎         | 10/310 [00:33<16:57,  3.39s/it]\r 13%|█▎        | 40/310 [00:34<03:49,  1.18it/s]\r 23%|██▎       | 70/310 [00:34<01:57,  2.05it/s]\r 32%|███▏      | 100/310 [00:34<01:11,  2.92it/s]\r 42%|████▏     | 130/310 [00:34<00:47,  3.78it/s]\r 52%|█████▏    | 160/310 [00:34<00:32,  4.64it/s]\r 61%|██████▏   | 190/310 [00:34<00:21,  5.49it/s]\r 71%|███████   | 220/310 [00:34<00:14,  6.34it/s]\r 81%|████████  | 250/310 [00:34<00:08,  7.18it/s]\r 90%|█████████ | 280/310 [00:34<00:03,  8.02it/s]WARNING:py.warnings:/home/ubuntu/anaconda3/envs/dlcami/lib/python3.6/site-packages/moviepy/video/io/ffmpeg_reader.py:130: UserWarning: Warning: in file TempTrial14cropped.mp4, 270000 bytes wanted but 0 bytes read,at frame 300/301, at time 10.00/10.00 sec. Using the last valid frame instead.\n",
+    "  UserWarning)\n",
+    "\n",
+    "Shutdown scheduled for Fri 2019-11-15 18:09:56 UTC, use 'shutdown -c' to cancel.\n"
   ],
-  "input": "peterkagroupCAIMAN/inputs/example_template/test_full.zip"
+  "input": "ctnncapdevDLC/inputs/TempTrial14cropped.mp4"
 }
