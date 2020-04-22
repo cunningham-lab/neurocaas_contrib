@@ -1,40 +1,25 @@
 {
   "status": "SUCCESS",
   "cpu_usage": [
-    "12"
+    "0"
   ],
   "stdout": [
-    "Completed 3.0 KiB/3.0 KiB (54.2 KiB/s) with 1 file(s) remaining\rdownload: s3://dlc-ncap/ctnncapdevDLC/inputs/myconfig_analysis.py to DeepLabCut/myconfig_analysis.py\n",
-    "Starting evaluation\n",
-    "../pose-tensorflow/models/social_NewJul8-trainset95shuffle1\n",
-    "['snapshot-850000' 'snapshot-900000' 'snapshot-950000' 'snapshot-1000000'\n",
-    " 'snapshot-1030000']\n",
-    "Starting\n",
-    "Loading config\n",
-    "Config done loading\n",
-    "Loading  TempTrial14cropped.mp4\n",
-    "Duration of video [s]:  10.0 , recorded with  30.0 fps!\n",
-    "Overall # of frames:  310 with cropped frame dimensions:  [300, 300]\n",
-    "Starting to extract posture\n",
-    "SET]TING UO ITERATION\n",
-    "Detected frames:  300\n",
-    "Saving results...\n",
-    "Evaluation took 35.0 seconds.\n",
-    "ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000includingmetadata.pickle ncapdata/localout/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000includingmetadata.pickle\n",
-    "ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000.h5 ncapdata/localout/TempTrial14croppedDeepCut_resnet50_social_NewJul8shuffle1_1030000.h5\n",
-    "Completed 1.5 KiB/1.5 KiB (21.0 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://dlc-ncap/ctnncapdevDLC/results/debugjob2019-11-15 13:05:12.520914/logs/DATASET_NAME:TempTrial14cropped.mp4_STATUS.txt\n",
-    "/var/lib/amazon/ssm/i-05822b5fddc81979e/document/orchestration/9f9362d2-47bf-4976-8463-2317992e9b03/awsrunShellScript/0.awsrunShellScript/_script.sh\n"
+    "execpath\n",
+    "ncap_remote/ncap_utils SCRIPTPATH\n",
+    "ncap_remote/run_mock.sh\n",
+    "epi-ncap-stable/examplegroup2EPIdevelop/results/debugjob2020-04-03 23:36:34.831373/logs/DATASET_NAME:dataset1.txt_STATUS.txt\n",
+    "Completed 240 Bytes/240 Bytes (5.7 KiB/s) with 1 file(s) remaining\rdownload: s3://epi-ncap-stable/examplegroup2EPIdevelop/results/debugjob2020-04-03 23:36:34.831373/logs/DATASET_NAME:dataset1.txt_STATUS.txt to ncap_remote/ncap_utils/statusdict.json\n",
+    "Completed 256 Bytes/256 Bytes (3.8 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://epi-ncap-stable/examplegroup2EPIdevelop/results/debugjob2020-04-03 23:36:34.831373/logs/DATASET_NAME:dataset1.txt_STATUS.txt\n",
+    "6908, is the pid of the background process\n",
+    "execpath\n",
+    "/home/ubuntu/ncap_remote/run_mock_internal.sh\n",
+    "/home/ubuntu/ config_noduration.json config parameters here\n"
   ],
-  "instance": "i-05822b5fddc81979e",
+  "instance": "i-0b6194a0c43f2fa31",
   "reason": [
-    "echo in test branch."
+    "cd \"mock_results\""
   ],
-  "command": "9f9362d2-47bf-4976-8463-2317992e9b03",
-  "stderr": [
-    "\r  0%|          | 0/310 [00:00<?, ?it/s]\r  3%|▎         | 10/310 [00:33<16:57,  3.39s/it]\r 13%|█▎        | 40/310 [00:34<03:49,  1.18it/s]\r 23%|██▎       | 70/310 [00:34<01:57,  2.05it/s]\r 32%|███▏      | 100/310 [00:34<01:11,  2.92it/s]\r 42%|████▏     | 130/310 [00:34<00:47,  3.78it/s]\r 52%|█████▏    | 160/310 [00:34<00:32,  4.64it/s]\r 61%|██████▏   | 190/310 [00:34<00:21,  5.49it/s]\r 71%|███████   | 220/310 [00:34<00:14,  6.34it/s]\r 81%|████████  | 250/310 [00:34<00:08,  7.18it/s]\r 90%|█████████ | 280/310 [00:34<00:03,  8.02it/s]WARNING:py.warnings:/home/ubuntu/anaconda3/envs/dlcami/lib/python3.6/site-packages/moviepy/video/io/ffmpeg_reader.py:130: UserWarning: Warning: in file TempTrial14cropped.mp4, 270000 bytes wanted but 0 bytes read,at frame 300/301, at time 10.00/10.00 sec. Using the last valid frame instead.\n",
-    "  UserWarning)\n",
-    "\n",
-    "Shutdown scheduled for Fri 2019-11-15 18:09:56 UTC, use 'shutdown -c' to cancel.\n"
-  ],
-  "input": "ctnncapdevDLC/inputs/TempTrial14cropped.mp4"
+  "command": "751dbd0d-ba98-4619-b580-770c80d3a21e",
+  "stderr": [],
+  "input": "examplegroup2EPIdevelop/inputs/dataset1.txt"
 }
