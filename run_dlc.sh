@@ -73,6 +73,33 @@ then
 elif [ $analysismode == "train" ]
 then 
     echo training
+    trainpath=$(cat "$userhome/$datastore/$configname" | jq '.traindata.trainpath' | sed 's/"//g')
+    trainname=$(basename $trainpath)
+    trainconfigpath=$(cat "$userhome/$datastore/$configname" | jq '.traindata.configpath' | sed 's/"//g')
+    cp "$userhome/$datastore/$dataname" "$userhome/DeepLabCut/Generating_a_Training_Set"
+    aws s3 cp "s3://$bucketname/$trainconfigpath" "$userhome/DeepLabCut/myconfig.py"
+    cd "$userhome/DeepLabCut/Generating_a_Training_Set"
+    unzip $dataname
+    ## Go to the generating a training set diretory. 
+    cd "$userhome/DeepLabCut/Generating_a_Training_Set/"
+    python Step2_ConvertingLabels2DataFrame.py
+    python Step3_CheckLabels.py
+    python Step4_GenerateTrainingFileFromLabelledData.py
+    # Copy labeled frames back to the user if they exist. 
+    cp -r "$userhome/DeepLabCut/Generating_a_Training_Set/$trainname" "$userhome/$outstore/$trainname"
+    aws s3 sync "$userhome/DeepLabCut/Generating_a_Training_Set/$trainname" "s3://$bucketname/$groupdir/$resultdir/$trainname" 
+    ## Now move the results to the model folder. 
+    cd "$userhome/ncap_remote"
+    foldername=$(python dlc_move_training_data.py)
+    ## Now download the pretrained weights: 
+    cd "$userhome/DeepLabCut/pose-tensorflow/models/pretrained"
+    bash download.sh
+    cd "$userhome/DeepLabCut/pose-tensorflow/models/$foldername/train"
+    python ../../../train.py
+    aws s3 sync "$userhome/DeepLabCut/pose-tensorflow/models/$foldername" "s3://$bucketname/$groupdir/$resultdir/$foldername"
+    
+    echo not done yet, exiting.
+    exit
 else
     echo "Mode $analysismode not recognized. Valid options are train or test. Exiting"
     exit
