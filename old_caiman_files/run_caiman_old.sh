@@ -1,8 +1,9 @@
 #!/bin/bash
 
-### Import functions for workflow management. 
-### Get the path to this function: 
+## Import functions for workflow management. 
+## Get the path to this function: 
 execpath="$0"
+echo execpath
 scriptpath="$(dirname "$execpath")/ncap_utils"
 
 source "$scriptpath/workflow.sh"
@@ -12,7 +13,11 @@ source "$scriptpath/transfer.sh"
 ## Set up error logging. 
 errorlog
 
-# Custom setup for this workflow.
+## Declare variables: bucketname,inputpath,groupdir,resultdir,dataname,configname given standard arguments to bin script.
+#parseargsstd "$1" "$2" "$3" "$4"
+
+#errorrep
+## Custom setup for this workflow.
 source .dlamirc
 
 export PATH="/home/ubuntu/anaconda3/bin:$PATH"
@@ -24,7 +29,7 @@ userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
 configstore="ncapdata/localconfig/"
 outstore="ncapdata/localout/"
-# Make local storage locations
+## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
 
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
@@ -41,10 +46,11 @@ export CAIMAN_DATA="/home/ubuntu/caiman_data"
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 CAIMAN_DATA="$userhome/caiman_data"
-python parse_config_caiman.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
-python process_caiman.py "$userhome/$configstore/final_pickled_new" "$userhome/$datastore/$dataname" "$userhome/$outstore" "$userhome/$configstore/$configname"
+python parse_config.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
+python process_test.py "$userhome/$configstore/final_pickled_new" "$userhome/$datastore/$dataname" "$userhome/$outstore"
 cd $userhome
 ###############################################################################################
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
+#cleanup "$datastore" "$outstore"
