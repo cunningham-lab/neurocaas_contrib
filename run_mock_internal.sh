@@ -1,11 +1,5 @@
 #!/bin/bash
 
-## Custom setup for this workflow.
-source .dlamirc
-
-export PATH="/home/ubuntu/anaconda3/bin:$PATH"
-
-source activate dlcami
 ## Import functions for workflow management. 
 ## Get the path to this function: 
 execpath="$0"
@@ -20,14 +14,21 @@ source "$scriptpath/transfer.sh"
 errorlog
 
 ## Declare variables: bucketname,inputpath,groupdir,resultdir,dataname,configname given standard arguments to bin script.
-parseargsstd "$1" "$2" "$3" "$4"
+#parseargsstd "$1" "$2" "$3" "$4"
 
-errorrep
+#errorrep
+## Custom setup for this workflow.
+#source .dlamirc
+
+export PATH="/home/ubuntu/anaconda3/bin:$PATH"
+
+source activate epi
 
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
-datastore="ncapdata/localdata/"
-outstore="ncapdata/localdata/analysis_vids/"
+datastore="epi/scripts/localdata/"
+configstore="/home/ubuntu/" 
+outstore="mock_results/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$outstore"
 
@@ -35,24 +36,19 @@ accessdir "$userhome/$datastore" "$userhome/$outstore"
 download "$inputpath" "$bucketname" "$datastore"
 
 ## Stereotyped download script for config: 
-download "$configpath" "$bucketname" "$datastore"
+download "$configpath" "$bucketname" "$configstore"
 
-###############################################################################################
-## Video preprocessing:
-## Import variables from the configuration file: 
-read -r XS XA YS YA <<< $(jq -r .Coordinates[] "$userhome/$datastore/$configname")
-read -r ext <<< $(jq -r .Ext "$userhome/$datastore/$configname")
+download "$configpath" "$bucketname" "$configstore"
+echo $configstore $configname config parameters here
+waittime=$(jq .wait "$configstore/$configname")
+sleep $waittime
 
-## Preprocess videos 
-
-## Run deeplabcut analysis: 
-cd ../../DeepLabCut/Analysis-tools
-
-python AnalyzeVideos_new.py
-cd "$userhome"
-## Custom bulk processing. 
 
 ###############################################################################################
 ## Stereotyped upload script for the data
-upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
+## give extensions to ignore. 
+cd "mock_results"
+aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/process_results"
+#upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
+#cleanup "$datastore" "$outstore"

@@ -4,7 +4,7 @@
 execpath="$0"
 echo execpath
 scriptpath="$(dirname "$execpath")/ncap_utils"
-
+echo $scriptpath "SCRIPTPATH"
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
 source "$scriptpath/transfer.sh"
@@ -32,7 +32,7 @@ background_pid=$!
 echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
-bash /home/ubuntu/ncap_remote/run_yass.sh
+bash /home/ubuntu/ncap_remote/run_epi_internal.sh
 ##############################################
 errorlog_final
 kill "$background_pid"

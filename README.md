@@ -3,5 +3,8 @@
 
 ## Requirements: 
 AWS CLI
+
 boto3 (for transfer utilities)
+
+Main script can be seen in run_main.sh. 
 

@@ -23,6 +23,7 @@ set +a
 
 ## Example usage:
 echo "$bucketname"/"$groupdir"/"$resultdir"/logs/DATASET_NAME:"$dataname"_STATUS.txt"" 
+
 ## Set up Error Status Reporting:
 errorlog_init 
 
@@ -32,8 +33,9 @@ background_pid=$!
 echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
-bash /home/ubuntu/ncap_remote/run_yass.sh
+bash /home/ubuntu/ncap_remote/run_dlc.sh
 ##############################################
+
 errorlog_final
 kill "$background_pid"
 

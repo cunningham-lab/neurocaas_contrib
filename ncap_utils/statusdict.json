@@ -1,56 +1,14 @@
 {
   "status": "SUCCESS",
   "cpu_usage": [
-    "8"
+    "0"
   ],
-  "stdout": [
-    "Completed 3.5 KiB/3.5 KiB (20.9 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 3.7 KiB/3.7 KiB (13.3 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Starting CNMF\n",
-    "Completed 4.0 KiB/4.0 KiB (45.5 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.3 KiB/4.3 KiB (47.5 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.5 KiB/4.5 KiB (15.0 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 4.7 KiB/4.7 KiB (67.4 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.0 KiB/5.0 KiB (53.1 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.2 KiB/5.2 KiB (80.9 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.4 KiB/5.4 KiB (58.7 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.6 KiB/5.6 KiB (16.2 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.6 KiB/5.6 KiB (44.6 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 5.9 KiB/5.9 KiB (85.1 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "Completed 6.3 KiB/6.3 KiB (43.6 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n",
-    "/home/ubuntu/ncapdata/localout/ test_full REL VARS\n",
-    "peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/test_fullA.npz ncapdata/localout/test_fullA.npz\n",
-    "peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/test_fullR.npz ncapdata/localout/test_fullR.npz\n",
-    "peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/test_fullC.npz ncapdata/localout/test_fullC.npz\n",
-    "peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/test_full_cnmf_obj.hdf5 ncapdata/localout/test_full_cnmf_obj.hdf5\n",
-    "Completed 6.3 KiB/6.3 KiB (59.1 KiB/s) with 1 file(s) remaining\rupload: ncap_remote/ncap_utils/statusdict.json to s3://caiman-ncap/peterkagroupCAIMAN/results/debugjob2019-11-14 21:29:30.447153/logs/DATASET_NAME:test_full.zip_STATUS.txt\n"
-  ],
-  "instance": "i-0e8af538e123816fc",
+  "stdout": "pending",
+  "instance": "i-0b6194a0c43f2fa31",
   "reason": [
-    "cd $userhome"
+    "echo not done yet, exiting."
   ],
-  "command": "4f8fedc0-2239-450c-909b-0353587f5725",
-  "stderr": [
-    "      284027 [temporal.py:    update_iteration():385][19904] 2 out of total 2 temporal components updated\n",
-    "      284028 [temporal.py:    update_iteration():398][19904] stopping: overall temporal component not changing significantly\n",
-    "      284034 [components_evaluation.py:estimate_components_quality():697][19904] Component evaluation in parallel\n",
-    "2019-11-15 02:35:05.476774: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA\n",
-    "2019-11-15 02:35:06.001597: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500000000 Hz\n",
-    "2019-11-15 02:35:06.005147: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x563690eb6320 executing computations on platform Host. Devices:\n",
-    "2019-11-15 02:35:06.005175: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>\n",
-    "/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/h5py/_hl/dataset.py:313: H5pyDeprecationWarning: dataset.value has been deprecated. Use dataset[()] instead.\n",
-    "  \"Use dataset[()] instead.\", H5pyDeprecationWarning)\n",
-    "      293060 [utils.py:recursively_save_dict_contents_to_group():441][19904] A is sparse ****\n",
-    "      293075 [utils.py:recursively_save_dict_contents_to_group():408][19904] g is an object type\n",
-    "      293078 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "      293078 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "      293084 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "      293086 [utils.py:recursively_save_dict_contents_to_group():441][19904] A is sparse ****\n",
-    "      293090 [utils.py:recursively_save_dict_contents_to_group():408][19904] g is an object type\n",
-    "      293092 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "      293092 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "      293099 [utils.py:recursively_save_dict_contents_to_group():416][19904] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']\n",
-    "Shutdown scheduled for Fri 2019-11-15 02:36:13 UTC, use 'shutdown -c' to cancel.\n"
-  ],
-  "input": "peterkagroupCAIMAN/inputs/example_template/test_full.zip"
+  "command": "751dbd0d-ba98-4619-b580-770c80d3a21e",
+  "stderr": [],
+  "input": "examplegroup2EPIdevelop/inputs/dataset1.txt"
 }
