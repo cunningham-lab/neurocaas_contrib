@@ -2,8 +2,14 @@
 ## Bash script that establishes ncap monitoring routines with minimal dependencies on other packages. 
 ## Load in helper functions. 
 execpath="$0"
-echo execpath
 scriptpath="$(dirname "$execpath")/ncap_utils"
+## Get in absolute path loader: 
+source "$scriptpath/paths.sh"
+
+## Now declare remote directory name for here and all sourced files: 
+set -a
+neurocaasrootdir=$(dirname $(get_abs_filename "$execpath"))
+set +a
 
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
