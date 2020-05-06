@@ -3,7 +3,7 @@
 ## NOTE: Most of these functions require you to run parseargsstd with appropriate aruments to function. 
 echo "$0"
 userhome=$PWD 
-remotedir="ncap_remote" #"$(dirname "$0")"
+remotedir="neurocaas_remote" #"$(dirname "$0")"
 ## Get the absolute path
 abspath=$userhome/$remotedir
 
