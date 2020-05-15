@@ -13,7 +13,7 @@ parseargsstd () {
     bucketname="$1"
     inputdir="$(python "$abspath"/ncap_utils/parse.py "$2")"
     groupdir="$(dirname "$inputdir")"
-    resultdir="$3"
+    resultdir="$3"/"process_results"
     dataname="$(basename "$2")"
     configname="$(basename "$4")"
     inputpath="$2"

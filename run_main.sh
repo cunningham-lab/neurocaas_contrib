@@ -46,9 +46,11 @@ echo $background_pid, "is the pid of the background process"
 ## MAIN SCRIPT GOES HERE #####################
 bash "$5" #/home/ubuntu/ncap_remote/run_yass.sh
 ##############################################
-## Cleanup:
 ## Once this is all over, send the config and end.txt file
+aws s3 cp s3://"$bucketname"/"$configpath" s3://"$bucketname"/"$groupdir"/"$resultdir"/$configname
+aws s3 cp $neurocaasrootdir/end.txt s3://"$bucketname"/"$groupdir"/"$resultdir"/end.txt
 
+## Cleanup:
 errorlog_final
 kill "$background_pid"
 
