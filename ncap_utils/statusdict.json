@@ -1,11 +1,13 @@
 {
   "status": "SUCCESS",
   "cpu_usage": [
-    "1"
+    "0"
   ],
   "stdout": "pending",
   "instance": "i-instanceid",
-  "reason": "NONE",
+  "reason": [
+    "accessdir \"$userhome/$datastore\" \"$userhome/$outstore\""
+  ],
   "command": "commandid",
   "stderr": "not given yet",
   "input": "traviscipermagroup/inputs/dataset1.txt"
