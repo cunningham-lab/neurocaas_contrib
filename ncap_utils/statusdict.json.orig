@@ -1,0 +1,21 @@
+{
+  "status": "SUCCESS",
+<<<<<<< HEAD
+  "reason": [
+    "cd \"/home/ubuntu/ncap_remote\""
+=======
+  "cpu_usage": [
+    "0"
+  ],
+  "stdout": "pending",
+  "instance": "i-0b6194a0c43f2fa31",
+  "reason": [
+    "echo not done yet, exiting."
+>>>>>>> 3f187a93d00b12a356d18ab28e6a6e2927b6cbba
+  ],
+  "stdout": "not given yet",
+  "stderr": "not given yet",
+  "input": "examplegroup2/inputs/datafile.txt",
+  "instance": "i-0f1c3bf8c9c7e3276",
+  "command": "c63f09a8-73a6-4793-b2c5-182795bba9ff"
+}

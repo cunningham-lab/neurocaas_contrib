@@ -49,6 +49,8 @@ sleep $waittime
 ## give extensions to ignore. 
 cd "mock_results"
 aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/process_results"
+cd "/home/ubuntu/ncap_remote"
+aws s3 cp ./end.txt "s3://$bucketname/$groupdir/$resultdir/process_results/end.txt"
 #upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
 #cleanup "$datastore" "$outstore"

@@ -27,13 +27,13 @@ set -a
 parseargsstd "$1" "$2" "$3" "$4"
 set +a
 
-echo $bucketname >> "/home/ubuntu/check_vars.txt.txt" 
-echo $groudir >> "/home/ubuntu/check_vars.txt.txt" 
-echo $resultdir >> "/home/ubuntu/check_vars.txt.txt" 
-echo $dataname >> "/home/ubuntu/check_vars.txt.txt" 
-echo $datapath >> "/home/ubuntu/check_vars.txt.txt" 
-echo $configname >> "/home/ubuntu/check_vars.txt.txt" 
-echo $configpath >> "/home/ubuntu/check_vars.txt.txt" 
+echo $bucketname >> "/home/ubuntu/check_vars.txt" 
+echo $groudir >> "/home/ubuntu/check_vars.txt" 
+echo $resultdir >> "/home/ubuntu/check_vars.txt" 
+echo $dataname >> "/home/ubuntu/check_vars.txt" 
+echo $datapath >> "/home/ubuntu/check_vars.txt" 
+echo $configname >> "/home/ubuntu/check_vars.txt" 
+echo $configpath >> "/home/ubuntu/check_vars.txt" 
  
 ## Set up Error Status Reporting:
 errorlog_init 
@@ -46,6 +46,9 @@ echo $background_pid, "is the pid of the background process"
 ## MAIN SCRIPT GOES HERE #####################
 bash "$5" #/home/ubuntu/ncap_remote/run_yass.sh
 ##############################################
+## Cleanup:
+## Once this is all over, send the config and end.txt file
+
 errorlog_final
 kill "$background_pid"
 
