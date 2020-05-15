@@ -1,60 +1,45 @@
 #!/bin/bash
 
-## Import functions for workflow management. 
-## Get the path to this function: 
-execpath="$0"
-echo execpath
-scriptpath="$(dirname "$execpath")/ncap_utils"
+execpath="$0" # get path to this script
+scriptpath="$(dirname $(dirname "$execpath"))/ncap_utils" # get path to the utility library. 
 
-source "$scriptpath/workflow.sh"
+## Import functions for workflow management. 
+source "$scriptpath/workflow.sh" # import workflow management (monitoring, error finding) functions 
 ## Import functions for data transfer 
-source "$scriptpath/transfer.sh"
+source "$scriptpath/transfer.sh" # import data transfer functions
 
 ## Set up error logging. 
-errorlog
+errorlog #set up error logging
 
-## Declare variables: bucketname,inputpath,groupdir,resultdir,dataname,configname given standard arguments to bin script.
-#parseargsstd "$1" "$2" "$3" "$4"
+export PATH="/home/ubuntu/anaconda3/bin:$PATH" # environment setup
 
-#errorrep
-## Custom setup for this workflow.
-#source .dlamirc
-
-export PATH="/home/ubuntu/anaconda3/bin:$PATH"
-
-source activate epi
+source activate epi # environment setup
 
 ## Declare local storage locations: 
-userhome="/home/ubuntu"
-datastore="epi/scripts/localdata/"
-configstore="epi/scripts/localconfig/"
-outstore="epi/scripts/data/lds_2D_linear2D_freq/"
+userhome="/home/ubuntu" #declaring variables 
+datastore="epi/scripts/localdata/" #declaring variables
+configstore="epi/scripts/localconfig/" #declaring variables
+outstore="epi/scripts/data/lds_2D_linear2D_freq/" #declaring variables
 ## Make local storage locations
-accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
+accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore" #initializing local storage locations
 
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
-download "$inputpath" "$bucketname" "$datastore"
+download "$inputpath" "$bucketname" "$datastore" #downloading data to immutable analysis environment
 
 ## Stereotyped download script for config: 
-download "$configpath" "$bucketname" "$configstore"
+download "$configpath" "$bucketname" "$configstore" # downloading config to immutable analysis environment 
 
 ###############################################################################################
 ## Custom bulk processing. 
-cd epi/scripts
+cd epi/scripts # going to script directory 
 
-bash lds_hp_search_ncap.sh "$userhome"/"$datastore""$dataname"
+bash lds_hp_search_ncap.sh "$userhome"/"$datastore""$dataname" # script in EPI to run EPI optimization for given random seed. 
 
-export resultsstore=data/lds_2D_linear2D_freq
+export resultsstore=data/lds_2D_linear2D_freq # export result directory. 
 
 ## copy the output to our results directory: 
-cd $resultsstore 
-echo  "results aimed at" "s3://$bucketname/$groupdir/$resultdir/"
-aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/per_hp"
+cd $resultsstore  # go to result directory. 
+echo  "results aimed at" "s3://$bucketname/$groupdir/$resultdir/" # report to user through stdout
+aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/per_hp" # upload back to user. 
 
-cd $userhome
 ###############################################################################################
-## Stereotyped upload script for the data
-## give extensions to ignore. 
-#upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
-
-#cleanup "$datastore" "$outstore"
