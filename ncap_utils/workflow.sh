@@ -65,6 +65,8 @@ errorlog_background () {
     sleep 10
     system_monitor
     aws s3 cp  "$writepath" "$homepath" --only-show-errors
+    ## Also update the cert file: 
+    python "$abspath"/ncap_utils/updatecert.py "$bucketname" "$groupdir"/"$resultdir"/logs/
     done
 }
 
