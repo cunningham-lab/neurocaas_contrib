@@ -4,7 +4,6 @@ import os
 import pickle
 sys.path.append("/home/ubuntu/neurocaas_remote")
 from ncap_utils.transfer_codebase.Interface_S3 import download
-from ncap_utils.
 from caiman.source_extraction.cnmf import params as params
 import json
 
