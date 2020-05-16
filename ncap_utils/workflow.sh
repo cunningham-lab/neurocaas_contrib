@@ -77,17 +77,11 @@ errorlog_final () {
     if [ $script_code -eq 0 ] 
     then 
         cat "$writepath" | jq '.status = "SUCCESS"' > "$tmp" && mv "$tmp" "$writepath"
-        joboutput=$(cat $abspath/joboutput.txt)
-        joberror=$(cat $abspath/joberror.txt)
-        cat "$writepath" | jq --arg o "$joboutput" '.stdout = $o' > "$tmp" && mv "$tmp" "$writepath"
-        cat "$writepath" | jq --arg e "$joberror" '.stderr = $e' > "$tmp" && mv "$tmp" "$writepath"
+        python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
         python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "SUCCESS" 
     else 
         cat "$writepath" | jq '.status = "FAILED"' > "$tmp" && mv "$tmp" "$writepath";
-        joboutput=$(cat $abspath/joboutput.txt)
-        joberror=$(cat $abspath/joberror.txt)
-        cat "$writepath" | jq --arg o "$joboutput" '.stdout = $o' > "$tmp" && mv "$tmp" "$writepath"
-        cat "$writepath" | jq --arg e "$joberror" '.stderr = $e' > "$tmp" && mv "$tmp" "$writepath"
+        python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
         python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "FAILED"
     fi
     aws s3 cp  "$writepath" "$homepath"
