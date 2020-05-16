@@ -23,7 +23,7 @@ if __name__ == "__main__":
         with open(os.path.join(neurocaasrootdir,"joboutput.txt")) as fout:
             for line in fout:
                 stdout.append(line)
-            status_dict["stdout"] = "".join(stdout)            
+            status_dict["stdout"] = "'\n'".join(stdout)            
 
         with open(os.path.join(path,"stderr")) as ferr:
             stderr = deque(maxlen=20)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         with open(os.path.join(neurocaasrootdir,"joberror.txt")) as ferr:
             for line in ferr:
                 stderr.append(line)
-            status_dict["stderr"] = "\\n".join(stderr)            
+            status_dict["stderr"] = "'\n'".join(stderr)            
 
     except OSError as e: 
         print("path {} does not exist yet".format(path)) 
