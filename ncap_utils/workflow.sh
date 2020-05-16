@@ -75,8 +75,20 @@ errorlog_final () {
     homepath="s3://"$bucketname"/"$groupdir"/"$resultdir"/logs/DATASET_NAME:"$dataname"_STATUS.txt"
     writepath="$abspath/ncap_utils/statusdict.json"
     if [ $script_code -eq 0 ] 
-    then cat "$writepath" | jq '.status = "SUCCESS"' > "$tmp" && mv "$tmp" "$writepath"; python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "SUCCESS"
-    else cat "$writepath" | jq '.status = "FAILED"' > "$tmp" && mv "$tmp" "$writepath";  python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "FAILED"
+    then 
+        cat "$writepath" | jq '.status = "SUCCESS"' > "$tmp" && mv "$tmp" "$writepath"
+        joboutput=$(cat $abspath/joboutput.txt)
+        joberror=$(cat $abspath/joberror.txt)
+        cat "$writepath" | jq --arg o "$joboutput" '.stdout = $o' > "$tmp" && mv "$tmp" "$writepath"
+        cat "$writepath" | jq --arg e "$joberror" '.stderr = $e' > "$tmp" && mv "$tmp" "$writepath"
+        python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "SUCCESS" 
+    else 
+        cat "$writepath" | jq '.status = "FAILED"' > "$tmp" && mv "$tmp" "$writepath";
+        joboutput=$(cat $abspath/joboutput.txt)
+        joberror=$(cat $abspath/joberror.txt)
+        cat "$writepath" | jq --arg o "$joboutput" '.stdout = $o' > "$tmp" && mv "$tmp" "$writepath"
+        cat "$writepath" | jq --arg e "$joberror" '.stderr = $e' > "$tmp" && mv "$tmp" "$writepath"
+        python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "FAILED"
     fi
     aws s3 cp  "$writepath" "$homepath"
 }
