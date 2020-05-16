@@ -55,5 +55,6 @@ errorlog_final
 
 ## Once this is all over, send the config and end.txt file
 aws s3 cp s3://"$bucketname"/"$configpath" s3://"$bucketname"/"$groupdir"/"$processdir"/$configname
+aws s3 cp "$neurocaasrootdir"/end.txt s3://"$bucketname"/"$groupdir"/"$processdir"/
 kill "$background_pid"
 
