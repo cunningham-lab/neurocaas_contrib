@@ -51,7 +51,7 @@ system_monitor () {
     homepath="s3://"$bucketname"/"$groupdir"/"$resultdir"/logs/DATASET_NAME:"$dataname"_STATUS.txt"
     writepath="$abspath/ncap_utils/statusdict.json"
     recent_usage=$(echo $[100-$(vmstat 1 2|tail -1|awk '{print $15}')])
-    python "$abspath"/ncap_utils/log_background.py "$writepath" 
+    python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
     tmp=$(mktemp)
     cat "$writepath" | jq --arg usage $recent_usage '.cpu_usage = [$usage]' > "$tmp" && mv "$tmp" "$writepath" 
 }

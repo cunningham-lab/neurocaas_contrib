@@ -8,6 +8,7 @@ import json
 
 if __name__ == "__main__":
     jsonpath = sys.argv[1]
+    neurocaasrootdir = sys.argv[2]
     status_dict = json.load(open(jsonpath,"r"))
     ## Now get the corresponding stdout and stderr logs: 
     try:
@@ -18,17 +19,28 @@ if __name__ == "__main__":
             for line in fout:
                 stdout.append(line)
             status_dict["stdout"] = list(stdout) 
+        stdout = []
+        with open(os.path.join(neurocaasrootdir,"joboutput.txt")) as fout:
+            for line in fout:
+                stdout.append(line)
+            status_dict["stdout"] = "".join(stdout)            
 
         with open(os.path.join(path,"stderr")) as ferr:
             stderr = deque(maxlen=20)
             for line in ferr:
                 stderr.append(line)
             status_dict["stderr"] = list(stderr) 
+        stderr = []
+        with open(os.path.join(neurocaasrootdir,"joberror.txt")) as ferr:
+            for line in ferr:
+                stderr.append(line)
+            status_dict["stderr"] = "\\n".join(stderr)            
 
     except OSError as e: 
         print("path {} does not exist yet".format(path)) 
         print(e)
         status_dict["stdout"] = "pending"
+        status_dict["stderr"] = "pending"
 
     json.dump(status_dict,open(jsonpath,"w"))
 

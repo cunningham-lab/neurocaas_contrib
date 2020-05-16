@@ -89,9 +89,9 @@ if __name__ == "__main__":
             rawstatus = load_json(bucketname,statusfiles[e])
             try:
                 cpu = rawstatus["cpu_usage"][0].encode("utf-8")
-                message = dataset_template.format(n = rawstatus["input"],s = rawstatus["status"],t = str(datetime.datetime.now()), r = rawstatus["reason"], u = cpu)
+                message = dataset_template.format(n = rawstatus["input"],s = rawstatus["status"],t = str(datetime.datetime.now()), r = rawstatus["reason"][0].encode("utf-8"), u = cpu)
             except KeyError:
-                message = dataset_template_init.format(n = rawstatus["input"],s = rawstatus["status"],t = str(datetime.datetime.now()), r = rawstatus["reason"])
+                message = dataset_template_init.format(n = rawstatus["input"],s = rawstatus["status"],t = str(datetime.datetime.now()), r = rawstatus["reason"][0].encode("utf-8"))
 
             ## Get template for what update should look like:  
         except: 
