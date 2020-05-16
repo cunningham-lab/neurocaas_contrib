@@ -1,0 +1,231 @@
+neurocaas_remote/caiman/run_caiman.sh workflow dirname
+this is the remote directory. 
+parsing configuration file given
+starting analysis.
+Not launched under iPython
+unzipping file into movie object
+[0, 0]
+[100, 100]
+[200, 200]
+[300, 300]
+[400, 400]
+[500, 500]
+[600, 600]
+[700, 700]
+[800, 800]
+[900, 900]
+[1000, 1000]
+[1100, 1100]
+[1200, 1200]
+[1300, 1300]
+[1400, 1400]
+[1500, 1500]
+[1600, 1600]
+[1700, 1700]
+[1800, 1800]
+No clusters to stop
+Starting CNMF
+CNMFParams:
+
+data:
+
+{'caiman_version': '1.5.3',
+ 'decay_time': 0.4,
+ 'dims': None,
+ 'dxy': (1, 1),
+ 'fnames': ['/home/ubuntu/ncapdata/localdata/movie_0.tif'],
+ 'fr': 30,
+ 'last_commit': 'a0e5d8252bc0bc768234991b2ba5742d113ffcbf',
+ 'var_name_hdf5': 'mov'}
+
+spatial_params:
+
+{'block_size_spat': 5000,
+ 'dist': 3,
+ 'expandCore': array([[0, 0, 1, 0, 0],
+       [0, 1, 1, 1, 0],
+       [1, 1, 1, 1, 1],
+       [0, 1, 1, 1, 0],
+       [0, 0, 1, 0, 0]]),
+ 'extract_cc': True,
+ 'maxthr': 0.1,
+ 'medw': None,
+ 'method_exp': 'dilate',
+ 'method_ls': 'lasso_lars',
+ 'n_pixels_per_process': None,
+ 'nb': 2,
+ 'normalize_yyt_one': True,
+ 'nrgthr': 0.9999,
+ 'num_blocks_per_run_spat': 20,
+ 'se': None,
+ 'ss': None,
+ 'thr_method': 'nrg',
+ 'update_background_components': True}
+
+temporal_params:
+
+{'ITER': 2,
+ 'bas_nonneg': False,
+ 'block_size_temp': 5000,
+ 'fudge_factor': 0.96,
+ 'lags': 5,
+ 'memory_efficient': False,
+ 'method_deconvolution': 'oasis',
+ 'nb': 2,
+ 'noise_method': 'mean',
+ 'noise_range': [0.25, 0.5],
+ 'num_blocks_per_run_temp': 20,
+ 'optimize_g': False,
+ 'p': 1,
+ 's_min': None,
+ 'solvers': ['ECOS', 'SCS'],
+ 'verbosity': False}
+
+init_params:
+
+{'K': 30,
+ 'SC_kernel': 'heat',
+ 'SC_nnn': 20,
+ 'SC_normalize': True,
+ 'SC_sigma': 1,
+ 'SC_thr': 0,
+ 'SC_use_NN': False,
+ 'alpha_snmf': 100,
+ 'center_psf': False,
+ 'gSig': [5, 5],
+ 'gSiz': [11, 11],
+ 'init_iter': 2,
+ 'kernel': None,
+ 'lambda_gnmf': 1,
+ 'maxIter': 5,
+ 'max_iter_snmf': 500,
+ 'method_init': 'greedy_roi',
+ 'min_corr': 0.85,
+ 'min_pnr': 20,
+ 'nIter': 5,
+ 'nb': 2,
+ 'normalize_init': True,
+ 'options_local_NMF': None,
+ 'perc_baseline_snmf': 20,
+ 'ring_size_factor': 1.5,
+ 'rolling_length': 100,
+ 'rolling_sum': True,
+ 'sigma_smooth_snmf': (0.5, 0.5, 0.5),
+ 'ssub': 2,
+ 'ssub_B': 2,
+ 'tsub': 3}
+
+preprocess_params:
+
+{'check_nan': True,
+ 'compute_g': False,
+ 'include_noise': False,
+ 'lags': 5,
+ 'max_num_samples_fft': 3072,
+ 'n_pixels_per_process': None,
+ 'noise_method': 'mean',
+ 'noise_range': [0.25, 0.5],
+ 'p': 1,
+ 'pixels': None,
+ 'sn': None}
+
+patch_params:
+
+{'border_pix': 0,
+ 'del_duplicates': False,
+ 'in_memory': True,
+ 'low_rank_background': True,
+ 'memory_fact': 1,
+ 'n_processes': 64,
+ 'nb_patch': 1,
+ 'only_init': False,
+ 'p_ssub': 2,
+ 'p_tsub': 2,
+ 'remove_very_bad_comps': False,
+ 'rf': None,
+ 'skip_refinement': False,
+ 'stride': 10}
+
+online:
+
+{'N_samples_exceptionality': 12,
+ 'batch_update_suff_stat': False,
+ 'dist_shape_update': False,
+ 'ds_factor': 1,
+ 'epochs': 1,
+ 'expected_comps': 500,
+ 'init_batch': 200,
+ 'init_method': 'bare',
+ 'iters_shape': 5,
+ 'max_comp_update_shape': inf,
+ 'max_num_added': 5,
+ 'max_shifts_online': 10,
+ 'min_SNR': 2.5,
+ 'min_num_trial': 5,
+ 'minibatch_shape': 100,
+ 'minibatch_suff_stat': 5,
+ 'motion_correct': True,
+ 'movie_name_online': 'online_movie.avi',
+ 'n_refit': 0,
+ 'normalize': False,
+ 'num_times_comp_updated': inf,
+ 'path_to_model': '/home/ubuntu/caiman_data/model/cnn_model_online.h5',
+ 'rval_thr': 0.8,
+ 'save_online_movie': False,
+ 'show_movie': False,
+ 'simultaneously': False,
+ 'sniper_mode': False,
+ 'test_both': False,
+ 'thresh_CNN_noisy': 0.5,
+ 'thresh_fitness_delta': -50,
+ 'thresh_fitness_raw': -60.97977932734429,
+ 'thresh_overlap': 0.5,
+ 'update_freq': 200,
+ 'update_num_comps': True,
+ 'use_dense': True,
+ 'use_peak_max': True}
+
+quality:
+
+{'SNR_lowest': 0.5,
+ 'cnn_lowest': 0.1,
+ 'gSig_range': None,
+ 'min_SNR': 2.5,
+ 'min_cnn_thr': 0.9,
+ 'rval_lowest': -1,
+ 'rval_thr': 0.8,
+ 'use_cnn': True}
+
+merging:
+
+{'do_merge': True,
+ 'max_merge_area': None,
+ 'merge_parallel': False,
+ 'merge_thr': 0.8}
+
+motion:
+
+{'border_nan': 'copy',
+ 'gSig_filt': None,
+ 'max_deviation_rigid': 3,
+ 'max_shifts': (6, 6),
+ 'min_mov': None,
+ 'niter_rig': 1,
+ 'nonneg_movie': True,
+ 'num_frames_split': 80,
+ 'num_splits_to_process_els': [7, None],
+ 'num_splits_to_process_rig': None,
+ 'overlaps': (32, 32),
+ 'pw_rigid': False,
+ 'shifts_opencv': True,
+ 'splits_els': 14,
+ 'splits_rig': 14,
+ 'strides': (96, 96),
+ 'upsample_factor_grid': 4,
+ 'use_cuda': False} options
+fitting once. 
+evaluating components
+reviewers/results/job__caiman-ncap-web_1589650982/process_results/N.01.01_cnmf_obj.hdf5 ncapdata/localout/N.01.01_cnmf_obj.hdf5
+reviewers/results/job__caiman-ncap-web_1589650982/process_results/N.01.01C.npz ncapdata/localout/N.01.01C.npz
+reviewers/results/job__caiman-ncap-web_1589650982/process_results/N.01.01A.npz ncapdata/localout/N.01.01A.npz
+reviewers/results/job__caiman-ncap-web_1589650982/process_results/N.01.01R.npz ncapdata/localout/N.01.01R.npz
