@@ -12,24 +12,12 @@ if __name__ == "__main__":
     status_dict = json.load(open(jsonpath,"r"))
     ## Now get the corresponding stdout and stderr logs: 
     try:
-        #path = "/var/lib/amazon/ssm/{}/document/orchestration/{}/awsrunShellScript/0.awsrunShellScript/".format(status_dict["instance"],status_dict["command"])
-        #os.listdir(path)
-        #with open(os.path.join(path,"stdout")) as fout:
-        #    stdout = deque(maxlen=20)
-        #    for line in fout:
-        #        stdout.append(line)
-        #    status_dict["stdout"] = list(stdout) 
         stdout = {} 
         with open(os.path.join(neurocaasrootdir,"joboutput.txt")) as fout:
             for l,line in enumerate(fout):
                 stdout[l] = line
             status_dict["stdout"] = stdout             
 
-        #with open(os.path.join(path,"stderr")) as ferr:
-        #    stderr = deque(maxlen=20)
-        #    for line in ferr:
-        #        stderr.append(line)
-        #    status_dict["stderr"] = list(stderr) 
         stderr = {} 
         with open(os.path.join(neurocaasrootdir,"joberror.txt")) as ferr:
             for l,line in enumerate(ferr):
