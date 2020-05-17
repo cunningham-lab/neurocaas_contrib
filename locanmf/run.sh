@@ -2,6 +2,17 @@
 #set -e 
 # usage: run.sh bucket path
 
+execpath="$0" # get path to this script
+scriptpath="$neurocaasrootdir"/"ncap_utils" # get path to the utility library. 
+
+## Import functions for workflow management. 
+source "$scriptpath/workflow.sh" # import workflow management (monitoring, error finding) functions 
+## Import functions for data transfer 
+source "$scriptpath/transfer.sh" # import data transfer functions
+
+## Set up error logging. 
+errorlog #set up error logging
+
 # self.bucket_name, self.path, config.INDIR, config.OUTDIR, config.LOGDIR, self.data_filename, self.atlas_filename, self.params_filename
 
 echo $1 >> $neurocaasrootdir/locanmf/check.txt # self.bucket_name

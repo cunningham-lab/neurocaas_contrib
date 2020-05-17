@@ -1,0 +1,5 @@
+fov_height: 80
+fov_width: 800
+num_frames: 6000
+block_height: 40
+block_width: 40

@@ -1,34 +1,7 @@
+fatal error: An error occurred (404) when calling the HeadObject operation: Key "reviewers/inputs/demoMovie.py" does not exist
 Traceback (most recent call last):
-  File "/home/ubuntu/locaNMF/run_locanmf.py", line 240, in <module>
-    min_size=min_pixels)
-  File "/home/ubuntu/locaNMF/LocaNMF.py", line 78, in extract_region_metadata
-    mindists, _ = tree.query(allpixels)
-  File "ckdtree.pyx", line 841, in scipy.spatial.ckdtree.cKDTree.query
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/site-packages/numpy/core/fromnumeric.py", line 197, in reshape
-    @array_function_dispatch(_reshape_dispatcher)
-KeyboardInterrupt
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/ubuntu/locaNMF/run_locanmf.py", line 349, in <module>
-    tbinfo = traceback.format_tb(tb)[0]
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/traceback.py", line 57, in format_tb
-    return extract_tb(tb, limit=limit).format()
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/traceback.py", line 72, in extract_tb
-    return StackSummary.extract(walk_tb(tb), limit=limit)
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/traceback.py", line 363, in extract
-    f.line
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/traceback.py", line 285, in line
-    self._line = linecache.getline(self.filename, self.lineno).strip()
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/linecache.py", line 16, in getline
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/linecache.py", line 47, in getlines
-    return updatecache(filename, module_globals)
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/linecache.py", line 136, in updatecache
-    with tokenize.open(fullname) as fp:
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/tokenize.py", line 449, in open
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/tokenize.py", line 418, in detect_encoding
-    first = read_or_stop()
-  File "/home/ubuntu/anaconda3/envs/locaNMF/lib/python3.7/tokenize.py", line 376, in read_or_stop
-    return readline()
-KeyboardInterrupt
+  File "/home/ubuntu/neurocaas_remote/pmd/compress.py", line 262, in <module>
+    data = load_data(os.path.join(indir, filename), ext)
+  File "/home/ubuntu/neurocaas_remote/pmd/compress.py", line 131, in load_data
+    raise ValueError("Invalid file format '{}', please use ['npy', 'tiff'].")
+ValueError: Invalid file format '{}', please use ['npy', 'tiff'].
