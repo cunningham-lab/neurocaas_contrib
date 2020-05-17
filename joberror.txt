@@ -1,124 +1,14 @@
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:528: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:529: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:530: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:535: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  np_resource = np.dtype([("resource", np.ubyte, 1)])
-WARNING:root:Changing key nb in group init from 1 to 2
-WARNING:root:Changing key nb in group spatial from 1 to 2
-WARNING:root:Changing key nb in group temporal from 1 to 2
-WARNING:root:Changing key p in group preprocess from 2 to 1
-WARNING:root:Changing key p in group temporal from 2 to 1
-WARNING:root:Changing key stride in group patch from None to 10
-WARNING:root:Changing key tsub in group init from 2 to 3
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:528: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:529: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:530: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:535: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
-  np_resource = np.dtype([("resource", np.ubyte, 1)])
-        4161 [params.py:                 set():835][2903] Changing key nb in group init from 1 to 2
-        4161 [params.py:                 set():835][2903] Changing key nb in group spatial from 1 to 2
-        4162 [params.py:                 set():835][2903] Changing key nb in group temporal from 1 to 2
-        4162 [params.py:                 set():835][2903] Changing key p in group preprocess from 2 to 1
-        4162 [params.py:                 set():835][2903] Changing key p in group temporal from 2 to 1
-        4162 [params.py:                 set():835][2903] Changing key tsub in group init from 2 to 3
-        4162 [params.py:                 set():835][2903] Changing key stride in group patch from None to 10
-       12748 [params.py:                 set():835][2903] Changing key fnames in group data from None to ['/home/ubuntu/ncapdata/localdata/movie_0.tif']
-       12748 [params.py:                 set():835][2903] Changing key only_init in group patch from True to False
-       12748 [cluster.py:         stop_server():297][2903] Stopping cluster...
-       13075 [cluster.py:         stop_server():336][2903] No cluster to stop...
-       13076 [cluster.py:         stop_server():350][2903] stop_cluster(): done
-       13318 [params.py:                 set():835][2903] Changing key n_processes in group patch from 1 to 64
-       25817 [motion_correction.py:motion_correction_piecewise():2554][2903] Saving file as /home/ubuntu/ncapdata/localdata/movie_0_rig__d1_512_d2_512_d3_1_order_F_frames_1825_.mmap
-       25817 [motion_correction.py:motion_correction_piecewise():2567][2903] ** Starting parallel motion correction **
-       35965 [motion_correction.py:motion_correction_piecewise():2575][2903] ** Finished parallel motion correction **
-       53090 [params.py:                 set():835][2903] Changing key init_batch in group online from 200 to 1825
-       53090 [cnmf.py:                 fit():429][2903] (1825, 512, 512)
-       53090 [params.py:                 set():835][2903] Changing key medw in group spatial from None to (3, 3)
-       53092 [params.py:                 set():835][2903] Changing key se in group spatial from None to [[1 1 1]
- [1 1 1]
- [1 1 1]]
-       53092 [params.py:                 set():835][2903] Changing key ss in group spatial from None to [[1 1 1]
- [1 1 1]
- [1 1 1]]
-       53092 [cnmf.py:                 fit():446][2903] Using 64 processes
-       53092 [params.py:                 set():835][2903] Changing key n_pixels_per_process in group preprocess from None to 4096
-       53092 [params.py:                 set():835][2903] Changing key n_pixels_per_process in group spatial from None to 4096
-       53093 [cnmf.py:                 fit():457][2903] using 4096 pixels per process
-       53093 [cnmf.py:                 fit():458][2903] using 5000 block_size_spat
-       53093 [cnmf.py:                 fit():459][2903] using 5000 block_size_temp
-       53093 [cnmf.py:                 fit():462][2903] preprocessing ...
-       53093 [pre_processing.py:interpolate_missing_data():53][2903] Checking for missing data entries (NaN)
-       57120 [cnmf.py:                 fit():465][2903] initializing ...
-       57123 [initialization.py:initialize_components():273][2903] Variance Normalization
-       58508 [initialization.py:initialize_components():293][2903] Spatial downsampling 2-photon
-       61566 [initialization.py:           downscale():84][2903] Downscaling using OpenCV
-       61567 [initialization.py:initialize_components():305][2903] Roi Initialization...
-       61567 [initialization.py:           greedyROI():671][2903] Greedy initialization of spatial and temporal components using spatial Gaussian filtering
-       64170 [initialization.py:           greedyROI():685][2903] Using rolling sum for initialization (RollingGreedyROI)
-       99004 [initialization.py:initialize_components():312][2903] Refining Components using HALS NMF iterations
-      106081 [cnmf.py:                 fit():502][2903] update spatial ...
-      106081 [spatial.py:update_spatial_components():183][2903] Computing support of spatial components
-      106100 [spatial.py:determine_search_location():940][2903] dilate in parallel...
-      108442 [spatial.py:update_spatial_components():215][2903] Memory mapping
-      108443 [spatial.py:update_spatial_components():221][2903] Updating Spatial Components using lasso lars
-      111249 [spatial.py:update_spatial_components():254][2903] thresholding components
-      111350 [spatial.py:update_spatial_components():278][2903] Computing residuals
-      111676 [spatial.py:update_spatial_components():306][2903] Updating done in 5s
-      111676 [spatial.py:update_spatial_components():309][2903] Removing created tempfiles
-      111710 [cnmf.py:                 fit():505][2903] update temporal ...
-      111710 [params.py:                 set():835][2903] Changing key p in group temporal from 1 to 0
-      111728 [temporal.py:update_temporal_components():201][2903] Generating residuals
-      112132 [temporal.py:update_temporal_components():215][2903] entering the deconvolution 
-      112139 [temporal.py:    update_iteration():385][2903] 23 out of total 30 temporal components updated
-      112147 [temporal.py:    update_iteration():385][2903] 30 out of total 30 temporal components updated
-      112147 [temporal.py:    update_iteration():398][2903] stopping: overall temporal component not changing significantly
-      112151 [cnmf.py:                 fit():516][2903] refinement...
-      112151 [cnmf.py:                 fit():518][2903] merging components ...
-      112161 [merging.py:    merge_components():296][2903] No more components merged!
-      112161 [cnmf.py:                 fit():521][2903] Updating spatial ...
-      112161 [spatial.py:update_spatial_components():183][2903] Computing support of spatial components
-      112187 [spatial.py:determine_search_location():940][2903] dilate in parallel...
-      114905 [spatial.py:update_spatial_components():215][2903] Memory mapping
-      114906 [spatial.py:update_spatial_components():221][2903] Updating Spatial Components using lasso lars
-      117249 [spatial.py:update_spatial_components():254][2903] thresholding components
-      117323 [spatial.py:update_spatial_components():278][2903] Computing residuals
-      117561 [spatial.py:update_spatial_components():306][2903] Updating done in 5s
-      117561 [spatial.py:update_spatial_components():309][2903] Removing created tempfiles
-      117608 [params.py:                 set():835][2903] Changing key p in group temporal from 0 to 1
-      117608 [cnmf.py:                 fit():526][2903] update temporal ...
-      117629 [temporal.py:update_temporal_components():201][2903] Generating residuals
-      118034 [temporal.py:update_temporal_components():215][2903] entering the deconvolution 
-      118046 [temporal.py:    update_iteration():385][2903] 23 out of total 30 temporal components updated
-      118053 [temporal.py:    update_iteration():385][2903] 30 out of total 30 temporal components updated
-      118055 [temporal.py:    update_iteration():398][2903] stopping: overall temporal component not changing significantly
-      118102 [components_evaluation.py:estimate_components_quality():697][2903] Component evaluation in parallel
-2020-05-17 00:41:49.752086: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
-2020-05-17 00:41:49.784005: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2499995000 Hz
-2020-05-17 00:41:49.787939: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x5613164ff970 executing computations on platform Host. Devices:
-2020-05-17 00:41:49.787973: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>
-/home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/h5py/_hl/dataset.py:313: H5pyDeprecationWarning: dataset.value has been deprecated. Use dataset[()] instead.
-  "Use dataset[()] instead.", H5pyDeprecationWarning)
-      119285 [utils.py:recursively_save_dict_contents_to_group():441][2903] A is sparse ****
-      119301 [utils.py:recursively_save_dict_contents_to_group():408][2903] g is an object type
-      119304 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
-      119305 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
-      119312 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
-      119313 [utils.py:recursively_save_dict_contents_to_group():441][2903] A is sparse ****
-      119318 [utils.py:recursively_save_dict_contents_to_group():408][2903] g is an object type
-      119320 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
-      119321 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
-      119327 [utils.py:recursively_save_dict_contents_to_group():416][2903] ['groups', 'idx_tot', 'ind_A', 'Ab_epoch', 'coordinates', 'loaded_model', 'optional_outputs', 'merged_ROIs', '** not saved']
+2020-05-17 02:10:39.885774: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+2020-05-17 02:10:41.498347: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:897] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+2020-05-17 02:10:41.499267: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1392] Found device 0 with properties: 
+name: Tesla V100-SXM2-16GB major: 7 minor: 0 memoryClockRate(GHz): 1.53
+pciBusID: 0000:00:1e.0
+totalMemory: 15.75GiB freeMemory: 15.44GiB
+2020-05-17 02:10:41.499289: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1471] Adding visible gpu devices: 0
+2020-05-17 02:11:39.547495: I tensorflow/core/common_runtime/gpu/gpu_device.cc:952] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-05-17 02:11:39.547544: I tensorflow/core/common_runtime/gpu/gpu_device.cc:958]      0 
+2020-05-17 02:11:39.547554: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   N 
+2020-05-17 02:11:39.547672: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1084] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 14950 MB memory) -> physical GPU (device: 0, name: Tesla V100-SXM2-16GB, pci bus id: 0000:00:1e.0, compute capability: 7.0)
+  0%|          | 0/266 [00:00<?, ?it/s]  2%|▏         | 4/266 [00:19<20:52,  4.78s/it]  4%|▍         | 10/266 [00:19<08:12,  1.92s/it]  6%|▌         | 16/266 [00:19<05:03,  1.21s/it]  9%|▊         | 23/266 [00:19<03:25,  1.18it/s] 11%|█         | 28/266 [00:19<02:47,  1.43it/s] 13%|█▎        | 34/266 [00:19<02:14,  1.72it/s] 15%|█▌        | 40/266 [00:19<01:52,  2.01it/s] 18%|█▊        | 47/266 [00:20<01:33,  2.35it/s] 20%|█▉        | 52/266 [00:20<01:23,  2.58it/s] 22%|██▏       | 59/266 [00:20<01:11,  2.91it/s] 24%|██▍       | 65/266 [00:20<01:03,  3.18it/s] 27%|██▋       | 71/266 [00:20<00:56,  3.46it/s] 29%|██▉       | 77/266 [00:20<00:50,  3.72it/s] 32%|███▏      | 84/266 [00:20<00:45,  4.03it/s] 34%|███▍      | 91/266 [00:20<00:40,  4.34it/s] 36%|███▋      | 97/266 [00:21<00:36,  4.60it/s] 39%|███▉      | 104/266 [00:21<00:33,  4.89it/s] 42%|████▏     | 111/266 [00:21<00:29,  5.19it/s] 44%|████▍     | 117/266 [00:21<00:27,  5.43it/s] 46%|████▌     | 123/266 [00:21<00:25,  5.69it/s] 48%|████▊     | 129/266 [00:21<00:23,  5.92it/s] 51%|█████     | 135/266 [00:21<00:21,  6.17it/s] 53%|█████▎    | 141/266 [00:22<00:19,  6.40it/s] 55%|█████▌    | 147/266 [00:22<00:17,  6.64it/s] 58%|█████▊    | 153/266 [00:22<00:16,  6.86it/s] 60%|█████▉    | 159/266 [00:22<00:15,  7.10it/s] 62%|██████▏   | 165/266 [00:22<00:13,  7.32it/s] 65%|██████▍   | 172/266 [00:22<00:12,  7.57it/s] 67%|██████▋   | 179/266 [00:22<00:11,  7.84it/s] 70%|██████▉   | 185/266 [00:22<00:10,  8.05it/s] 72%|███████▏  | 192/266 [00:23<00:08,  8.29it/s] 75%|███████▍  | 199/266 [00:23<00:07,  8.56it/s] 77%|███████▋  | 205/266 [00:23<00:06,  8.76it/s] 80%|███████▉  | 212/266 [00:23<00:06,  8.99it/s] 82%|████████▏ | 219/266 [00:23<00:05,  9.25it/s] 85%|████████▍ | 225/266 [00:23<00:04,  9.44it/s] 87%|████████▋ | 231/266 [00:23<00:03,  9.65it/s] 89%|████████▉ | 237/266 [00:24<00:02,  9.84it/s] 91%|█████████▏| 243/266 [00:24<00:02, 10.05it/s] 94%|█████████▎| 249/266 [00:24<00:01, 10.23it/s] 96%|█████████▌| 255/266 [00:24<00:01, 10.43it/s]WARNING:py.warnings:/home/ubuntu/anaconda3/envs/dlcami/lib/python3.6/site-packages/moviepy/video/io/ffmpeg_reader.py:130: UserWarning: Warning: in file reachingvideo1.avi, 1864512 bytes wanted but 0 bytes read,at frame 256/256, at time 8.53/8.53 sec. Using the last valid frame instead.
+  UserWarning)
+
