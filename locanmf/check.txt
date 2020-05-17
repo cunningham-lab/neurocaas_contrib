@@ -262,3 +262,11 @@ results/debug_1_3/logs
 Vc_Uc.mat
 atlas.mat
 params.yaml
+locanmf-ncap-web
+reviewers
+inputs
+results/job__locanmf-ncap-web_1589686519
+results/job__locanmf-ncap-web_1589686519/logs
+Vc_Uc.mat
+atlas.mat
+params.yaml
