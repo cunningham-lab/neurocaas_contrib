@@ -59,7 +59,7 @@ echo " -- Output From Denoiser -- " > $LOGDIR/pmd_out.txt
 python $neurocaasrootdir/pmd/compress.py $3 $INDIR $OUTDIR >> $LOGDIR/pmd_out.txt
 
 # Copy Logs & Results Back To S3 Subdirectory
-aws s3 sync $OUTDIR s3://$1/$processdir/
+aws s3 sync $OUTDIR s3://$1/$6/process_results/
 aws s3 sync $LOGDIR s3://$1/$6/logs/
 
 # Remove Temporary File Structure

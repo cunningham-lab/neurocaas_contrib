@@ -1,7 +1,14 @@
-fatal error: An error occurred (404) when calling the HeadObject operation: Key "reviewers/inputs/demoMovie.py" does not exist
-Traceback (most recent call last):
-  File "/home/ubuntu/neurocaas_remote/pmd/compress.py", line 262, in <module>
-    data = load_data(os.path.join(indir, filename), ext)
-  File "/home/ubuntu/neurocaas_remote/pmd/compress.py", line 131, in load_data
-    raise ValueError("Invalid file format '{}', please use ['npy', 'tiff'].")
-ValueError: Invalid file format '{}', please use ['npy', 'tiff'].
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
+
+The user-provided path /home/ubuntu/tmp/log does not exist.
