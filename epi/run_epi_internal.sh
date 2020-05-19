@@ -39,7 +39,7 @@ export resultsstore=data/lds_2D_linear2D_freq # export result directory.
 
 ## copy the output to our results directory: 
 cd $resultsstore  # go to result directory. 
-echo  "results aimed at" "s3://$bucketname/$groupdir/$resultdir/" # report to user through stdout
-aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/per_hp" # upload back to user. 
+echo  "results aimed at" "s3://$bucketname/$groupdir/$processdir/" # report to user through stdout
+aws s3 sync ./ "s3://$bucketname/$groupdir/$processdir/per_hp" # upload back to user. 
 
 ###############################################################################################
