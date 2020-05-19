@@ -1,10 +1,10 @@
 #!/bin/bash
-## Bash script that mocks real analysis. Just waits for one minute, then returns. 
+## Bash script that establishes ncap monitoring routines with minimal dependencies on other packages. 
 ## Load in helper functions. 
 execpath="$0"
 echo execpath
 scriptpath="$(dirname "$execpath")/ncap_utils"
-echo $scriptpath "SCRIPTPATH"
+
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
 source "$scriptpath/transfer.sh"
@@ -32,7 +32,8 @@ background_pid=$!
 echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
-bash /home/ubuntu/ncap_remote/run_mock_internal.sh
+echo $bucketname "$groupdir/inputs" "$dataname" these are the variables to process
+bash /home/ubuntu/bin/run.sh "$bucketname" "$groupdir/inputs" "$dataname" "$groupdir/configs" "$configname" "$groupdir/$resultdir"
 ##############################################
 errorlog_final
 kill "$background_pid"

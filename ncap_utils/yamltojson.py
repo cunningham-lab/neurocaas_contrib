@@ -13,7 +13,7 @@ if __name__ == "__main__":
         dicttype = "yaml"
     else:
         pass
-    assert dicttype is not None, "must be a json or yaml file."
+    assert dicttype is not None
 
     if dicttype == "json":
        jsonpath = dict_path 
@@ -24,6 +24,6 @@ if __name__ == "__main__":
         jsonpath = dict_path.replace(".yaml",".json")
         with open(jsonpath,"w") as jfile:
             json.dump(ydict,jfile)
-    print(jsonpath)
+    print(os.path.basename(jsonpath))
 
        

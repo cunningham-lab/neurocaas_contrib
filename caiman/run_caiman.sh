@@ -3,7 +3,7 @@
 ### Import functions for workflow management. 
 ### Get the path to this function: 
 execpath="$0"
-scriptpath="$(dirname "$execpath")/ncap_utils"
+scriptpath="$neurocaasrootdir/ncap_utils"
 
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
@@ -32,19 +32,24 @@ download "$inputpath" "$bucketname" "$datastore"
 
 ## Stereotyped download script for config: 
 download "$configpath" "$bucketname" "$configstore"
+## Check if it's yaml, and if so convert to json: 
+## Reset to correctly get out json:
+configname=$(python $neurocaasrootdir/ncap_utils/yamltojson.py "$userhome"/"$configstore"/"$configname")
 
 ###############################################################################################
 ## Custom bulk processing. 
-cd ncap_remote
+cd "$neurocaasrootdir"
 export CAIMAN_DATA="/home/ubuntu/caiman_data"
 ## For efficiency: 
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 CAIMAN_DATA="$userhome/caiman_data"
-python parse_config_caiman.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
-python process_caiman.py "$userhome/$configstore/final_pickled_new" "$userhome/$datastore/$dataname" "$userhome/$outstore" "$userhome/$configstore/$configname"
+echo  "parsing configuration file given"
+python "$neurocaasrootdir"/caiman/parse_config_caiman.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
+echo  "starting analysis."
+python "$neurocaasrootdir"/caiman/process_caiman.py "$userhome/$configstore/final_pickled_new" "$userhome/$datastore/$dataname" "$userhome/$outstore" "$userhome/$configstore/$configname"
 cd $userhome
 ###############################################################################################
 ## Stereotyped upload script for the data
-upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
+upload "$outstore" "$bucketname" "$groupdir" "$processdir" "mp4"
 
