@@ -35,7 +35,7 @@ cd epi/scripts # going to script directory
 
 bash lds_hp_search_ncap.sh "$userhome"/"$datastore""$dataname" # script in EPI to run EPI optimization for given random seed. 
 
-export resultsstore=data/lds_2D_linear2D_freq # export result directory. 
+export resultsstore="data/lds_2D_*" # export result directory. 
 
 ## copy the output to our results directory: 
 cd $resultsstore  # go to result directory. 
