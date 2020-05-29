@@ -19,7 +19,8 @@ source activate epi # environment setup
 userhome="/home/ubuntu" #declaring variables 
 datastore="epi/scripts/localdata/" #declaring variables
 configstore="epi/scripts/localconfig/" #declaring variables
-outstore="epi/scripts/data/lds_2D_linear2D_freq/" #declaring variables
+#outstore="epi/scripts/data/lds_2D_linear2D_freq/" #declaring variables
+outstore="epi/scripts/data/" #declaring variables
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore" #initializing local storage locations
 
@@ -39,6 +40,7 @@ export resultsstore="data/lds_2D_*" # export result directory.
 
 ## copy the output to our results directory: 
 cd $resultsstore  # go to result directory. 
+echo $PWD "working directory"
 echo  "results aimed at" "s3://$bucketname/$groupdir/$processdir/" # report to user through stdout
 aws s3 sync ./ "s3://$bucketname/$groupdir/$processdir/per_hp" # upload back to user. 
 
