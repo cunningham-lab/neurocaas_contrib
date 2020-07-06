@@ -28,7 +28,7 @@ source activate yass
 userhome="/home/ubuntu"
 datastore="ncapdata/localdata/"
 configstore="ncapdata/localconfig/"
-outstore="ncapdata/localdata/tmp"
+outstore="ncapdata/localdata/tmp/"
 ## Make local storage locations
 accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
 
@@ -70,5 +70,6 @@ cd $userhome
 ###############################################################################################
 ## Stereotyped upload script for the data
 upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
+aws s3 sync "$userhome/$outstore" "s3://$bucketname/$groupdir/$resultdir/"
 #
 #cleanup "$datastore" "$outstore"
