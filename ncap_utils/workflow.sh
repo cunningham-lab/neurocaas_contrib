@@ -1,11 +1,11 @@
 #!/bin/bash
 ## Get execution directory of script. Assume it lives in ncap_remote
 ## NOTE: Most of these functions require you to run parseargsstd with appropriate aruments to function. 
-echo "$0"
-userhome=$PWD 
-remotedir="ncap_remote" #"$(dirname "$0")"
+echo "$0" workflow dirname
+
 ## Get the absolute path
-abspath=$userhome/$remotedir
+abspath=$neurocaasrootdir
+#abspath=$userhome/$remotedir
 
 ## Function to create useful global variables from inputs to bash script in known way given command sent by SSM RunCommand as indicated in stackconfig.  
 ## Creates 4 path variables relating to the path of data as referenced in the source S3 bucket [bucketname,inputpath,grouppath,resultpath], and two as will be referenced locally [dataname,configname]. Does handling to ensure that we can manage folder uploads.  
@@ -14,6 +14,7 @@ parseargsstd () {
     inputdir="$(python "$abspath"/ncap_utils/parse.py "$2")"
     groupdir="$(dirname "$inputdir")"
     resultdir="$3"
+    processdir="$resultdir"/"process_results"
     dataname="$(basename "$2")"
     configname="$(basename "$4")"
     inputpath="$2"
@@ -50,7 +51,7 @@ system_monitor () {
     homepath="s3://"$bucketname"/"$groupdir"/"$resultdir"/logs/DATASET_NAME:"$dataname"_STATUS.txt"
     writepath="$abspath/ncap_utils/statusdict.json"
     recent_usage=$(echo $[100-$(vmstat 1 2|tail -1|awk '{print $15}')])
-    python "$abspath"/ncap_utils/log_background.py "$writepath" 
+    python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
     tmp=$(mktemp)
     cat "$writepath" | jq --arg usage $recent_usage '.cpu_usage = [$usage]' > "$tmp" && mv "$tmp" "$writepath" 
 }
@@ -64,6 +65,8 @@ errorlog_background () {
     sleep 10
     system_monitor
     aws s3 cp  "$writepath" "$homepath" --only-show-errors
+    ## Also update the cert file: 
+    python "$abspath"/ncap_utils/updatecert.py "$bucketname" "$groupdir"/"$resultdir"/logs/
     done
 }
 
@@ -72,8 +75,14 @@ errorlog_final () {
     homepath="s3://"$bucketname"/"$groupdir"/"$resultdir"/logs/DATASET_NAME:"$dataname"_STATUS.txt"
     writepath="$abspath/ncap_utils/statusdict.json"
     if [ $script_code -eq 0 ] 
-    then cat "$writepath" | jq '.status = "SUCCESS"' > "$tmp" && mv "$tmp" "$writepath"
-    else cat "$writepath" | jq '.status = "FAILED"' > "$tmp" && mv "$tmp" "$writepath"
+    then 
+        cat "$writepath" | jq '.status = "SUCCESS"' > "$tmp" && mv "$tmp" "$writepath"
+        python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
+        python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "SUCCESS" 
+    else 
+        cat "$writepath" | jq '.status = "FAILED"' > "$tmp" && mv "$tmp" "$writepath";
+        python "$abspath"/ncap_utils/log_background.py "$writepath" "$neurocaasrootdir"
+        python "$abspath"/ncap_utils/finalcert.py "$bucketname" "$groupdir"/"$resultdir"/logs/ "$inputpath" "FAILED"
     fi
     aws s3 cp  "$writepath" "$homepath"
 }

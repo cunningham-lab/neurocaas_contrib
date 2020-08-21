@@ -47,7 +47,8 @@ echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
 #bash wait 20 #   "$5" #/home/ubuntu/ncap_remote/run_yass.sh
-bash "$5" > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
+bash $neurocaasrootdir/pmd/run.sh "$bucketname" "$groupdir/inputs" "$dataname" "$groupdir/configs" "$configname" "$groupdir/$resultdir" > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
+#bash $neurocaasrootdir/locanmf/run.sh $bucketname $groupdir inputs $processdir $resultdir/logs $dataname atlas.mat $configname > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
 ##############################################
 ## Cleanup: figure out how the actual processing went. 
 ## MUST BE RUN IMMEDIATELY AFTER PROCESSING SCRIPTS TO GET ERROR CODE CORRECTLY.
@@ -55,6 +56,6 @@ errorlog_final
 
 ## Once this is all over, send the config and end.txt file
 aws s3 cp s3://"$bucketname"/"$configpath" s3://"$bucketname"/"$groupdir"/"$processdir"/$configname
-aws s3 cp "$neurocaasrootdir"/update.txt s3://"$bucketname"/"$groupdir"/"$processdir"/
+aws s3 cp "$neurocaasrootdir"/end.txt s3://"$bucketname"/"$groupdir"/"$processdir"/
 kill "$background_pid"
 

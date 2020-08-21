@@ -47,7 +47,7 @@ echo $background_pid, "is the pid of the background process"
 
 ## MAIN SCRIPT GOES HERE #####################
 #bash wait 20 #   "$5" #/home/ubuntu/ncap_remote/run_yass.sh
-bash "$5" > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
+bash $neurocaasrootdir/locanmf/run.sh $bucketname $groupdir inputs $processdir $resultdir/logs $dataname atlas.mat $configname > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
 ##############################################
 ## Cleanup: figure out how the actual processing went. 
 ## MUST BE RUN IMMEDIATELY AFTER PROCESSING SCRIPTS TO GET ERROR CODE CORRECTLY.

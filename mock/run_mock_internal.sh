@@ -27,10 +27,10 @@ source activate epi
 ## Declare local storage locations: 
 userhome="/home/ubuntu"
 datastore="epi/scripts/localdata/"
-configstore="epi/scripts/localconfig/"
-outstore="epi/scripts/data/lds_2D_linear2D_freq/"
+configstore="/home/ubuntu/" 
+outstore="mock_results/"
 ## Make local storage locations
-accessdir "$userhome/$datastore" "$userhome/$configstore" "$userhome/$outstore"
+accessdir "$userhome/$datastore" "$userhome/$outstore"
 
 ## Stereotyped download script for data. The only reason this comes after something custom is because we depend upon the AWS CLI and installed credentials. 
 download "$inputpath" "$bucketname" "$datastore"
@@ -38,23 +38,17 @@ download "$inputpath" "$bucketname" "$datastore"
 ## Stereotyped download script for config: 
 download "$configpath" "$bucketname" "$configstore"
 
-###############################################################################################
-## Custom bulk processing. 
-cd epi/scripts
+download "$configpath" "$bucketname" "$configstore"
+echo $configstore $configname config parameters here
+waittime=$(jq .wait "$configstore/$configname")
+sleep $waittime
 
-bash lds_hp_search_ncap.sh "$userhome"/"$datastore""$dataname"
 
-export resultsstore=data/lds_2D_linear2D_freq
-
-## copy the output to our results directory: 
-cd $resultsstore 
-echo  "results aimed at" "s3://$bucketname/$groupdir/$resultdir/"
-aws s3 sync ./ "s3://$bucketname/$groupdir/$resultdir/per_hp"
-
-cd $userhome
 ###############################################################################################
 ## Stereotyped upload script for the data
 ## give extensions to ignore. 
+cd "mock_results"
+aws s3 sync ./ "s3://$bucketname/$groupdir/$processdir"
 #upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
 
 #cleanup "$datastore" "$outstore"

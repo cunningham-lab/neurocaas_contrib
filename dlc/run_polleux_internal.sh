@@ -9,7 +9,7 @@ source activate dlcami
 ## Import functions for workflow management. 
 ## Get the path to this function: 
 execpath="$0"
-scriptpath="$(dirname "$execpath")/ncap_utils"
+scriptpath="$neurocaasrootdir/ncap_utils"
 
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
@@ -48,18 +48,18 @@ download "$configpath" "$bucketname" "$datastore"
 ###############################################################################################
 
 ## Run deeplabcut analysis: 
-cd DeepLabCut/Analysis-tools
+cd "$userhome"/DeepLabCut/Analysis-tools
 
 python AnalyzeVideos_new.py
-cd "$userhome"
+
 ## Custom post processing. 
-cd Video_Pipelining
+cd "$userhome"/Video_Pipelining
 python Polleux_Postprocess.py "$userhome/$datastore"
 
 cd "$userhome"
 
 ###############################################################################################
 ## Stereotyped upload script for the data
-upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
+upload "$outstore" "$bucketname" "$groupdir" "$resultdir/process_results" "mp4"
 
 #cleanup "$datastore" "$outstore"

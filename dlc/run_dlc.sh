@@ -4,7 +4,7 @@
 ## Get the path to this function: 
 execpath="$0"
 echo execpath
-scriptpath="$(dirname "$execpath")/ncap_utils"
+scriptpath="$neurocaasrootdir/ncap_utils"
 
 source "$scriptpath/workflow.sh"
 ## Import functions for data transfer 
@@ -36,6 +36,9 @@ download "$inputpath" "$bucketname" "$datastore"
 
 ## Stereotyped download script for config: 
 download "$configpath" "$bucketname" "$datastore"
+## Check if it's yaml, and if so convert to json: 
+## Reset to correctly get out json:
+configname=$(python $neurocaasrootdir/ncap_utils/yamltojson.py "$userhome"/"$configstore"/"$configname")
 
 ###############################################################################################
 ## parse the config to place model folder, myconfig_analysis, in the right places. 
@@ -43,8 +46,7 @@ download "$configpath" "$bucketname" "$datastore"
 analysismode=$(cat "$userhome/$datastore/$configname" | jq '.mode' | sed 's/"//g')
 if [ $analysismode == "test" ] 
 then
-    echo in test branch. 
-    exit
+    echo testing 
     modelpath=$(cat "$userhome/$datastore/$configname" | jq '.modeldata.modelpath' | sed 's/"//g')
     configpath=$(cat "$userhome/$datastore/$configname" | jq '.modeldata.configpath' | sed 's/"//g')
 
@@ -55,7 +57,7 @@ then
     aws s3 sync "s3://""$bucketname"/"$modelpath" "$userhome/DeepLabCut/pose-tensorflow/models/"$(basename "$modelpath")""
     aws s3 cp "s3://""$bucketname"/"$configpath" "$userhome/DeepLabCut/myconfig_analysis.py"
     ## Replace the video location in the config folder. 
-    python "ncap_remote/substitute_config.py"
+    python "neurocaas_remote/dlc/substitute_config.py"
 
     ## Preprocess videos 
 
@@ -65,6 +67,7 @@ then
     python AnalyzeVideos.py
     cd "$userhome"/"$datastore"
 
+    find -iname "*.csv" -exec cp {} "$userhome"/"$outstore" \;
     find -iname "*.h5" -exec cp {} "$userhome"/"$outstore" \;
     find -iname "*.pickle" -exec cp {} "$userhome"/"$outstore" \;
 
@@ -87,24 +90,22 @@ then
     python Step4_GenerateTrainingFileFromLabelledData.py
     # Copy labeled frames back to the user if they exist. 
     cp -r "$userhome/DeepLabCut/Generating_a_Training_Set/$trainname" "$userhome/$outstore/$trainname"
-    aws s3 sync "$userhome/DeepLabCut/Generating_a_Training_Set/$trainname" "s3://$bucketname/$groupdir/$resultdir/$trainname" 
+    aws s3 sync "$userhome/DeepLabCut/Generating_a_Training_Set/$trainname" "s3://$bucketname/$groupdir/$processdir/$trainname" 
     ## Now move the results to the model folder. 
-    cd "$userhome/ncap_remote"
-    foldername=$(python dlc_move_training_data.py)
+    cd "$userhome/neurocaas_remote"
+    foldername=$(python dlc/dlc_move_training_data.py)
     ## Now download the pretrained weights: 
     cd "$userhome/DeepLabCut/pose-tensorflow/models/pretrained"
     bash download.sh
     cd "$userhome/DeepLabCut/pose-tensorflow/models/$foldername/train"
     python ../../../train.py
-    aws s3 sync "$userhome/DeepLabCut/pose-tensorflow/models/$foldername" "s3://$bucketname/$groupdir/$resultdir/$foldername"
+    aws s3 sync "$userhome/DeepLabCut/pose-tensorflow/models/$foldername" "s3://$bucketname/$groupdir/$processdir/$foldername"
     
-    echo not done yet, exiting.
-    exit
 else
     echo "Mode $analysismode not recognized. Valid options are train or test. Exiting"
     exit
 fi 
 ###############################################################################################
 ## Stereotyped upload script for the data
-upload "$outstore" "$bucketname" "$groupdir" "$resultdir" "mp4"
+upload "$outstore" "$bucketname" "$groupdir" "$processdir" "mp4"
 
