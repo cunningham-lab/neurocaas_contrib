@@ -1,4 +1,4 @@
-# NeuroCAAS Remote
+# NeuroCAAS Contrib
 ## A repository to assist the creation of new pipelines on the NeuroCAAS platform. 
 
 This repository contains scripts that coordinate analyses that we built and host on NeuroCAAS. It serves to provide transparency for the analyses that we provide (all analysis code for NeuroCAAS is contained in this repo or the original analysis repo), and as a template for developers who would like to offer their analyses on NeuroCAAS. For these developers, this repo houses a collection of utilities that automate the process of coordinating logs and system monitoring with the NeuroCAAS platform and the web frontend. 
