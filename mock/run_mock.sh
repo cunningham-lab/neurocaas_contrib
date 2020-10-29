@@ -2,7 +2,7 @@
 ## Bash script that mocks real analysis. Just waits for one minute, then returns. 
 ## Load in helper functions. 
 execpath="$0"
-echo execpath
+echo execpath, $execpath
 scriptpath="$(dirname "$execpath")/ncap_utils"
 echo $scriptpath "SCRIPTPATH"
 source "$scriptpath/workflow.sh"
