@@ -11,4 +11,3 @@ The "Remote" portion of this repository contains scripts that should live on the
 
 To get started, the script "run\_main.sh" runs all of the setup and cleanup required by NeuroCAAS, as well as declaring useful variables to streamline data transfer and directory navigation. Take a look at how it calls analysis-specific scripts within it, and consider how that can be adapted for your pipeline. See the epi, dlc, caiman, locanmf, and pmd subfolders to see how other analyses function within this framework. To see how these analyses perform, see the NeuroCAAS [website](http://www.neurocaas.org).
 
-
