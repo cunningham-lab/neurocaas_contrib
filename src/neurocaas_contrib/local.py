@@ -40,7 +40,19 @@ class NeuroCAASAutoScript(object):
             self.add_dlami()
 
         if "env_name" in scriptdict.keys() and scriptdict["env_name"] is not None:
-            self.add_conda_env()
+            if "conda_dir" in scriptdict.keys() and scriptdict["conda_dir"] is not None:
+                path = scriptdict["conda_dir"]
+            else:
+                path = None
+            self.add_conda_env(path = path)
+
+    def add_dlami(self):
+        """Sources the dlami bash script to correctly configure the ec2 os environment with GPU. 
+
+        """
+        self.scriptlines.append("\n")
+        self.scriptlines.append("## AUTO ADDED DLAMI SETUP \n")
+        self.scriptlines.append("source .dlamirc")
 
     def append_conda_path_command(self,path = None):
         """Generates the material we want to append to the python path to find the anaconda environment correctly. Will assume that anaconda(3) is installed in the user's home directory. An alternative path to anaconda3/bin can be supplied if this is not the case.   
@@ -50,10 +62,9 @@ class NeuroCAASAutoScript(object):
         if path is None:
             path = os.path.join(self.scriptdict["user_root_dir"],"anaconda3/bin")
             
-
         ## First check that this path exists and is appropriately formatted.
-        assert path.endswith("anaconda3/bin"), "Path must end with anaconda3/bin."
-        assert os.path.isdir(path),"The path {} does not exist. Please add/revise a manually added path to the anaconda bin."
+        assert path.endswith("/bin"), "Path must end with *conda{}/bin."
+        assert os.path.isdir(path),f"The path {path} does not exist. Please add/revise a manually added path to the anaconda bin."
         
         command = "export PATH=\"{}:$PATH\"".format(path)
         return command
@@ -71,23 +82,19 @@ class NeuroCAASAutoScript(object):
 
         return condition 
 
-    def add_dlami(self):
-        """Sources the dlami bash script to correctly configure the ec2 os environment with GPU. 
 
-        """
-        self.scriptlines.append("\n")
-        self.scriptlines.append("## AUTO ADDED DLAMI SETUP \n")
-        self.scriptlines.append("source .dlamirc")
-
-    def add_conda_env(self,check = True):
+    def add_conda_env(self,check = True,path = None):
         """Adds commands to enter a conda virtual environment to template script. If check, will check that this virtual environment exists before adding.  
+
+        :param check: boolean asking if we should check that the environment exists first or not.
+        :param path: (optional) if provided, looks here for the conda installation. Otherwise will defaults to $user_root_dir/conda_dir(anaconda3 if not provided).
 
         """
         env_name = self.scriptdict["env_name"]
         if check:
             assert self.check_conda_env(env_name),"conda environment must exist"
 
-        setupcommand = self.append_conda_path_command()+" \n"
+        setupcommand = self.append_conda_path_command(path)+" \n"
         declarecommand = f"conda activate {env_name}"+" \n"
 
         #Now add the suggested lines to the script:  
