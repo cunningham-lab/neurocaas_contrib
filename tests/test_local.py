@@ -31,11 +31,6 @@ class Test_NeuroCAASAutoScript(object):
 
     def test_NeuroCAASAutoScript_append_conda_path_command(self):
         ncas = NeuroCAASAutoScript(scriptdict,template)
-        command = ncas.append_conda_path_command()
-        assert command == f"export PATH=\"{path}:$PATH\""
-
-    def test_NeuroCAASAutoScript_append_conda_path_command_custom(self):
-        ncas = NeuroCAASAutoScript(scriptdict,template)
         command = ncas.append_conda_path_command(path)
         assert command == f"export PATH=\"{path}:$PATH\""
 

@@ -22,7 +22,7 @@ install:
 - conda update -q conda
 # Useful for debugging any issues with conda
 - conda info -a
-- conda create -n neurocaasci
+- conda create -n neurocaas
 script:
 - pytest tests/test_local.py
 
