@@ -10,14 +10,15 @@ rootpath = os.path.dirname(testpath)
 if get_dict_file() == "local":
     scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict.json")
     scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_env.json")
+    path = "/Users/taigaabe/anaconda3/bin"
 elif get_dict_file() == "ci":
     scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis.json")
     scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis_env.json")
+    path = "/home/travis/miniconda/bin"
 else:
     assert 0,"Home directory not recognized for running tests."
     
 template = os.path.join(rootpath,"src/neurocaas_contrib/template_script.sh")
-path = "/Users/taigaabe/anaconda3/bin"
 
 class Test_NeuroCAASAutoScript(object):
     def test_NeuroCAASAutoScript(self):
@@ -35,7 +36,7 @@ class Test_NeuroCAASAutoScript(object):
 
     def test_NeuroCAASAutoScript_append_conda_path_command_custom(self):
         ncas = NeuroCAASAutoScript(scriptdict,template)
-        command = ncas.append_conda_path_command("/Users/taigaabe/anaconda3/bin")
+        command = ncas.append_conda_path_command(path)
         assert command == f"export PATH=\"{path}:$PATH\""
 
     def test_NeuroCAASAutoScript_check_conda_env(self):

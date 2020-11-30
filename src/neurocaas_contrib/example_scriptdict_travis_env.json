@@ -2,7 +2,7 @@
     "user_root_dir":"/home/travis",
     "conda_dir":"/home/travis/miniconda",
     "script_name":"example.sh",
-    "env_name":"neurocaasci",
+    "env_name":"neurocaas",
     "in":{
         "data":{
                 "local_location":"/home/ubuntu/datastore/",
