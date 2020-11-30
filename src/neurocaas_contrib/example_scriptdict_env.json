@@ -1,0 +1,21 @@
+{
+    "user_root_dir":"/Users/taigaabe",
+    "script_name":"example.sh",
+    "env_name":"neurocaas",
+    "in":{
+        "data":{
+                "local_location":"/home/ubuntu/datastore/",
+                "ext":[".mpg",".mp4"]
+               },
+        "config":{
+                "local_location":"/home/ubuntu/datastore/",
+                "ext":[".json",".yaml"]
+               }
+        },
+    "out":{
+        "out1":{
+                "local_location":"/home/ubuntu/outstore/results"
+            }
+        },
+    "dlami":true
+}
