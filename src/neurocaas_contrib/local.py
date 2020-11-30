@@ -44,7 +44,6 @@ class NeuroCAASAutoScript(object):
                 path = scriptdict["conda_dir"]
             else:
                 path = None
-            print(path,"conda_dir from path")
             self.add_conda_env(path = path)
 
     def add_dlami(self):
