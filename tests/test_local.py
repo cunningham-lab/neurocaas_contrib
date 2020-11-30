@@ -40,7 +40,7 @@ class Test_NeuroCAASAutoScript(object):
 
     def test_NeuroCAASAutoScript_add_conda_env(self):
         ncas = NeuroCAASAutoScript(scriptdict_env,template)
-        ncas.add_conda_env(path)
+        ncas.add_conda_env(path = path)
         assert ncas.scriptlines[-2] == f"export PATH=\"{path}:$PATH\" \n" 
         assert ncas.scriptlines[-1] == f"conda activate neurocaas \n"
 
