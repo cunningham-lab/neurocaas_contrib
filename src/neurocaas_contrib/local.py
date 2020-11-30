@@ -36,6 +36,9 @@ class NeuroCAASAutoScript(object):
         self.scriptlines = scriptlines
 
         ## Now we start doing setup: 
+        if "dlami" in scriptdict.keys() is scriptdict["dlami"] is "true":
+            self.add_dlami()
+
         if "env_name" in scriptdict.keys() and scriptdict["env_name"] is not None:
             self.add_conda_env()
 
@@ -68,6 +71,14 @@ class NeuroCAASAutoScript(object):
 
         return condition 
 
+    def add_dlami(self):
+        """Sources the dlami bash script to correctly configure the ec2 os environment with GPU. 
+
+        """
+        self.scriptlines.append("\n")
+        self.scriptlines.append("## AUTO ADDED DLAMI SETUP \n")
+        self.scriptlines.append("source .dlamirc")
+
     def add_conda_env(self,check = True):
         """Adds commands to enter a conda virtual environment to template script. If check, will check that this virtual environment exists before adding.  
 
@@ -76,10 +87,16 @@ class NeuroCAASAutoScript(object):
         if check:
             assert self.check_conda_env(env_name),"conda environment must exist"
 
-        command = self.append_conda_path_command()+" \n"
+        setupcommand = self.append_conda_path_command()+" \n"
+        declarecommand = f"conda activate {env_name}"+" \n"
 
         #Now add the suggested lines to the script:  
-        self.scriptlines.append(command)
+        self.scriptlines.append("\n")
+        self.scriptlines.append("## AUTO ADDED ENV SETUP \n")
+        self.scriptlines.append(setupcommand)
+        self.scriptlines.append(declarecommand)
+
+
 
     def write_new_script(self,filename):
         """Writes the current contents of scriptlines to file. 
@@ -89,7 +106,6 @@ class NeuroCAASAutoScript(object):
         """
         with open(filename,"w") as f:
             f.writelines(self.scriptlines)
-
 
     def check_args():
         """
