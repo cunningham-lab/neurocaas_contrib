@@ -1,13 +1,21 @@
 import pytest 
 from neurocaas_contrib.local import NeuroCAASAutoScript
+from testpaths import get_dict_file 
 import os
 
 filepath = os.path.realpath(__file__)
 testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
-scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict.json")
-scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_env.json")
+if get_dict_file() == "local":
+    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict.json")
+    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_env.json")
+elif get_dict_file() == "ci":
+    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis.json")
+    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis_env.json")
+else:
+    assert 0,"Home directory not recognized for running tests."
+    
 template = os.path.join(rootpath,"src/neurocaas_contrib/template_script.sh")
 path = "/Users/taigaabe/anaconda3/bin"
 

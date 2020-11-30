@@ -1,8 +1,7 @@
 {
-    "user_root_dir":"/Users/taigaabe",
-    "conda_dir":"/Users/taigaabe/anaconda3",
+    "user_root_dir":"/home/travis",
+    "conda_dir":"/home/travis/miniconda",
     "script_name":"example.sh",
-    "env_name":"neurocaas",
     "in":{
         "data":{
                 "local_location":"/home/ubuntu/datastore/",
