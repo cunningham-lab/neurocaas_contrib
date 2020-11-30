@@ -1,9 +1,14 @@
 import pytest 
 from neurocaas_contrib.local import NeuroCAASAutoScript
+import os
 
-scriptdict = "../src/neurocaas_contrib/example_scriptdict.json"
-scriptdict_env = "../src/neurocaas_contrib/example_scriptdict_env.json"
-template = "../src/neurocaas_contrib/template_script.sh"
+filepath = os.path.realpath(__file__)
+testpath = os.path.dirname(filepath)
+rootpath = os.path.dirname(testpath)
+
+scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict.json")
+scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_env.json")
+template = os.path.join(rootpath,"src/neurocaas_contrib/template_script.sh")
 path = "/Users/taigaabe/anaconda3/bin"
 
 class Test_NeuroCAASAutoScript(object):
@@ -37,7 +42,7 @@ class Test_NeuroCAASAutoScript(object):
 
     def test_NeuroCAASAutoScript_write_new_script(self):
         ncas = NeuroCAASAutoScript(scriptdict,template)
-        script_path = "./test_mats/test_write_new_script.sh"
+        script_path = os.path.join(testpath,"test_mats/test_write_new_script.sh")
         ncas.write_new_script(script_path)
         with open(script_path,"r") as f1:
             with open(template,"r") as f2:
