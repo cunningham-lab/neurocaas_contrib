@@ -42,11 +42,10 @@ class NeuroCAASAutoScript(object):
         if "env_name" in scriptdict.keys() and scriptdict["env_name"] is not None:
             if "conda_dir" in scriptdict.keys() and scriptdict["conda_dir"] is not None:
                 path = scriptdict["conda_dir"]
-                print(path,"conda_dir from path")
             else:
                 path = None
-                print("path is none")
-            self.add_conda_env(path)
+            print(path,"conda_dir from path")
+            self.add_conda_env(path = path)
 
     def add_dlami(self):
         """Sources the dlami bash script to correctly configure the ec2 os environment with GPU. 
