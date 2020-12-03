@@ -1,6 +1,7 @@
 import pytest 
-from neurocaas_contrib.local import NeuroCAASAutoScript
+from neurocaas_contrib.local import NeuroCAASAutoScript,NeuroCAASImage
 from testpaths import get_dict_file 
+import docker
 import os
 
 filepath = os.path.realpath(__file__)
@@ -18,7 +19,37 @@ elif get_dict_file() == "ci":
 else:
     assert 0,"Home directory not recognized for running tests."
     
+
+
 template = os.path.join(rootpath,"src/neurocaas_contrib/template_script.sh")
+
+class Test_NeuroCAASImage(object):
+    def test_NeuroCAASImage(self):
+        nci = NeuroCAASImage()
+    def test_NeuroCAASImage_find_image(self):
+        nci = NeuroCAASImage()
+        nci.find_image("neurocaascontribinit:latest")
+    def test_NeuroCAASImage_find_image_noimage(self):
+        nci = NeuroCAASImage()
+        with pytest.raises(AssertionError):
+            nci.find_image("neurocaascontribinit")
+    def test_NeuroCAASImage_build_default_image(self):
+        nci = NeuroCAASImage()
+        nci.build_default_image()
+    def test_NeuroCAASImage_run_container(self):
+        nci = NeuroCAASImage()
+        nci.run_container()
+        try:
+            container = nci.client.containers.get("NeuroCAASDevContainer")
+            container.remove()
+        except:    
+            pass
+    def setup_method(self,test_method):
+        pass
+
+    def teardown_method(self,test_method):
+        client = docker.from_env()
+        client.containers.prune()
 
 class Test_NeuroCAASAutoScript(object):
     def test_NeuroCAASAutoScript(self):
@@ -56,7 +87,12 @@ class Test_NeuroCAASAutoScript(object):
                 for r1,r2 in zip(f1r,f2r):
                     assert r1 == r2
 
-        
+    def test_NeuroCAASAutoScript_check_dirs(self):
+        ncas = NeuroCAASAutoScript(scriptdict,template)
+        ncas.check_dirs()
+        refpaths = ["mkdir -p \"/home/ubuntu/datastore/\"", "mkdir -p \"/home/ubuntu/outstore/results/\""]
 
+        for s in ncas.scriptlines[-2:]:
+            assert s in refpaths
 
 
