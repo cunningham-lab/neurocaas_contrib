@@ -21,30 +21,33 @@ cfn_client = boto3.client("cloudformation")
 if mode == "std":
     default_tag = "latest"
     default_repo = "continuumio/anaconda3"
-    default_neurocaas_repo = "neurocaascontribinit"
+    default_neurocaas_repo = "neurocaas/contrib"
+    default_neurocaas_repo_tag = "base"
     default_command = "/bin/bash"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
 elif mode == "test":
     default_tag = "latest"
     default_repo = "bash"
     default_neurocaas_repo = "test_local_build"
+    default_neurocaas_repo_tag = "latest"
     default_command = "ls"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../","tests","test_mats"))
 
-default_image = f"{default_neurocaas_repo}:latest"
-default_root_image = "continuumio/anaconda:latest"
+default_image = f"{default_neurocaas_repo}:{default_neurocaas_repo_tag}"
+default_root_image = f"{default_repo}:{default_tag}"
 
 ## 11/30/20
 class NeuroCAASImage(object):
     """NeuroCAAS image management. Builds a docker image from the dockerfile, if needed, or attaches to a known one.  
 
     """
-    def __init__(self,image_tag=None):
+    def __init__(self,image_tag=None,container_name="neurocaasdevcontainer"):
         """Initialize the NeuroCAASImage object.
         
         :param image_tag: (optional) The image tag identifying the image we want to load. Should be given in the form repository:tag. If not given, will default to using/building the default neurocaas image. 
         """
         self.client = docker.from_env()
+        self.container_name = container_name # check this is all lowercase.
         if image_tag is None:
             self.image = self.get_default_image()
             self.image_tag = default_image   
@@ -58,6 +61,8 @@ class NeuroCAASImage(object):
             except AssertionError as e:
                 print(f"Error while loading requested image: {e}. Loading in default image.")
                 self.image = self.get_default_image()
+        ## Sequence of all containers associated with this image.
+        self.container_history = {} 
 
     def find_image(self,image_tag):
         """Looks to see if the image requested is locally available. Raises an exception if not.
@@ -91,24 +96,84 @@ class NeuroCAASImage(object):
             self.find_image(default_image)
             return self.client.images.get(default_image)
         except AssertionError:
-            print("Default image not available. Building.")
-            ##TODO In the future pull neurocaas image directly.
-            image,logs = self.build_default_image()
+            print("Default image not available. Pulling from Docker Hub.")
+            try:
+                print(f"Pulling {default_neurocaas_repo_tag} version of repository {default_neurocaas_repo}. Please wait...")
+                image = self.client.images.pull(default_neurocaas_repo,tag = default_neurocaas_repo_tag)
+                if type(image) is list:
+                    print("Got many tags, providing first image")
+                    image = image[0]
+            except docker.errors.APIError: 
+                print(f"Pull failed. Building default image from Anaconda base.")
+                image,logs = self.build_default_image()
+            except Exception as e:
+                print(f"unhandled exception: {e}")
         return image 
 
-    def run_container(self,image_tag = None):
+    def setup_container(self,image_tag = None,container_name = None):
         """Probably the most important method in this class. Runs a container off of the image that you created, or another image of your choice. If you include a new image tag, all subsequent commands (until you run this command again) will refer to the corresponding image.  
-        
+        :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
+        :param container_name: (optional) If given, will launch a container with that name attached. Note this must be lowercase. If not given, will launch with the default name at self.container_name.
         """
+        if container_name is None:
+            ## Check that it's all lowercase
+            container_name = self.container_name
         if image_tag is not None:
             ## Will return assertion error if image is not found.
             self.find_image(image_tag)
             self.image = self.client.images.get(image_tag)
             self.image_tag = image_tag
-        print(self.image_tag)
-        self.client.containers.run(self.image_tag,default_command,name = "NeuroCAASDevContainer",stdin_open = True,tty = True,detach = True)
-        print("Container is running as NeuroCAASDevContainer. You can connect to it by running: \n\n  `docker run -it NeuroCAASDevContainer /bin/bash` \n\n from the command line")
-            
+        container = self.client.containers.run(self.image_tag,default_command,name = container_name ,stdin_open = True,tty = True,detach = True)
+
+        print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `docker exec -it {container_name} /bin/bash` \n\n from the command line. The container can now be accessed at attribute current_container.")
+        ## Set 
+        self.container_name = container_name 
+        self.current_container = container
+        self.container_history[container.id] = container
+
+    def test_container(self,command,container_name = None):
+        """Test the container with a command. If no container name is given, the container with name at self.container_name will be used.
+
+        :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'`
+        :param container_name: (optional) The name of the container where we should run the given command.
+        """
+        ## First get the container:
+        if container_name is None:
+            container_name = self.container_name
+        container = self.client.containers.get(container_name)
+        output = container.exec_run(f"/bin/bash -c '{command}'",detach = False,stream=True)
+        try:
+            print("[Test Execution Starting: Output to command line below]")
+            while True:
+                print(next(output.output).decode("utf-8"))
+        except StopIteration:
+            print("[Test Execution Done]")
+
+    def save_container_to_image(self,tag,force = False):
+        """Once you have made appropriate changes and tested, you will want to save your running container to a new image. This image will be specified as a tag; i.e., your image's name will be neurocaas/contrib:[tag]. 
+        :param tag: The tag that will be used to identify this image. We recommend providing your tag as the name of your analysis repo + a git commit, like neurocaas/contrib:mockanalysis.356d78a, where 356d78a is the output of running `git rev-parse --short HEAD` from your git repo. If you provide a tag that is already in use, you will have to provide a "force=True" argument.   
+        :param force: (optional) Whether or not to overwrite an image with this name already. Default is force = False
+        """
+        ## First create the requested tag:
+        image_tag = f"{default_neurocaas_repo}:{tag}"
+        ## See if this exists:
+        if force is False:
+            try:
+                self.find_image(image_tag)
+                print("An image with name {image_tag} already exists. To overwrite it, call this method with parameter force = True")
+                return
+            except AssertionError: 
+                print("This tag is available, proceeding with commit.")
+        else:
+            pass
+        container = self.current_container
+        try:
+            container.commit(repository=default_neurocaas_repo,tag=tag)
+            print(f"Success! Container saved as image {image_tag}")
+        except docker.errors.APIError:
+            print(f"Unable to commit container. You can try manually from the command line by calling `docker commit [container name] {default_neurocaas_repo}:{tag}`")
+
+
 
 ## 11/23/20
 class NeuroCAASAutoScript(object):
