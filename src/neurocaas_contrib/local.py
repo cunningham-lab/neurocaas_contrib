@@ -134,7 +134,7 @@ class NeuroCAASImage(object):
     def test_container(self,command,container_name = None):
         """Test the container with a command. If no container name is given, the container with name at self.container_name will be used.
 
-        :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'`
+        :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'. We recommend passing this string with single quotes on the outside, and double quotes for shell arguments: ex. `NeuroCAASImage.test_container(command = \'run.sh \"parameter1\"\'`
         :param container_name: (optional) The name of the container where we should run the given command.
         """
         ## First get the container:
