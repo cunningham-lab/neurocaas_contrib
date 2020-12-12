@@ -9,6 +9,7 @@ import subprocess
 import json
 import pathlib
 import docker
+from .log import NeuroCAASCertificate,NeuroCAASDataStatus
 
 if "pytest" in sys.modules:
     mode = "test"
@@ -16,6 +17,7 @@ else:
     mode = "std"
 
 cfn_client = boto3.client("cloudformation")
+docker_client = docker.from_env()
 
 
 if mode == "std":
@@ -23,14 +25,16 @@ if mode == "std":
     default_repo = "continuumio/anaconda3"
     default_neurocaas_repo = "neurocaas/contrib"
     default_neurocaas_repo_tag = "base"
-    default_command = "/bin/bash"
+    default_base_command = "/bin/bash"
+    default_param_command = "/bin/bash -c {}"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
 elif mode == "test":
     default_tag = "latest"
     default_repo = "bash"
     default_neurocaas_repo = "test_local_build"
     default_neurocaas_repo_tag = "latest"
-    default_command = "ls"
+    default_base_command = "ls"
+    default_param_command = "/bin/sh -c {}"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../","tests","test_mats"))
 
 default_image = f"{default_neurocaas_repo}:{default_neurocaas_repo_tag}"
@@ -46,7 +50,7 @@ class NeuroCAASImage(object):
         
         :param image_tag: (optional) The image tag identifying the image we want to load. Should be given in the form repository:tag. If not given, will default to using/building the default neurocaas image. 
         """
-        self.client = docker.from_env()
+        self.client = docker_client   
         self.container_name = container_name # check this is all lowercase.
         if image_tag is None:
             self.image = self.get_default_image()
@@ -63,6 +67,27 @@ class NeuroCAASImage(object):
                 self.image = self.get_default_image()
         ## Sequence of all containers associated with this image.
         self.container_history = {} 
+        self.current_container = None
+
+    def assign_default_image(self,image_tag):
+        """Assigns a new default image to this object.
+
+        :param: The name of a docker image, with the tag parameter specified (as repository:tag)
+        """
+        ## Will return assertion error if image is not found.
+        self.find_image(image_tag)
+        self.image = self.client.images.get(image_tag)
+        self.image_tag = image_tag
+
+    def assign_default_container(self,container_name):
+        """Assigns a new default image to this object.
+
+        :param: The name of a docker image, with the tag parameter specified (as repository:tag)
+        """
+        ## First log the current container in history, if it exists
+        self.container_name = container_name
+        self.current_container = self.client.containers.get(container_name)
+        self.container_history[self.current_container.id] = self.current_container
 
     def find_image(self,image_tag):
         """Looks to see if the image requested is locally available. Raises an exception if not.
@@ -123,25 +148,30 @@ class NeuroCAASImage(object):
             self.find_image(image_tag)
             self.image = self.client.images.get(image_tag)
             self.image_tag = image_tag
-        container = self.client.containers.run(self.image_tag,default_command,name = container_name ,stdin_open = True,tty = True,detach = True)
+        container = self.client.containers.run(self.image_tag,default_base_command,name = container_name ,stdin_open = True,tty = True,detach = True)
 
         print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `docker exec -it {container_name} /bin/bash` \n\n from the command line. The container can now be accessed at attribute current_container.")
         ## Set 
-        self.container_name = container_name 
-        self.current_container = container
-        self.container_history[container.id] = container
+        self.assign_default_container(container_name)
 
     def test_container(self,command,container_name = None):
-        """Test the container with a command. If no container name is given, the container with name at self.container_name will be used.
+        """Test the container with a command. If no container name is given, the container with name at self.container_name will be used. This command will print the output of the given command to the command line. If you want to examine the outputs of the command, do so by coordinating with the localenv object using method [TODO].
 
         :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'. We recommend passing this string with single quotes on the outside, and double quotes for shell arguments: ex. `NeuroCAASImage.test_container(command = \'run.sh \"parameter1\"\'`
-        :param container_name: (optional) The name of the container where we should run the given command.
+        :param container_name: (optional) The name of the container where we should run the given command. If given, will be assigned status as the current container.
         """
         ## First get the container:
         if container_name is None:
             container_name = self.container_name
+        else:
+            self.assign_default_container(container_name)
         container = self.client.containers.get(container_name)
-        output = container.exec_run(f"/bin/bash -c '{command}'",detach = False,stream=True)
+        try:
+            output = container.exec_run(f"/bin/bash -c '{command}'",detach = False,stream=True)
+        except docker.errors.APIError:
+            print(f"Docker Raised APIError: your container {container_name} may not be running. Run docker ps to check.")
+            raise
+
         try:
             print("[Test Execution Starting: Output to command line below]")
             while True:
@@ -173,7 +203,91 @@ class NeuroCAASImage(object):
         except docker.errors.APIError:
             print(f"Unable to commit container. You can try manually from the command line by calling `docker commit [container name] {default_neurocaas_repo}:{tag}`")
 
+    def run_analysis(self,command,local_env,image_tag=None):
+        """Full-fledged test an analysis image. Expect outputs in the local environment after the analysis run, along with logs that the use would see.
 
+        :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'. We recommend passing this string with single quotes on the outside, and double quotes for shell arguments: ex. `NeuroCAASImage.test_container(command = \'run.sh \"parameter1\"\'`
+        :param local_env: (NeuroCAASLocalEnv) a NeuroCAASLocalEnv instance. The outputs of analysis commands will be written to this local environment for easy inspection. 
+        :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
+        """
+        if image_tag is not None:
+            self.assign_default_image(image_tag)
+        ## Now generate a timestamp for this job: 
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        job_id = f"job__{timestamp}"
+        logjobpath = os.path.join(local_env.io_path,"logs",job_id)
+        os.mkdir(logjobpath)
+
+        container = self.client.containers.run(image = self.image_tag,
+                command = default_param_command.format(command),
+                detach = True,
+                volumes = {local_env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
+        ## Initialize certificate and datastatus objects here. 
+        datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
+        certificate = NeuroCAASCertificate("s3://dummy_path")
+        ## TODO implement fast regular logging. 
+        output_gen = container.logs(stream = True,timestamps = True)
+        logpath = os.path.join(local_env.io_path,"logs",job_id,"logfile.txt")
+        self.write_logs(logpath,output_gen)
+
+    def write_logs(self,logpath,datastatus,certificate,loginterval = 1,timeout=None):
+        """Function to write with the given logging objects to a local file. Logging will be terminated when the container enters any of the following states:
+            exited (recorded in "status" field of datastatus as success or failed)
+            dead
+            paused
+
+        :param logpath: Path to a directory where we should write logs. 
+        :param datastatus: NeuroCAASDataStatus object to use to log data status. 
+        :param certificate: NeuroCAASCertificate object to use to log high level data. 
+        """
+        end_states = ["exited","dead","paused"]
+        status = "initializing"
+        while status not in end_states:
+            time.sleep(loginterval)
+            status = datastatus.rawfile["status"]
+            datastatus.update_file()
+            updatedict = {
+                "t" : datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
+                "n" : os.path.basename(datastatus.rawfile["input"]),
+                "s" : datastatus.rawfile[status],
+                "r" : "N/A",
+                "u" : "N/A",
+            }
+            datastatus.write_local(os.path.join(logpath,"DATASET_NAME-{}_STATUS.json"))
+            certificate.update_instance_info(updatedict)
+            certificate.write_local(os.path.join(logpath,"certificate.txt"))
+        #with open(logpath,"w") as f:
+        #    try:
+        #        f.write("[Analysis Execution Starting: Output to log file below given as (timestamp):(data)]\n")
+        #        f.write("\n")
+        #        while True:
+        #            f.write(next(output_gen).decode("utf-8"))
+        #    except StopIteration:
+        #        f.write("\n")
+        #        f.write("[Analysis Execution Done]")
+
+## 12/5/20
+class NeuroCAASLocalEnv(object):
+    """A class to explicitly manage the local environment around a docker container. A key feature to running local tests. Will create/locate a local directory named "io-dir" at the specified location, with appropriately named subdirectories, and designate it as a docker volume ready to be mounted on testing runs. Volume setup from :https://stackoverflow.com/questions/39496564/docker-volume-custom-mount-point 
+
+    """
+    def __init__(self,path):
+        """
+
+        :param path: path to parent directory where we will search for or create a directory named "io-dir".
+        """
+        ## Look for the path to the input output directory we would create:
+        self.client = docker_client
+        io_path = os.path.realpath(os.path.join(path,"io-dir"))
+        self.io_path = io_path
+        exists = os.path.isdir(io_path)
+        if not exists:
+            os.mkdir(io_path)
+            for subdir in ["configs","inputs","logs","results"]:
+                subpath = os.path.join(io_path,subdir)
+                os.mkdir(subpath)
+        print(io_path)
+        self.volume = self.client.volumes.create(name = "test_local_env",driver = "local",driver_opts = {"type":None,"device":io_path,"o":"bind"})  
 
 ## 11/23/20
 class NeuroCAASAutoScript(object):
@@ -266,7 +380,6 @@ class NeuroCAASAutoScript(object):
         self.scriptlines.append("## AUTO ADDED ENV SETUP \n")
         self.scriptlines.append(setupcommand)
         self.scriptlines.append(declarecommand)
-
 
 
     def write_new_script(self,filename):
