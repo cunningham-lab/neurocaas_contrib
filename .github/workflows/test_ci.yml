@@ -40,6 +40,7 @@ jobs:
           hash -r
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
+          conda config --append envs_dirs $HOME/miniconda/envs 
           conda create -n neurocaas
           conda activate neurocaas
           python -m pip install --upgrade pip
@@ -49,8 +50,10 @@ jobs:
         run: |
           echo $HOME $GITHUB_WORKSPACE "locations."
           ls $HOME/miniconda/bin
+          ls $HOME/miniconda/envs
           conda config --describe envs_dirs
           conda env list
+          
           pytest tests/test_local.py
         env:
           AWS_DEFAULT_REGION: "us-east-1"
