@@ -46,7 +46,9 @@ jobs:
           pip install -r requirements.txt
           pip install ./src
       - name: Run tests
-        run: pytest tests/test_local.py
+        run: |
+          echo $HOME $GITHUB_WORKSPACE "locations."
+          pytest tests/test_local.py
         env:
           AWS_DEFAULT_REGION: "us-east-1"
 
