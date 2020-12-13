@@ -49,6 +49,7 @@ jobs:
         run: |
           echo $HOME $GITHUB_WORKSPACE "locations."
           ls $HOME/miniconda/bin
+          conda env list
           pytest tests/test_local.py
         env:
           AWS_DEFAULT_REGION: "us-east-1"
