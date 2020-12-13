@@ -1,6 +1,6 @@
 {
-    "user_root_dir":"/home/travis",
-    "conda_dir":"/home/travis/miniconda/bin",
+    "user_root_dir":"/home/runner",
+    "conda_dir":"/home/runner/miniconda/bin",
     "script_name":"example.sh",
     "in":{
         "data":{
