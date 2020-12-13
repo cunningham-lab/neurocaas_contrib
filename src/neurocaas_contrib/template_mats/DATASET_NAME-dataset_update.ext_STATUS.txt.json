@@ -6,8 +6,8 @@
     "reason": "",
     "memory_usage": "N/A MB",
     "cpu_usage": "0 %",
-    "job_start": "2020-12-13T03:06:39.7400144Z",
-    "job_finish": "2020-12-13T03:06:39.7390582Z",
+    "job_start": "2020-12-13T21:09:37.966376Z",
+    "job_finish": "2020-12-13T21:09:37.9650214Z",
     "std": {
         "0": "io-dir",
         "1": "neurocaas_contrib",
