@@ -1,0 +1,21 @@
+{
+    "user_root_dir":"/home/travis",
+    "conda_dir":"/home/travis/miniconda/bin",
+    "script_name":"example.sh",
+    "in":{
+        "data":{
+                "local_location":"/home/ubuntu/datastore/",
+                "ext":[".mpg",".mp4"]
+               },
+        "config":{
+                "local_location":"/home/ubuntu/datastore/",
+                "ext":[".json",".yaml"]
+               }
+        },
+    "out":{
+        "out1":{
+                "local_location":"/home/ubuntu/outstore/results"
+            }
+        },
+    "dlami":true
+}

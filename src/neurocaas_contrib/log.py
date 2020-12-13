@@ -284,7 +284,7 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         sorted_lines = [s[1] for s in sort_line_tuples]
         body = "\n".join(sorted_lines)
         with open(path, "wb") as f:
-            f.write(body)
+            f.write(body.encode("utf-8"))
 
 class NeuroCAASDataStatus(NeuroCAASLogObject):
     """Per-instance log file that captures details about each individual dataset analysis run: entire history of messages printed to stdout/stderr, the exit code, any error information, etc. Written as a json file for convenience. Takes a running docker container and does everything needed to parse out relevant arguments from it. This includes the output to stdout and stderr, the current cpu usage and memory usage, the  docker container object that we will be querying for relevant status information. Note that this file is also assumed to be initialized by a lambda generated file, so we should treat it like the certificate file with similar failsafes to fall back on local processing. We inherit an init method from NeuroCAASLogObject to enable this. 
@@ -302,9 +302,13 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
                    "status",
                    "reason",
                    "memory_usage",
+                   "cpu_usage",
                    "job_start",
                    "job_finish",
                    "std"]
+        ## Initialize the cpu usage stats with 0 
+        self.prev_cpu = 0
+        self.prev_system = 0
 
         super().__init__(s3_path,write_localpath)
         self.container = container
@@ -347,11 +351,26 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
         :return: dictionary containing output statistics
         """
         current_usage_stats = json.loads(next(self.container.stats()).decode("utf-8"))
-        cpu_total_stats = current_usage_stats["cpu_stats"]["cpu_usage"]["total_usage"]
-        memory_total_stats = current_usage_stats["memory_stats"]["usage"]
-        memory_total_mb = memory_total_stats/1e6
+        ## Taken from https://github.com/TomasTomecek/sen/blob/master/sen/util.py#L175, itself taken from docker 
+        cpu_usage = current_usage_stats["cpu_stats"]["cpu_usage"]["total_usage"]
+        if cpu_usage is not 0:
+            system_usage = current_usage_stats["cpu_stats"]["system_cpu_usage"]
+            cpu_delta = cpu_usage - self.prev_cpu
+            system_delta = system_usage - self.prev_system
+            online_cpus = online_cpus = current_usage_stats["cpu_stats"].get("online_cpus", len(current_usage_stats["cpu_stats"]["cpu_usage"]["percpu_usage"]))
+            cpu_percent = (cpu_delta/system_delta)*online_cpus*100
+        else:
+            cpu_percent = 0
+
+
+        try:
+            memory_total_stats = current_usage_stats["memory_stats"]["usage"]
+            memory_total_mb = memory_total_stats/1e6
+        except KeyError:
+            ### If the container is not in the "running" state, usage will not be reported. 
+            memory_total_mb = "N/A"
         outdict = {
-            "cpu_total":cpu_total_stats,
+            "cpu_total":cpu_percent,
             "memory_total_mb":memory_total_mb
                 }
         return outdict 
@@ -363,6 +382,7 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
         """
         custom_status = {}
         inspection = client.api.inspect_container(self.container.name)
+        ## Possible statuses.
         docker_stats = {
                 "created":"created",
                 "restarting":"restarting",
@@ -402,13 +422,13 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
         usage = self.get_usage()
         self.rawfile["status"] = statusdict["status"]
         self.rawfile["reason"] = statusdict["error"]
-        #self.rawfile["cpu_usage"] = "{} MB".format(usage["cpu_total_mb"])
+        self.rawfile["cpu_usage"] = "{} %".format(usage["cpu_total"])
         self.rawfile["memory_usage"] = "{} MB".format(usage["memory_total_mb"])
         self.rawfile["job_start"] = statusdict["starttime"]
         self.rawfile["job_finish"] = statusdict["finishtime"]
         self.rawfile["std"] = writedict
         ## Remove keys from legacy usage to avoid confusion
-        for key in ["cpu_usage","stderr","stdout"]:
+        for key in ["stderr","stdout"]:
             try:
                 del self.rawfile[key]
             except KeyError:
@@ -432,7 +452,7 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
         od = OrderedDict([
                (key,self.rawfile[key]) for key in self.writeorder])
         with open(path, "w") as f:
-            json.dump(od,f)
+            json.dump(od,f,indent = 4)
 
         
 class NeuroCAASActivityLog(object):

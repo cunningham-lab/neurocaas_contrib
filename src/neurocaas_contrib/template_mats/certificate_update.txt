@@ -1,0 +1,10 @@
+PER ENVIRONMENT MONITORING:
+================
+DATANAME: groupname/inputs/dataname.ext | STATUS: SUCCESS | TIME: 2020-08-03 20:22:14.527781 (finished)
+================
+Once jobs start, these logs will be updated regularly. Allow some time [~1 minute] after all jobs finish for results to appear.
+For more information, see DATASET_NAME: files for stdout and stderr output.
+ 
+++++++++++++++++++
+JOB MANAGER SETUP LOG:
+WARNING: this is a template certificate: could not find a certificate corresponding to this analysis request in AWS S3. 

@@ -1,5 +1,6 @@
 ## A module to work with AMIs for the purpose of debugging and updating.
 import boto3
+import pdb
 import sys
 import time
 import os
@@ -65,6 +66,7 @@ class NeuroCAASImage(object):
             except AssertionError as e:
                 print(f"Error while loading requested image: {e}. Loading in default image.")
                 self.image = self.get_default_image()
+                self.image_tag = default_image   
         ## Sequence of all containers associated with this image.
         self.container_history = {} 
         self.current_container = None
@@ -227,8 +229,12 @@ class NeuroCAASImage(object):
         certificate = NeuroCAASCertificate("s3://dummy_path")
         ## TODO implement fast regular logging. 
         output_gen = container.logs(stream = True,timestamps = True)
-        logpath = os.path.join(local_env.io_path,"logs",job_id,"logfile.txt")
-        self.write_logs(logpath,output_gen)
+        logpath = os.path.join(local_env.io_path,"logs",job_id)
+        try:
+            os.mkdir(logpath)
+        except FileExistsError:    
+            print("dir exists, moving forwards.")
+        self.write_logs(logpath,datastatus,certificate)
 
     def write_logs(self,logpath,datastatus,certificate,loginterval = 1,timeout=None):
         """Function to write with the given logging objects to a local file. Logging will be terminated when the container enters any of the following states:
@@ -241,30 +247,24 @@ class NeuroCAASImage(object):
         :param certificate: NeuroCAASCertificate object to use to log high level data. 
         """
         end_states = ["exited","dead","paused"]
-        status = "initializing"
-        while status not in end_states:
+        rawstatus = "initializing"
+        dataname = os.path.basename(datastatus.rawfile["input"])
+        while rawstatus not in end_states:
+            datastatus.container.reload()
+            rawstatus = datastatus.container.status
             time.sleep(loginterval)
-            status = datastatus.rawfile["status"]
             datastatus.update_file()
+            status = datastatus.rawfile["status"]
             updatedict = {
                 "t" : datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
-                "n" : os.path.basename(datastatus.rawfile["input"]),
-                "s" : datastatus.rawfile[status],
+                "n" : dataname,
+                "s" : status,
                 "r" : "N/A",
                 "u" : "N/A",
             }
-            datastatus.write_local(os.path.join(logpath,"DATASET_NAME-{}_STATUS.json"))
+            datastatus.write_local(os.path.join(logpath,"DATASET_NAME-{}_STATUS.json".format(dataname)))
             certificate.update_instance_info(updatedict)
             certificate.write_local(os.path.join(logpath,"certificate.txt"))
-        #with open(logpath,"w") as f:
-        #    try:
-        #        f.write("[Analysis Execution Starting: Output to log file below given as (timestamp):(data)]\n")
-        #        f.write("\n")
-        #        while True:
-        #            f.write(next(output_gen).decode("utf-8"))
-        #    except StopIteration:
-        #        f.write("\n")
-        #        f.write("[Analysis Execution Done]")
 
 ## 12/5/20
 class NeuroCAASLocalEnv(object):

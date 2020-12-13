@@ -1,0 +1,4 @@
+[Analysis Execution Starting: Output to log file below given as (timestamp):(data)]
+
+01234
+[Analysis Execution Done]
