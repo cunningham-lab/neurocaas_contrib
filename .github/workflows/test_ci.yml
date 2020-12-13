@@ -49,6 +49,7 @@ jobs:
         run: |
           echo $HOME $GITHUB_WORKSPACE "locations."
           ls $HOME/miniconda/bin
+          conda config --describe envs_dirs
           conda env list
           pytest tests/test_local.py
         env:
