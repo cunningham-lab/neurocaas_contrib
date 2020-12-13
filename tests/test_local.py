@@ -14,7 +14,7 @@ if get_dict_file() == "local":
 elif get_dict_file() == "ci":
     scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis.json")
     scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis_env.json")
-    path = "/home/travis/miniconda/bin"
+    path = "/home/runner/miniconda/bin"
 else:
     assert 0,"Home directory not recognized for running tests."
     
