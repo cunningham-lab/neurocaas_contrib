@@ -8,12 +8,12 @@ testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
 if get_dict_file() == "local":
-    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict.json")
-    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_env.json")
+    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict.json")
+    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict_env.json")
     path = "/Users/taigaabe/anaconda3/bin"
 elif get_dict_file() == "ci":
-    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis.json")
-    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/example_scriptdict_travis_env.json")
+    scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict_travis.json")
+    scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict_travis_env.json")
     path = "/home/runner/miniconda/bin"
 else:
     assert 0,"Home directory not recognized for running tests."
