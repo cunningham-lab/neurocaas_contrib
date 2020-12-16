@@ -14,5 +14,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
     ],
     python_requires='>=3.6.9',
+    include_package_data=True,
+    package_data={"":['docker_mats/*']}
 )
 
