@@ -7,7 +7,6 @@ filepath = os.path.realpath(__file__)
 testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
-assert 0 
 if get_dict_file() == "local":
     scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict.json")
     scriptdict_env = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict_env.json")
