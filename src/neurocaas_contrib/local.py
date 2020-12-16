@@ -1,5 +1,6 @@
 ## A module to work with AMIs for the purpose of debugging and updating.
 import boto3
+import pkg_resources
 import pdb
 import sys
 import time
