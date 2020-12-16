@@ -4,6 +4,7 @@ from testpaths import get_dict_file
 import os
 
 filepath = os.path.realpath(__file__)
+print(filepath,"filepath IS HERE")
 testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
