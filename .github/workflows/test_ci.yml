@@ -54,6 +54,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ./src
+
+      - name: Pull hello-world image
+        run: docker pull hello-world
+
       - name: Run tests
         run: |
           echo $HOME $GITHUB_WORKSPACE "locations."
