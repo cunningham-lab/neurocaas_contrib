@@ -29,11 +29,12 @@ if mode == "std":
     default_base_command = "/bin/bash"
     default_param_command = "/bin/bash -c {}"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
+
 elif mode == "test":
     default_tag = "latest"
     default_repo = "bash"
-    default_neurocaas_repo = "test_local_build"
-    default_neurocaas_repo_tag = "latest"
+    default_neurocaas_repo = "neurocaas/test"
+    default_neurocaas_repo_tag = "base"
     default_base_command = "ls"
     default_param_command = "/bin/sh -c {}"
     repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../","tests","test_mats"))
@@ -287,7 +288,7 @@ class NeuroCAASLocalEnv(object):
                 subpath = os.path.join(io_path,subdir)
                 os.mkdir(subpath)
         print(io_path)
-        self.volume = self.client.volumes.create(name = "test_local_env",driver = "local",driver_opts = {"type":None,"device":io_path,"o":"bind"})  
+        self.volume = self.client.volumes.create(name = "test_local_env_{}".format(os.path.basename(path)),driver = "local",driver_opts = {"type":None,"device":io_path,"o":"bind"})  
 
 ## 11/23/20
 class NeuroCAASAutoScript(object):
