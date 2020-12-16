@@ -5,6 +5,7 @@ import os
 
 filepath = os.path.realpath(__file__)
 print(filepath,"filepath IS HERE")
+assert 0 
 testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
