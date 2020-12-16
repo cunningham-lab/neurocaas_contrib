@@ -115,7 +115,7 @@ class Test_NeuroCAASImage(object):
         logpath = "./test_mats/test_analysis/"
         #testgen = (a for a in ["0".encode("utf-8"),"1".encode("utf-8"),"2".encode("utf-8"),"3".encode("utf-8"),"4".encode("utf-8")])
         nci = NeuroCAASImage()
-        ncle = NeuroCAASLocalEnv("./test_mats")
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"/test_mats"))
         container = client.containers.run(image = nci.image_tag,command = "ls",detach = True)
         datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
         certificate = NeuroCAASCertificate("s3://dummy_path")
@@ -123,7 +123,7 @@ class Test_NeuroCAASImage(object):
 
     def test_NeuroCAASImage_run_analysis(self):
         nci = NeuroCAASImage()
-        ncle = NeuroCAASLocalEnv("./test_mats")
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"/test_mats"))
         nci.run_analysis("ls",ncle)
 
 
@@ -134,7 +134,7 @@ class Test_NeuroCAASImage(object):
 
 class Test_NeuroCAASLocalEnv(object):
     def test_NeuroCAASLocalEnv(self):
-        ncle = NeuroCAASLocalEnv("./test_mats")
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"/test_mats"))
 
 class Test_NeuroCAASAutoScript(object):
     def test_NeuroCAASAutoScript(self):
