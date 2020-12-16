@@ -20,7 +20,6 @@ else:
 cfn_client = boto3.client("cloudformation")
 docker_client = docker.from_env()
 
-
 if mode == "std":
     default_tag = "latest"
     default_repo = "continuumio/anaconda3"
@@ -28,7 +27,8 @@ if mode == "std":
     default_neurocaas_repo_tag = "base"
     default_base_command = "/bin/bash"
     default_param_command = "/bin/bash -c {}"
-    repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
+    repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/prod_env/")
+    #repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
 
 elif mode == "test":
     default_tag = "latest"
@@ -37,7 +37,7 @@ elif mode == "test":
     default_neurocaas_repo_tag = "base"
     default_base_command = "ls"
     default_param_command = "/bin/sh -c {}"
-    repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../","tests","test_mats"))
+    repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/test_env/")
 
 default_image = f"{default_neurocaas_repo}:{default_neurocaas_repo_tag}"
 default_root_image = f"{default_repo}:{default_tag}"
@@ -51,6 +51,7 @@ class NeuroCAASImage(object):
         """Initialize the NeuroCAASImage object.
         
         :param image_tag: (optional) The image tag identifying the image we want to load. Should be given in the form repository:tag. If not given, will default to using/building the default neurocaas image. 
+        :param container_name: (optional) the default name to give to containers built from this image and the associated object. 
         """
         self.client = docker_client   
         self.container_name = container_name # check this is all lowercase.
