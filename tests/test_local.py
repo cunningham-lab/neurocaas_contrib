@@ -5,10 +5,10 @@ import os
 
 filepath = os.path.realpath(__file__)
 print(filepath,"filepath IS HERE")
-print(os.listdir("./"))
+print(os.listdir(filepath))
 testpath = os.path.dirname(filepath)
+print(os.listdir(os.path.join(testpath,"test_mats")))
 rootpath = os.path.dirname(testpath)
-print(testpath)
 
 assert 0 
 if get_dict_file() == "local":
