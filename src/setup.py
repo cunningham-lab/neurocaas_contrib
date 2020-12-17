@@ -15,6 +15,6 @@ setuptools.setup(
     ],
     python_requires='>=3.6.9',
     include_package_data=True,
-    package_data={"":['*Dockerfile'],"":["*.json","*.txt"]}
+    package_data={"":["*Dockerfile","*.json","*.txt"]}
 )
 
