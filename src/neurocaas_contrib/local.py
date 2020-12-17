@@ -39,7 +39,7 @@ elif mode == "test":
     default_base_command = "ls"
     default_param_command = "/bin/sh -c {}"
     repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/test_env/")
-    print(repo_path)
+    print(os.listdir(pkg_resources.resource_filename("neurocaas_contrib","docker_mats/")))
     print(os.listdir(repo_path),"listdir")
     assert 0
 
