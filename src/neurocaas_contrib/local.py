@@ -39,6 +39,9 @@ elif mode == "test":
     default_base_command = "ls"
     default_param_command = "/bin/sh -c {}"
     repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/test_env/")
+    print(repo_path)
+    print(os.listdir(repo_path),"listdir")
+    assert 0
 
 default_image = f"{default_neurocaas_repo}:{default_neurocaas_repo_tag}"
 default_root_image = f"{default_repo}:{default_tag}"
