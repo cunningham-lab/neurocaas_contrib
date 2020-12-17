@@ -29,7 +29,6 @@ if mode == "std":
     default_base_command = "/bin/bash"
     default_param_command = "/bin/bash -c {}"
     repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/prod_env/")
-    #repo_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../../"))
 
 elif mode == "test":
     default_tag = "latest"
@@ -39,9 +38,6 @@ elif mode == "test":
     default_base_command = "ls"
     default_param_command = "/bin/sh -c {}"
     repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/test_env/")
-    print(os.listdir(pkg_resources.resource_filename("neurocaas_contrib","docker_mats/")))
-    print(os.listdir(repo_path),"listdir")
-    assert 0
 
 default_image = f"{default_neurocaas_repo}:{default_neurocaas_repo_tag}"
 default_root_image = f"{default_repo}:{default_tag}"
