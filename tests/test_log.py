@@ -5,10 +5,12 @@ import docker
 from unittest.mock import patch
 import os
 import pytest
+import pkg_resources
 import neurocaas_contrib.log as log
 
 loc = os.path.realpath(__file__)
-root = os.path.realpath(os.path.join(os.path.dirname(loc),"../"))
+testdir = os.path.dirname(loc)
+root = os.path.realpath(os.path.join(testdir,"../"))
 source = os.path.join(root,"src","neurocaas_contrib")
 
 
@@ -75,12 +77,14 @@ def empty_and_delete_bucket(bucket_name):
 certbucket = "caiman-ncap-web"
 certkey = "reviewers/results/job__caiman-ncap-web_1589650394/logs/certificate.txt"
 certpath = os.path.join("s3://",certbucket,certkey)
-localcertpath = "../src/neurocaas_contrib/template_mats/certificate.txt"
+#localcertpath = "../src/neurocaas_contrib/template_mats/certificate.txt"
+localcertpath = pkg_resources.resource_filename("neurocaas_contrib","template_mats/certificate.txt")
 
 statusbucket = "caiman-ncap-web"
 statuskey = "reviewers/results/job__caiman-ncap-web_1589650394/logs/DATASET_NAME-dataset.ext_STATUS.txt.json"
 statuspath = os.path.join("s3://",statusbucket,statuskey)
-localstatuspath = "../src/neurocaas_contrib/template_mats/DATASET_NAME-dataset.ext_STATUS.txt.json"
+#localstatuspath = "../src/neurocaas_contrib/template_mats/DATASET_NAME-dataset.ext_STATUS.txt.json"
+localstatuspath = pkg_resources.resource_filename("neurocaas_contrib","template_mats/DATASET_NAME-dataset.ext_STATUS.txt.json")
 
 class Test_NeuroCAASCertificate(object):
     def test_NeuroCAASCertificate(self):
@@ -262,7 +266,7 @@ class Test_WriteObj():
         s3_localclient = self.session_ls.client("s3")
         s3_localclient.create_bucket(Bucket=self.bucket_name)
     def test_WriteObj_local(self):
-        localpath = "./test_mats/object.txt"
+        localpath = os.path.join(testdir,"test_mats/object.txt") 
         init_dict = {"loc":"local","localpath":localpath}
         wo = log.WriteObj(init_dict)
     def test_WriteObj_s3(self):
@@ -270,7 +274,7 @@ class Test_WriteObj():
         init_dict = {"loc":"s3","bucket":self.bucket_name,"key":key}
         wo = log.WriteObj(init_dict)
     def test_WriteObj_put_local(self):
-        localpath = "./test_mats/object.txt"
+        localpath = os.path.join(testdir,"test_mats/object.txt") 
         init_dict = {"loc":"local","localpath":localpath}
         wo = log.WriteObj(init_dict)
         wo.put("text")
@@ -281,7 +285,7 @@ class Test_WriteObj():
         wo.put("text")
     def test_WriteObj_put_consistent(self):
         key = "object.txt"
-        localpath = "./test_mats/object.txt"
+        localpath = os.path.join(testdir,"test_mats/object.txt") 
         init_dict1 = {"loc":"s3","bucket":self.bucket_name,"key":key}
         init_dict2 = {"loc":"local","localpath":localpath}
         wo1 = log.WriteObj(init_dict1)
@@ -295,7 +299,7 @@ class Test_WriteObj():
         assert local == remote == text
     def test_WriteObj_put_json_local(self):    
         key = "object.txt"
-        localpath = "./test_mats/testjson.json"
+        localpath = os.path.join(testdir,"test_mats/object.txt") 
         init_dict = {"loc":"local","localpath":localpath}
         wo = log.WriteObj(init_dict)
         data_dict = {"a":"aa","b":"bb"}
