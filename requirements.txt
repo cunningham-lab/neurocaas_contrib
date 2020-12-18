@@ -1,5 +1,5 @@
 boto3==1.14.34
 docker==4.2.2
-localstack==0.11.3.3
-localstack-client==0.24
+localstack==0.12.3
+localstack-client==1.10
 pytest
