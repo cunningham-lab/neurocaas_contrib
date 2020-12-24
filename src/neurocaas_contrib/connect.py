@@ -1,4 +1,5 @@
 ## Module to manage connections with remote. 
+import errno
 import paramiko
 
 class SSH(object):
@@ -78,3 +79,24 @@ class FTPConnection(SSH):
         :param remotepath: location we want to write to remotely. 
         """
         self.ftp_client.put(localpath,remotepath)
+
+    def exists(self,filepath):
+        """Like the os.path.exists command through paramiko's SFTP client. See https://stackoverflow.com/questions/850749/check-whether-a-path-exists-on-a-remote-host-using-paramiko
+
+        """
+        try:
+            self.ftp_client.stat(filepath)
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                return False
+            raise
+        else:
+            return True
+        
+    def mkdir(self,dirpath):    
+        """Directly maps to paramiko.sftp_client.SFPTClient.mkdir()
+        :param path: requested path (must be absolute)
+
+        """
+        self.ftp_client.mkdir(dirpath)
+            

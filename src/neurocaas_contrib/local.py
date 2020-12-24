@@ -12,14 +12,23 @@ import json
 import pathlib
 import docker
 from .log import NeuroCAASCertificate,NeuroCAASDataStatus
+from .connect import SSHConnection,FTPConnection
 
 if "pytest" in sys.modules:
     mode = "test"
 else:
     mode = "std"
+    
+subdirs = ["configs","inputs","logs","results"]
 
 cfn_client = boto3.client("cloudformation")
+
 docker_client = docker.from_env()
+if docker_client.api.base_url == "http://localhost:2375":
+    docker_host = "remote"
+    ## Open connection to remote via paramiko:
+else: 
+    docker_host = "local"
 
 if mode == "std":
     default_tag = "latest"
@@ -207,11 +216,11 @@ class NeuroCAASImage(object):
         except docker.errors.APIError:
             print(f"Unable to commit container. You can try manually from the command line by calling `docker commit [container name] {default_neurocaas_repo}:{tag}`")
 
-    def run_analysis(self,command,local_env,image_tag=None):
+    def run_analysis(self,command,env,image_tag=None):
         """Full-fledged test an analysis image. Expect outputs in the local environment after the analysis run, along with logs that the use would see.
 
         :param command: (str) a string representing the command you would like to be executed by the bash shell inside the container. Will be passed to /bin/bash inside the container as `docker exec [container_name] /bin/bash -c '[command]'. We recommend passing this string with single quotes on the outside, and double quotes for shell arguments: ex. `NeuroCAASImage.test_container(command = \'run.sh \"parameter1\"\'`
-        :param local_env: (NeuroCAASLocalEnv) a NeuroCAASLocalEnv instance. The outputs of analysis commands will be written to this local environment for easy inspection. 
+        :param env: (NeuroCAASEnv) a NeuroCAASLocalEnv or NeuroCAASRemoteEnv instance. The outputs of analysis commands and results will be written to the directory referenced in this environment for easy inspection. 
         :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
         """
         if image_tag is not None:
@@ -219,35 +228,37 @@ class NeuroCAASImage(object):
         ## Now generate a timestamp for this job: 
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         job_id = f"job__{timestamp}"
-        logjobpath = os.path.join(local_env.io_path,"logs",job_id)
-        os.mkdir(logjobpath)
 
         container = self.client.containers.run(image = self.image_tag,
                 command = default_param_command.format(command),
                 detach = True,
-                volumes = {local_env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
+                volumes = {env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
         ## Initialize certificate and datastatus objects here. 
+        ## TODO implement real s3 connection. 
         datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
         certificate = NeuroCAASCertificate("s3://dummy_path")
-        ## TODO implement fast regular logging. 
         output_gen = container.logs(stream = True,timestamps = True)
-        logpath = os.path.join(local_env.io_path,"logs",job_id)
-        try:
-            os.mkdir(logpath)
-        except FileExistsError:    
-            print("dir exists, moving forwards.")
-        self.write_logs(logpath,datastatus,certificate)
+        self.track_job(env,datastatus,certificate,job_id)
 
-    def write_logs(self,logpath,datastatus,certificate,loginterval = 1,timeout=None):
+    def track_job(self,env,datastatus,certificate,job_id,loginterval = 1,timeout=None):
         """Function to write with the given logging objects to a local file. Logging will be terminated when the container enters any of the following states:
             exited (recorded in "status" field of datastatus as success or failed)
             dead
             paused
 
-        :param logpath: Path to a directory where we should write logs. 
+        :param env: (NeuroCAASEnv) a NeuroCAASLocalEnv or NeuroCAASRemoteEnv instance. The outputs of analysis commands and results will be written to the directory referenced in this environment for easy inspection. 
         :param datastatus: NeuroCAASDataStatus object to use to log data status. 
         :param certificate: NeuroCAASCertificate object to use to log high level data. 
+        :param job_id: A job id string that uniquely identifies the job being run. Assumed to take the form of a timestamp. 
+        :param loginterval: Integer giving the amount of time in seconds to wait between writing logs. 
+        :param timeout: The total time to wait before giving up on tracking the job. NotImplementedYet
         """
+        logjobpath = os.path.join(env.io_path,"logs",job_id)
+        try:
+            os.mkdir(logjobpath)
+        except FileExistsError:    
+            print("dir exists, moving forwards.")
+
         end_states = ["exited","dead","paused"]
         rawstatus = "initializing"
         dataname = os.path.basename(datastatus.rawfile["input"])
@@ -264,15 +275,13 @@ class NeuroCAASImage(object):
                 "r" : "N/A",
                 "u" : "N/A",
             }
-            datastatus.write_local(os.path.join(logpath,"DATASET_NAME-{}_STATUS.json".format(dataname)))
+            datastatus.write_local(os.path.join(logjobpath,"DATASET_NAME-{}_STATUS.json".format(dataname)))
             certificate.update_instance_info(updatedict)
-            certificate.write_local(os.path.join(logpath,"certificate.txt"))
+            certificate.write_local(os.path.join(logjobpath,"certificate.txt"))
+            env.update_results(datastatus.container) ## TODO if this is local env, does nothing. if remote env,use docker container diff to look for updates to io dir. if they exist, write them back to the local volume and scp them back.  
+        ## TODO add final loop on exit:
 
-## 12/5/20
-class NeuroCAASLocalEnv(object):
-    """A class to explicitly manage the local environment around a docker container. A key feature to running local tests. Will create/locate a local directory named "io-dir" at the specified location, with appropriately named subdirectories, and designate it as a docker volume ready to be mounted on testing runs. Volume setup from :https://stackoverflow.com/questions/39496564/docker-volume-custom-mount-point 
-
-    """
+class NeuroCAASEnv(object):
     def __init__(self,path):
         """
 
@@ -280,16 +289,121 @@ class NeuroCAASLocalEnv(object):
         """
         ## Look for the path to the input output directory we would create:
         self.client = docker_client
+        self.basename = os.path.basename(path)
         io_path = os.path.realpath(os.path.join(path,"io-dir"))
         self.io_path = io_path
-        exists = os.path.isdir(io_path)
+        self.config_io_path()
+        self.volume = self.create_volume()
+
+    def config_io_path(self):
+        """Checks for and creates directories for a local docker volume.
+
+        :param io_path: path to directory where we expect an io directory to be set up: configs, inputs, logs and results folders.
+        """
+        exists = os.path.isdir(self.io_path)
         if not exists:
-            os.mkdir(io_path)
-            for subdir in ["configs","inputs","logs","results"]:
-                subpath = os.path.join(io_path,subdir)
+            os.mkdir(self.io_path)
+            for subdir in subdirs:
+                subpath = os.path.join(self.io_path,subdir)
                 os.mkdir(subpath)
-        print(io_path)
-        self.volume = self.client.volumes.create(name = "test_local_env_{}".format(os.path.basename(path)),driver = "local",driver_opts = {"type":None,"device":io_path,"o":"bind"})  
+        else:
+            for subdir in subdirs:
+                assert os.path.isdir(os.path.join(self.io_path,subdir)), "structure of local io directory must conform to expected."
+
+    def create_volume(self):
+        raise NotImplementedError
+
+class NeuroCAASRemoteEnv(NeuroCAASEnv):
+    """Class to explicitly manage an environment around a docker container hosted on a remote instance, and to further sync that with the local environment indicated. One thing I dislike is that in the current implementation, the local directory is a docker volume if we use LocalEnv, but it's just a directory if we use RemoteEnv. 
+    :param path: Local path where we will create a directory called io-dir
+    :param remote_path: Remote location (must be absolute path) where we will create a docker volume to coordinate with docker container
+    :param remote_host: The ip address of the remote host
+    :param remote_username: The username to use on the remote machine.
+    :param key_path: path to the ssh key we will use to connect with the remote host. 
+
+    """
+    def __init__(self,path,remote_path,remote_host,remote_username,key_path):
+        self.path = path
+        self.remote_path = remote_path
+        self.remote_host = remote_host
+        self.remote_username = remote_username
+        self.key_path = key_path
+        self.ssh_connection,self.ftp_connection = self.setup_client()
+        ## Set up a docker volume on the remote instance
+        self.remote_basename = os.path.basename(remote_path)
+        self.remote_io_path = os.path.join(remote_path,"io-dir") ##TODO: check if realpath. 
+        ## Set up a directory locally as with a local env, and create a volume on the remote. 
+        super().__init__(path)
+        ## Finally, copy over files from local io_dir to remote io_dir
+        self.sync_put()
+
+    def setup_client(self):
+        """Sets up a paramiko client for duration of this object's life. Separates out ssh and ftp connection context managers. 
+
+        """
+        ssh_connection = SSHConnection(self.remote_host,self.remote_username,self.key_path)
+        ftp_connection = FTPConnection(self.remote_host,self.remote_username,self.key_path)
+        return ssh_connection,ftp_connection
+
+    def config_io_path(self):
+        """Configure the local path using the path and io_path variables as in the abstract class. However
+
+        """
+        super().config_io_path()
+        with self.ftp_connection:
+            exists = self.ftp_connection.exists(self.remote_io_path)
+            if not exists:
+                self.ftp_connection.mkdir(self.remote_io_path)
+                for subdir in subdirs:
+                    subpath = os.path.join(self.remote_io_path,subdir)
+                    self.ftp_connection.mkdir(subpath)
+                    ##TODO  Have an additional condition here to check if the directories we need are present even if we're not making the top level io-dir. 
+            else:
+                for subdir in subdirs:
+                    subpath = os.path.join(self.remote_io_path,subdir)
+                    assert self.ftp_connection.exists(subpath),"structure of remote io directory must conform to expected."
+
+
+
+    def create_volume(self):
+        """Creates a volume at the location specified by path on the remote machine. 
+
+        """
+        volume = self.client.volumes.create(name = "test_remote_env_{}".format(self.remote_basename),
+                driver = "local",
+                driver_opts = {"type":None,"device":self.remote_io_path,"o":"bind"})  
+        return volume
+
+    def sync_put(self):
+        """Looks at all files in the local io-dir's inputs and configs, and puts them in the remote io-dir
+
+        """
+        pass
+        
+
+    def update_results(self,container):
+        pass
+
+
+## 12/5/20
+class NeuroCAASLocalEnv(NeuroCAASEnv):
+    """A class to explicitly manage the local environment around a docker container. A key feature to running local tests. Will create/locate a local directory named "io-dir" at the specified location, with appropriately named subdirectories, and designate it as a docker volume ready to be mounted on testing runs. Volume setup from :https://stackoverflow.com/questions/39496564/docker-volume-custom-mount-point 
+
+    """
+
+    def update_results(self,container):
+        pass
+
+
+    def create_volume(self):
+        """Creates a volume at the location specified by path on the local machine. 
+
+        """
+        volume = self.client.volumes.create(name = "test_local_env_{}".format(self.basename),
+                driver = "local",
+                driver_opts = {"type":None,"device":self.io_path,"o":"bind"})  
+        return volume
+
 
 ## 11/23/20
 class NeuroCAASAutoScript(object):
