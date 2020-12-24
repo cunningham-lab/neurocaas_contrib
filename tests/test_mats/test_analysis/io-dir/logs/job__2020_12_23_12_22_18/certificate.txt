@@ -1,6 +1,6 @@
 PER ENVIRONMENT MONITORING:
 ================
-DATANAME: dataset.ext | STATUS: success | TIME: 2020_12_23_11_01_09 | LAST COMMAND: N/A | CPU_USAGE: N/A
+DATANAME: dataset.ext | STATUS: success | TIME: 2020_12_23_12_22_22 | LAST COMMAND: N/A | CPU_USAGE: N/A
 ================
 Once jobs start, these logs will be updated regularly. Allow some time [~1 minute] after all jobs finish for results to appear.
 For more information, see DATASET_NAME: files for stdout and stderr output.

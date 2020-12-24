@@ -1,6 +1,7 @@
 import pytest 
+import datetime
 import pdb
-from neurocaas_contrib.local import NeuroCAASAutoScript,NeuroCAASImage,NeuroCAASLocalEnv
+from neurocaas_contrib.local import NeuroCAASAutoScript,NeuroCAASImage,NeuroCAASLocalEnv,NeuroCAASRemoteEnv
 from neurocaas_contrib.log import NeuroCAASDataStatus,NeuroCAASCertificate
 from testpaths import get_dict_file 
 import docker
@@ -11,6 +12,7 @@ testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
 
 certpath = "s3://caiman-ncap-web/reviewers/results/job__caiman-ncap-web_1589650394/logs/certificate.txt"
+## Check if we're running on a local machine or on a ci server. 
 
 if get_dict_file() == "local":
     scriptdict = os.path.join(rootpath,"src/neurocaas_contrib/template_mats/example_scriptdict.json")
@@ -25,6 +27,16 @@ else:
     
 client = docker.from_env()
 
+## Check if we're running compute locally or on a docker remote host.  
+
+if client.api.base_url == "http://localhost:2375":
+    dockerhost = "remote"
+else: 
+    dockerhost = "local"
+
+
+#@pytest.fixture(scope="class")
+#def testinstance()
 
 template = os.path.join(rootpath,"src/neurocaas_contrib/template_script.sh")
 
@@ -88,13 +100,14 @@ class Test_NeuroCAASImage(object):
         """
         nci = NeuroCAASImage()
         containername = "test_container"
-        nci.setup_container(container_name=containername)
-        nci.test_container(command='ls')
+        container = client.containers.run("neurocaas/contrib:base",command="/bin/bash",name=containername,detach=True,tty = True,stdin_open=True)
+        nci.test_container(command='ls',container_name = containername)
         try:
             container = nci.client.containers.get(containername)
             container.remove(force=True)
         except:    
             pass
+
     def test_NeuroCAASImage_test_container_stopped(self):
         """This test can be a lot more sensitive and specific. This is just a basic test that the program finishes. 
 
@@ -111,21 +124,49 @@ class Test_NeuroCAASImage(object):
         except:    
             pass
 
-    def test_NeuroCAASImage_write_logs(self): 
-        logpath = os.path.join(testpath,"test_mats/test_analysis/")
-        #testgen = (a for a in ["0".encode("utf-8"),"1".encode("utf-8"),"2".encode("utf-8"),"3".encode("utf-8"),"4".encode("utf-8")])
+    def test_NeuroCAASImage_track_job_local(self): 
+        if dockerhost is "remote":
+            pytest.skip("can't run this test on remote host.")
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        job_id = f"job__{timestamp}"
+
         nci = NeuroCAASImage()
-        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats"))
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats/test_analysis"))
         container = client.containers.run(image = nci.image_tag,command = "ls",detach = True)
         datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
         certificate = NeuroCAASCertificate("s3://dummy_path")
-        nci.write_logs(logpath,datastatus,certificate)
+        nci.track_job(ncle,datastatus,certificate,job_id)
 
-    def test_NeuroCAASImage_run_analysis(self):
+    def test_NeuroCAASImage_track_job_remote(self): 
+        if dockerhost is "local":
+            pytest.skip("can't run this test on local host.")
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        job_id = f"job__{timestamp}"
+
+        nci = NeuroCAASImage()
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats/test_analysis"))
+        container = client.containers.run(image = nci.image_tag,command = "ls",detach = True)
+        datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
+        certificate = NeuroCAASCertificate("s3://dummy_path")
+        nci.track_job(ncle,datastatus,certificate,job_id)
+
+    def test_NeuroCAASImage_run_analysis_local_host(self):
+        if dockerhost is "remote": 
+            pytest.skip("can't run this test on remote host.")
         nci = NeuroCAASImage()
         ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats"))
         nci.run_analysis("ls",ncle)
 
+    def test_NeuroCAASImage_run_analysis_remote_host(self):
+        remote_path = "/home/ubuntu/test_mats"
+        remote_host = "54.226.47.20"
+        remote_username = "ubuntu"
+        keypath = "/Users/taigaabe/.ssh/id_rsa_remote_docker"
+        if dockerhost is "local": 
+            pytest.skip("can't run this test on local host.")
+        nci = NeuroCAASImage()
+        ncre = NeuroCAASRemoteEnv(os.path.join(testpath,"test_mats"),remote_path,remote_host,remote_username,keypath)
+        nci.run_analysis("ls",ncre)
 
     def setup_method(self,test_method):
         pass
@@ -135,6 +176,20 @@ class Test_NeuroCAASImage(object):
 class Test_NeuroCAASLocalEnv(object):
     def test_NeuroCAASLocalEnv(self):
         ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats"))
+
+    def test_NeuroCAASLocalEnv_create_volume(self):
+        pass
+
+    def test_NeuroCAASLocalEnv_config_io_path(self):
+        pass
+
+class Test_NeuroCAASRemoteEnv(object):
+    def test_NeuroCAASRemoteEnv(self):
+        remote_path = "/home/ubuntu/test_mats"
+        remote_host = "54.226.47.20"
+        remote_username = "ubuntu"
+        keypath = "/Users/taigaabe/.ssh/id_rsa_remote_docker"
+        ncre = NeuroCAASRemoteEnv(os.path.join(testpath,"test_mats"),remote_path,remote_host,remote_username,keypath)
 
 class Test_NeuroCAASAutoScript(object):
     def test_NeuroCAASAutoScript(self):
