@@ -308,7 +308,11 @@ class NeuroCAASEnv(object):
                 os.mkdir(subpath)
         else:
             for subdir in subdirs:
-                assert os.path.isdir(os.path.join(self.io_path,subdir)), "structure of local io directory must conform to expected."
+                subdir_path = os.path.join(self.io_path,subdir)
+                subdir_exists = os.path.isdir(subdir_path)
+                if not subdir_exists:
+                    print("Structure of local io directory must conform to expected. Creating required subdirectory {}.".format(subdir))
+                    os.mkdir(subdir_path)
 
     def create_volume(self):
         raise NotImplementedError
