@@ -1,10 +1,14 @@
 import pytest
 import os
+from testpaths import get_dict_file 
 from neurocaas_contrib.connect import SSHConnection,FTPConnection
 
 ## This test suite depends entirely upon a particular ec2 instance. Not clear the best way to improve this beyond mocking everything :( 
 loc = os.path.realpath(__file__)
 testdir = os.path.dirname(loc)
+
+if get_dict_file() == "ci":
+    pytest.skip("skipping tests that rely upon an aws instance to host.", allow_module_level=True)
 
 class Test_SSHConnection():
     def test_SSHConnection(self):
