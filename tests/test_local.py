@@ -189,6 +189,8 @@ class Test_NeuroCAASRemoteEnv(object):
         remote_host = "54.226.47.20"
         remote_username = "ubuntu"
         keypath = "/Users/taigaabe/.ssh/id_rsa_remote_docker"
+        if dockerhost is "local": 
+            pytest.skip("can't run this test on local host.")
         ncre = NeuroCAASRemoteEnv(os.path.join(testpath,"test_mats"),remote_path,remote_host,remote_username,keypath)
 
 class Test_NeuroCAASAutoScript(object):
