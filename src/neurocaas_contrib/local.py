@@ -229,6 +229,8 @@ class NeuroCAASImage(object):
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         job_id = f"job__{timestamp}"
 
+        env.sync_put() ## Sync again in case there wer any changes: 
+
         container = self.client.containers.run(image = self.image_tag,
                 command = default_param_command.format(command),
                 detach = True,
@@ -278,8 +280,23 @@ class NeuroCAASImage(object):
             datastatus.write_local(os.path.join(logjobpath,"DATASET_NAME-{}_STATUS.json".format(dataname)))
             certificate.update_instance_info(updatedict)
             certificate.write_local(os.path.join(logjobpath,"certificate.txt"))
-            env.update_results(datastatus.container) ## TODO if this is local env, does nothing. if remote env,use docker container diff to look for updates to io dir. if they exist, write them back to the local volume and scp them back.  
-        ## TODO add final loop on exit:
+        ## TODO we can definitely make this more elegant...
+        datastatus.container.reload()
+        rawstatus = datastatus.container.status
+        time.sleep(loginterval)
+        datastatus.update_file()
+        status = datastatus.rawfile["status"]
+        updatedict = {
+            "t" : datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
+            "n" : dataname,
+            "s" : status,
+            "r" : "N/A",
+            "u" : "N/A",
+        }
+        datastatus.write_local(os.path.join(logjobpath,"DATASET_NAME-{}_STATUS.json".format(dataname)))
+        certificate.update_instance_info(updatedict)
+        certificate.write_local(os.path.join(logjobpath,"certificate.txt"))
+        env.sync_get()
 
 class NeuroCAASEnv(object):
     def __init__(self,path):
@@ -365,9 +382,10 @@ class NeuroCAASRemoteEnv(NeuroCAASEnv):
             else:
                 for subdir in subdirs:
                     subpath = os.path.join(self.remote_io_path,subdir)
-                    assert self.ftp_connection.exists(subpath),"structure of remote io directory must conform to expected."
-
-
+                    subdir_exists = self.ftp_connection.exists(subpath),"structure of remote io directory must conform to expected."
+                    if not subdir_exists:
+                        print("Structure of remote io directory must conform to expected. Creating required subdirectory {}.".format(subdir))
+                        self.ftp_connection.mkdir(subpath)
 
     def create_volume(self):
         """Creates a volume at the location specified by path on the remote machine. 
@@ -382,12 +400,23 @@ class NeuroCAASRemoteEnv(NeuroCAASEnv):
         """Looks at all files in the local io-dir's inputs and configs, and puts them in the remote io-dir
 
         """
-        pass
+        subdirs_put = ["inputs","configs"]
+        for sp in subdirs_put:
+            local_writepath = os.path.join(self.io_path,sp)
+            remote_writepath = os.path.join(self.remote_io_path,sp)
+            with self.ftp_connection:
+                self.ftp_connection.r_put(local_writepath,remote_writepath)
         
+    def sync_get(self):    
+        """Looks at all files in the remote io-dir's results, and moves them back to local io-dir.
 
-    def update_results(self,container):
-        pass
-
+        """
+        subdirs_get = ["results"]
+        for sp in subdirs_get:
+            remote_getpath = os.path.join(self.remote_io_path,sp)
+            local_getpath = os.path.join(self.io_path,sp)
+            with self.ftp_connection:
+                self.ftp_connection.r_get(remote_getpath,local_getpath)
 
 ## 12/5/20
 class NeuroCAASLocalEnv(NeuroCAASEnv):
@@ -407,6 +436,12 @@ class NeuroCAASLocalEnv(NeuroCAASEnv):
                 driver = "local",
                 driver_opts = {"type":None,"device":self.io_path,"o":"bind"})  
         return volume
+
+    def sync_put(self):
+        pass
+
+    def sync_get(self):
+        pass
 
 
 ## 11/23/20
