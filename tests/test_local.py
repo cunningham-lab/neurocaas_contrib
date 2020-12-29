@@ -7,6 +7,8 @@ from testpaths import get_dict_file
 import docker
 import os
 
+connection_ip = "54.157.238.198"
+
 filepath = os.path.realpath(__file__)
 testpath = os.path.dirname(filepath)
 rootpath = os.path.dirname(testpath)
@@ -159,7 +161,7 @@ class Test_NeuroCAASImage(object):
 
     def test_NeuroCAASImage_run_analysis_remote_host(self):
         remote_path = "/home/ubuntu/test_mats"
-        remote_host = "54.226.47.20"
+        remote_host = connection_ip
         remote_username = "ubuntu"
         keypath = "/Users/taigaabe/.ssh/id_rsa_remote_docker"
         if dockerhost is "local": 
@@ -186,7 +188,7 @@ class Test_NeuroCAASLocalEnv(object):
 class Test_NeuroCAASRemoteEnv(object):
     def test_NeuroCAASRemoteEnv(self):
         remote_path = "/home/ubuntu/test_mats"
-        remote_host = "54.226.47.20"
+        remote_host = connection_ip
         remote_username = "ubuntu"
         keypath = "/Users/taigaabe/.ssh/id_rsa_remote_docker"
         if dockerhost is "local": 
