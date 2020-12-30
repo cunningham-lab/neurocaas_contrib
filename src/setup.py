@@ -10,6 +10,14 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/cunningham-lab/neurocaas_contrib",
     packages=setuptools.find_packages(),
+    install_requires=[
+        "Click",
+    ],
+    entry_points={
+        "console_scripts":[
+            "neurocaas_contrib = neurocaas_contrib.main:main",
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
