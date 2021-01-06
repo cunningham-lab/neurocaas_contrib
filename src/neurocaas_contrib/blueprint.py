@@ -23,3 +23,9 @@ class Blueprint(object):
         """
         with open(self.config_filepath,"r") as f:
             self.blueprint_dict = config
+    def write(self):
+        """Write back to the original source file:
+
+        """
+        with open(self.config_filepath,"w") as f:
+            json.dump(self.blueprint_dict,f,indent = 4)
