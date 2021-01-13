@@ -76,7 +76,7 @@ class Test_NeuroCAASImage(object):
         assert nci.container_history[container1.id] == container1
     def test_NeuroCAASImage_assign_default_container_noexists(self):
         nci = NeuroCAASImage()
-        with pytest.raises(docker.errors.NotFound):
+        with pytest.raises(Exception):
             nci.assign_default_container("trash")
     def test_NeuroCAASImage_find_image(self):
         nci = NeuroCAASImage()
@@ -96,6 +96,17 @@ class Test_NeuroCAASImage(object):
             container.remove(force=True)
         except:    
             pass
+
+    def test_NeuroCAASImage_setup_container_env(self):
+        ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats"))
+        nci = NeuroCAASImage()
+        nci.setup_container(env = ncle)
+        try:
+            container = nci.client.containers.get("neurocaasdevcontainer")
+            container.remove(force=True)
+        except:    
+            pass
+
     def test_NeuroCAASImage_test_container(self):
         """This test can be a lot more sensitive and specific. This is just a basic test that the program finishes. 
 

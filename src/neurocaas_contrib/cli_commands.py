@@ -1,15 +1,17 @@
 ## Mimicking cli structure given in remote-docker-aws repository. 
+import subprocess
 import sys
 import shutil
 import click 
 import json
 import os
 from .blueprint import Blueprint
-from .local import NeuroCAASImage
+from .local import NeuroCAASImage,NeuroCAASLocalEnv
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 template_dir= os.path.join(dir_loc,"local_envs","templatestack") 
+default_write_loc = os.path.join(dir_loc,"local_envs")
 
 if "pytest" in sys.modules:
     mode = "test"
@@ -67,8 +69,8 @@ def cli(ctx,location,analysis_name):
 @cli.command()
 @click.option(
     "--location",
-    help="Root location for neurocaas local environment build.", 
-    default=os.path.join(dir_loc,"local_envs")
+    help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
+    default=default_write_loc
         )
 @click.option(
     "--analysis-name",
@@ -77,7 +79,9 @@ def cli(ctx,location,analysis_name):
         )
 @click.pass_obj
 def init(blueprint,location,analysis_name):
-    """Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the cli, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
+    """Configure CLI to work with certain analysis.
+
+    Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
     ## First set the analysis name in the config file:
     analysis_settings = {"analysis_name":analysis_name,
@@ -120,6 +124,9 @@ def init(blueprint,location,analysis_name):
 @cli.command(help = "print the current blueprint.")
 @click.pass_obj
 def get_blueprint(blueprint):
+    """Prints the blueprint that CLI is currently configured to work with. Given in JSON format.  
+
+    """
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     click.echo(string)
 
@@ -131,17 +138,25 @@ def get_blueprint(blueprint):
         "--container",
         help = "name to give to containers",
         default="neurocaasdevcontainer")
-@cli.command(help = "setup a containerized environment to start developing.")
+@cli.command(help = "set up an environment to develop in.")
 @click.pass_obj
 def setup_development_container(blueprint,image,container):
     """Launches a container from an image of your choice so that you can perform configuration."""
     ## See if the blueprint has the fields you want:
     if image is None:
-        image = blueprint["blueprint"].blueprint_dict.get("active_image",None)
+        image = blueprint["blueprint"].active_image
+    
+    envloc = blueprint["blueprint"].blueprint_dict.get("localenv",None)
+    containerparams = {}
+    if envloc is not None:
+        ncle = NeuroCAASLocalEnv(envloc) 
+        containerparams["env"] = ncle
     active_image = NeuroCAASImage(image,container)
-    active_image.setup_container()
-    blueprint["blueprint"].blueprint_dict["active_container"] = active_image.container_name
-    blueprint["blueprint"].blueprint_dict["active_image"] = active_image.image_tag 
+    active_image.setup_container(**containerparams)
+    blueprint["blueprint"].update_image_history(active_image.image_tag)
+    blueprint["blueprint"].update_container_history(active_image.container_name)
+    #blueprint["blueprint"].blueprint_dict["active_container"] = active_image.container_name
+    #blueprint["blueprint"].blueprint_dict["active_image"] = active_image.image_tag 
     blueprint["blueprint"].write()
 
 ### TODO delete image. 
@@ -162,19 +177,94 @@ def setup_development_container(blueprint,image,container):
 @click.pass_obj
 def save_developed_image(blueprint,tagid,force,container):
     """Saves a container into a new image, and saves that image as the new default for this analysis. """
+    image = NeuroCAASImage(None,None) 
+    if container is None:
+        container = blueprint["blueprint"].active_container
+    if container is None:    
+        raise click.ClickException("No valid container can be found. Please provide one explicitly with --container")
     try:
-        container_name = blueprint["blueprint"].blueprint_dict.get("active_container",None)
-        image = NeuroCAASImage(None,None) 
-        image.assign_default_container(container_name)
-    except KeyError:
-        click.echo("Image not found. Run `setup_image` first.")
+        image.assign_default_container(container)
+    except Exception: 
+        click.echo("Image not found. Run `setup-development-container` first.")
         raise
     tag = "{}.{}".format(blueprint["analysis_name"],tagid)
     saved = image.save_container_to_image(tag,force)
     if saved:
-        blueprint["blueprint"].blueprint_dict["active_image"] = "{}:{}".format(image.repo_name,tag) 
+        #blueprint["blueprint"].blueprint_dict["active_image"] = "{}:{}".format(image.repo_name,tag) 
+        blueprint["blueprint"].update_image_history("{}:{}".format(image.repo_name,tag))
         blueprint["blueprint"].write()
-        image.current_container.stop()
+        #image.current_container.stop()
+
+@cli.command(help ="list all analyses.")
+@click.option(
+    "--location",
+    help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
+    default=default_write_loc,
+    type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True)
+        )
+def describe_analyses(location):
+    """List all of the analyses available to develop on. Takes a location parameter: by default will be the packaged local_envs location. 
+
+    """
+    all_contents = os.listdir(location) 
+    dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
+    analyses = "\n".join(dirs)
+    analyses_formatted = "\nNeuroCAAS Analyses Available for Development: \n\n"+analyses
+    click.echo(analyses_formatted)
+
+@cli.command(help="enter the container to start development.")
+@click.option("-c",
+        "--container",
+        help = "name of the container to enter.",
+        default = None
+        )
+@click.pass_obj
+def enter_container(blueprint,container):
+    """Runs docker exec -it {containername} /bin/bash, connecting the terminal to your container. 
+
+    """
+    if container is None:
+        container = blueprint["blueprint"].blueprint_dict.get("active_container",None)
+    if container is None:    
+        raise click.ClickException("Can't find container to enter.")
+    else:
+        subprocess.run(["docker","exec","-it",container,"/bin/bash"])
+
+@cli.command(help = "prepare sample input data.")
+@click.option("-d",
+        "--data",
+        help = "path to test dataset.",
+        prompt = True,
+        type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
+        multiple = True)
+@click.option("-c",
+        "--config",
+        help = "path to test config file.",
+        prompt = True,
+        type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
+        multiple = True)
+@click.pass_obj
+def setup_inputs(blueprint,data,config):
+    """Takes in the sample data you'd like to use, sets up a local environment, and deposits data and config there.   
+
+    """
+    ## Initialize the local environment:
+    analysis_location = os.path.join(blueprint["location"],blueprint["analysis_name"])
+    ncle = NeuroCAASLocalEnv(analysis_location) 
+    ## Now deposit all data into the inputs directory:
+    for dat in data:
+        datname = os.path.basename(dat)
+        shutil.copyfile(dat,os.path.join(analysis_location,"io-dir","inputs",datname))
+
+    ## Deposit all configs into the config directory:
+    for conf in config:
+        confname = os.path.basename(conf)
+        shutil.copyfile(conf,os.path.join(analysis_location,"io-dir","configs",confname))
+    blueprint["blueprint"].blueprint_dict["localenv"] = analysis_location 
+    blueprint["blueprint"].write()
+    
+    
+#def wipe_containers
 
 
 

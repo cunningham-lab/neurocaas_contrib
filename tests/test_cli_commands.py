@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 import traceback
 import docker
 from click.testing import CliRunner
@@ -91,8 +92,8 @@ def test_cli_setup_development_container(remove_container):
         result = eprint(runner.invoke(cli,["setup-development-container"]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    assert blueprint["active_container"] == containername
-    assert blueprint["active_image"] == imagename 
+    assert blueprint["container_history"][-1] == containername
+    assert blueprint["image_history"][-1] == imagename 
 
 def test_cli_setup_development_container_named(remove_named_container):
     runner = CliRunner()
@@ -105,28 +106,81 @@ def test_cli_setup_development_container_named(remove_named_container):
         result = eprint(runner.invoke(cli,["setup-development-container","--image",imagename,"--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    assert blueprint["active_container"] == namedcontainername
-    assert blueprint["active_image"] == imagename 
+    assert blueprint["container_history"][-1] == namedcontainername
+    assert blueprint["image_history"][-1] == imagename 
 
 def test_cli_save_developed_image(remove_named_container):
     runner = CliRunner()
     name = "savedevelopedimage"
-    imagename = "neurocaas/test"
+    imagerepo = "neurocaas/test"
     testid = "test01"
 
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagename,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagerepo,"--container",namedcontainername]))
         result = eprint(runner.invoke(cli,["save-developed-image","--tagid",testid,"--force","--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    imagetag = "neurocaas/test:{}.{}".format(name,testid)
+    imagetag = "{}:{}.{}".format(imagerepo,name,testid)
     try:
         docker_client.images.get(imagetag)
         docker_client.images.remove(imagetag)
     except docker.errors.ImageNotFound:
         assert 0
-    assert blueprint["active_container"] == namedcontainername
-    assert blueprint["active_image"] == imagetag 
+    assert blueprint["container_history"][-1] == namedcontainername
+    assert blueprint["image_history"][-1] == imagetag
 
+def test_cli_describe_analyses():
+    runner = CliRunner()
+    name = "describeanalysis"
+    name2= "describeanalysis2"
+    
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name2,"Y")))
+        result = eprint(runner.invoke(cli,["describe-analyses","--location","./"]))
+    assert name in result.output   
+    assert name2 in result.output   
+
+def test_cli_setup_inputs():    
+    runner = CliRunner()
+    name = "setupinputs"
+    datapath = "./data.txt"
+    datapath2 = "./data2.txt"
+    confpath = "./config.json"
+
+    with runner.isolated_filesystem():
+        Path(datapath).touch()
+        Path(datapath2).touch()
+        Path(confpath).touch()
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        result = eprint(runner.invoke(cli,["setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
+        assert os.path.exists(os.path.join("setupinputs","io-dir","inputs","data.txt"))
+        assert os.path.exists(os.path.join("setupinputs","io-dir","inputs","data2.txt"))
+        assert os.path.exists(os.path.join("setupinputs","io-dir","configs","config.json"))
+        with open("./"+name+"/stack_config_template.json") as f: 
+            blueprint = json.load(f)
+    assert blueprint["localenv"] == "./setupinputs"      
+
+@pytest.mark.xfail ## issue with docker volumes in the runner isolated filesystem
+def test_cli_setup_development_container_env(remove_named_container):
+    runner = CliRunner()
+    name = "setupimage_env"
+    imagename = "neurocaas/test:base"
+    datapath = "./data.txt"
+    datapath2 = "./data2.txt"
+    confpath = "./config.json"
+
+    with runner.isolated_filesystem():
+        Path(datapath).touch()
+        Path(datapath2).touch()
+        Path(confpath).touch()
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        result = eprint(runner.invoke(cli,["setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
+        assert os.path.exists("./"+name+"/stack_config_template.json") == True
+        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagename,"--container",namedcontainername]))
+        with open("./"+name+"/stack_config_template.json") as f: 
+            blueprint = json.load(f)
+    assert blueprint["container_history"][-1] == namedcontainername
+    assert blueprint["image_history"][-1] == imagename 
