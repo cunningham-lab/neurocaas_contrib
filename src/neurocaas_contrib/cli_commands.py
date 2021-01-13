@@ -44,7 +44,9 @@ def cli(ctx,location,analysis_name):
     """ Base command to interact with the neurocaas_contrib repo from the command line. Can be given location and analysis name parameters to run certain actions in a one-off manner, but preferred workflow is assigning these with the `configure` subcommand. Assigns parameters (analysis metadata, blueprint, active image) to be referenced in other subparameters.  
 
     """
-    if ctx.invoked_subcommand == 'init':
+    ## Determine those commands for which you don't require a specific blueprint.
+    no_blueprint = ['init','describe-analyses']
+    if ctx.invoked_subcommand in no_blueprint:
         return ## move on and run configure. 
     else:
         if location is None or analysis_name is None:
@@ -83,25 +85,11 @@ def init(blueprint,location,analysis_name):
 
     Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
-    ## First set the analysis name in the config file:
-    analysis_settings = {"analysis_name":analysis_name,
-                         "location":location
-                        }
-    ## Get dictionary:
-    try:
-        with open(configpath,"r") as f:
-            config = json.load(f)
-        config["analysis_name"] = analysis_name
-        config["location"] = location
-    except FileNotFoundError:    
-        click.echo("NeuroCAAS Contrib config file not found. Writing now.")
-        config = analysis_settings 
-    with open(configpath,"w") as f: 
-        json.dump(config,f,indent = 4)
 
-    #if analysis_name is None:
-    #    analysis_name = blueprint["analysis_name"]
     analysis_location = os.path.join(location,analysis_name)
+    ## Initialize state variables to determine whether or not we should write to the config file. 
+    create = False
+    initialize = False
 
     if not os.path.exists(analysis_location):
         create = click.confirm("The analysis named {} does not exist at {}. Initialize?".format(analysis_name,location),default = False)
@@ -120,6 +108,28 @@ def init(blueprint,location,analysis_name):
             shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
         else:    
             print("Not creating analysis folder at this location.")
+    else:        
+        create = True
+        initialize = True
+
+    ## Only if you created or initialized an analysis folder should the config file be written to.
+    if create or initialize:
+        ## First set the analysis name in the config file:
+        analysis_settings = {"analysis_name":analysis_name,
+                             "location":location
+                            }
+        ## Get dictionary:
+        try:
+            with open(configpath,"r") as f:
+                config = json.load(f)
+            config["analysis_name"] = analysis_name
+            config["location"] = location
+        except FileNotFoundError:
+            click.echo("NeuroCAAS Contrib config file not found. Writing now.")
+            config = analysis_settings
+        with open(configpath,"w") as f:
+            json.dump(config,f,indent = 4)
+
 
 @cli.command(help = "print the current blueprint.")
 @click.pass_obj
@@ -208,8 +218,17 @@ def describe_analyses(location):
     """
     all_contents = os.listdir(location) 
     dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
-    analyses = "\n".join(dirs)
-    analyses_formatted = "\nNeuroCAAS Analyses Available for Development: \n\n"+analyses
+    ## Add a star for the current one. 
+    try:
+        with open(configpath,"r") as f:
+            config = json.load(f)
+        currentanalysis = config["analysis_name"]    
+    except FileNotFoundError:        
+        currentanalysis = None
+    dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
+
+    analyses = "\n".join(dirs_searched)
+    analyses_formatted = "\nNeuroCAAS Analyses Available for Development: \n\n"+analyses + "\n"
     click.echo(analyses_formatted)
 
 @cli.command(help="enter the container to start development.")
@@ -224,7 +243,7 @@ def enter_container(blueprint,container):
 
     """
     if container is None:
-        container = blueprint["blueprint"].blueprint_dict.get("active_container",None)
+        container = blueprint["blueprint"].active_container
     if container is None:    
         raise click.ClickException("Can't find container to enter.")
     else:
@@ -234,13 +253,11 @@ def enter_container(blueprint,container):
 @click.option("-d",
         "--data",
         help = "path to test dataset.",
-        prompt = True,
         type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
         multiple = True)
 @click.option("-c",
         "--config",
         help = "path to test config file.",
-        prompt = True,
         type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
         multiple = True)
 @click.pass_obj

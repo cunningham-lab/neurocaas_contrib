@@ -179,7 +179,7 @@ class NeuroCAASImage(object):
             #container = self.client.containers.run(self.image_tag,default_base_command,name = container_name ,stdin_open = True,tty = True,detach = True)
             container = self.client.containers.run(self.image_tag,default_base_command,**run_kwargs)
 
-            print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `neurcaas_contrib enter-container` \n\n from the command line.")
+            print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `neurocaas_contrib enter-container` \n\n from the command line.")
             ## Set 
             self.assign_default_container(container_name)
         except docker.errors.APIError:    

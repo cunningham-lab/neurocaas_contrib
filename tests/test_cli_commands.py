@@ -142,6 +142,7 @@ def test_cli_describe_analyses():
         result = eprint(runner.invoke(cli,["describe-analyses","--location","./"]))
     assert name in result.output   
     assert name2 in result.output   
+    assert name2+"*" in result.output
 
 def test_cli_setup_inputs():    
     runner = CliRunner()
