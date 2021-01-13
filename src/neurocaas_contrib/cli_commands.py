@@ -175,8 +175,11 @@ def get_iae_info(blueprint):
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     active_container = blueprint["blueprint"].active_container
     active_image = blueprint["blueprint"].active_image
-    previous_container = blueprint["blueprint"].blueprint_dict.get("container_history",[None,None])[-2]
-    previous_image = blueprint["blueprint"].blueprint_dict.get("image_history",[None,None])[-2]
+
+    container_history = [None,None] + blueprint["blueprint"].blueprint_dict.get("container_history",[None,None])
+    image_history = [None,None] + blueprint["blueprint"].blueprint_dict.get("image_history",[None,None])   
+    previous_container = container_history[-2]
+    previous_image = image_history[-2]
     if active_container is None and active_image is None:
         click.echo("No info available.")
     else:    
