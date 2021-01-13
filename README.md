@@ -40,8 +40,11 @@ First, we will set up a docker container where you can install your own analysis
 
 #### Working with the API (python console)
 If you are working with the API, first start up a python interpreter inside your local environment, on your local machine (tested on ipython 7.7.0): 
+
 `% ipython`
+
 Now, import the neurocaas\_contrib.local module to start local development:
+
 `>>> import neurocaas_contrib.local as local`
 
 Instantiate a NeuroCAASImage object. This will create an object that manages the environment in which you install and setup your software.  
@@ -69,7 +72,70 @@ Once you have installed your analysis software, you can save the container where
 Where tag is a unique identifier of your analysis name and its current state (example "pcadev.[datetime]") 
 
 
-#### Working with the CLI (todo)
+#### Working with the CLI 
+If you are working with the CLI, first check that the cli is correctly set up. You can run 
 
+`neurocaas_contrib --help` 
+
+And you should see a help page detailing the different functionality available:     
+
+![docs/images/help.png](docs/images/help.png)
+
+With a working CLI, you must first record the algorithm you are working on by running:  
+
+`neurocaas_contrib init` 
+
+This command writes a config file at `~/.neurocaas_contrib_config.json`, and keeps track of your configuration parameters over the course of the session. You will be prompted to give the name of the analysis that you want to work on: 
+
+![docs/images/init.png](docs/images/init.png)
+
+If it does not exist, you will be prompted to create a new one. 
+
+![docs/images/init_write.png](docs/images/init_write.png)
+
+If you want to work on a different analysis, you can run the same command again.  
+
+You can check that initialization was successful by running:
+
+`neurocaas_contrib describe-analyses`
+
+You will see a list of all the analyses available for development, as well as a star next to the one currently being worked on: 
+
+![docs/images/describe-analyses.png](docs/images/describe-analyses.png)
+
+Once you have initialized your CLI, to work with a particular analysis, you want to start the process of setting up your software in a development container to create an immutable analysis environment (IAE). Your development container is an isolated environment with limited access to the file system available on you computer, so you will need to take several steps through the CLI to make the relevant data and software available. 
+To make your sample data and configuration parameters available through the CLI, run the following command:   
+
+`neurocaas_contrib setup-inputs -d path/to/sample/data.txt -c path/to/sample/configuration/params.json`
+
+By running this command, you will copy sample data and config files into a location initialized by running `neurocaas_contrib init`. You can pass multiple instances of either the -d or -c flags if you would like to set up multiple inputs or config files at a time. You can also omit either entry. You can skip this step, but you will not be able to access any other data files in your IAE if you do so.    
+Next, you will want to start installing and setting up your software into your IAE. This is done interactively from inside the IAE.  Run the following: 
+
+`neurocaas_contrib setup-development-container`
+
+You will then recieve a prompt that tells you how to enter your development container:
+
+![docs/images/setup-development-container.png](docs/images/setup-development-container.png)
+
+Running the given command will drop you directly into the container from the command line, where you can install the relevant software and perform setup. You should see something like this:  
+
+![docs/images/enter-container.png](docs/images/enter-container.png)
+
+Note that the user name should change to neurocaasdev@container code, and you will be in the base environment again. Once you are done installing and setting up your analysis, you can close the window by entering `exit` or `ctrl-D`.   
+
+You can then save your progress by running:
+
+`neurocaas_contrib save-developed-image`
+
+You will be prompted to enter a unique tag id to distinguish the work you did in the container (we recommend the short version of your current github commit id + the date, or something unique like that). You will be told if the image was saved successfully. You can also save containers other than the one most recently started using the `setup-development-container ` command by passing the --container option.
+If you want to keep tweaking your container, run the entry command again:
+
+`neurocaas_contrib enter-container`
+
+Otherwise, if you want to delete you development container and start from the new image, run the setup command:  
+
+`neurocaas_contrib setup-development-container`
+
+The CLI records your most recently saved image, and will start a new container from it automatically. To start a container from a different image, you can pass the relevant docker image tag with the `--image` parameter.  
 
 

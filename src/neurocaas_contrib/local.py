@@ -64,6 +64,7 @@ class NeuroCAASImage(object):
         """
         self.client = docker_client   
         self.container_name = container_name # check this is all lowercase.
+        self.repo_name = default_neurocaas_repo
         if image_tag is None:
             self.image = self.get_default_image()
             self.image_tag = default_image   
@@ -99,7 +100,10 @@ class NeuroCAASImage(object):
         """
         ## First log the current container in history, if it exists
         self.container_name = container_name
-        self.current_container = self.client.containers.get(container_name)
+        try:
+            self.current_container = self.client.containers.get(container_name)
+        except docker.errors.NotFound:
+            raise Exception(f"Container {container_name} does not exist.")
         self.container_history[self.current_container.id] = self.current_container
 
     def find_image(self,image_tag):
@@ -148,24 +152,39 @@ class NeuroCAASImage(object):
                 print(f"unhandled exception: {e}")
         return image 
 
-    def setup_container(self,image_tag = None,container_name = None):
+    def setup_container(self,image_tag = None,container_name = None,env = None):
         """Probably the most important method in this class. Runs a container off of the image that you created, or another image of your choice. If you include a new image tag, all subsequent commands (until you run this command again) will refer to the corresponding image.  
         :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
         :param container_name: (optional) If given, will launch a container with that name attached. Note this must be lowercase. If not given, will launch with the default name at self.container_name.
+        :param env: (optional, NeuroCAASEnv) a NeuroCAASLocalEnv or NeuroCAASRemoteEnv instance. Files included here will be included in the environment on startup. Furhtermore, the outputs of analysis commands and results will be written to the directory referenced in this environment for easy inspection. 
         """
         if container_name is None:
             ## Check that it's all lowercase
             container_name = self.container_name
+        run_kwargs = {
+                "name" : container_name,
+                "stdin_open" : True,
+                "tty": True,
+                "detach": True
+                }
         if image_tag is not None:
             ## Will return assertion error if image is not found.
             self.find_image(image_tag)
             self.image = self.client.images.get(image_tag)
             self.image_tag = image_tag
-        container = self.client.containers.run(self.image_tag,default_base_command,name = container_name ,stdin_open = True,tty = True,detach = True)
+        if env is not None:    
+            env.sync_put() ## Sync in case there were any changes at remote: 
+            run_kwargs["volumes"]= {env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}}
+        try:    
+            #container = self.client.containers.run(self.image_tag,default_base_command,name = container_name ,stdin_open = True,tty = True,detach = True)
+            container = self.client.containers.run(self.image_tag,default_base_command,**run_kwargs)
 
-        print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `docker exec -it {container_name} /bin/bash` \n\n from the command line. The container can now be accessed at attribute current_container.")
-        ## Set 
-        self.assign_default_container(container_name)
+            print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `neurocaas_contrib enter-container` \n\n from the command line.")
+            ## Set 
+            self.assign_default_container(container_name)
+        except docker.errors.APIError:    
+            raise Exception(f"Error launching. Check full stack trace above.")
+
 
     def test_container(self,command,container_name = None):
         """Test the container with a command. If no container name is given, the container with name at self.container_name will be used. This command will print the output of the given command to the command line. If you want to examine the outputs of the command, do so by coordinating with the localenv object using method [TODO].
@@ -179,6 +198,7 @@ class NeuroCAASImage(object):
         else:
             self.assign_default_container(container_name)
         container = self.client.containers.get(container_name)
+
         try:
             output = container.exec_run(f"/bin/bash -c '{command}'",detach = False,stream=True)
         except docker.errors.APIError:
@@ -204,7 +224,8 @@ class NeuroCAASImage(object):
             try:
                 self.find_image(image_tag)
                 print("An image with name {image_tag} already exists. To overwrite it, call this method with parameter force = True")
-                return
+                successcode = False
+                return successcode
             except AssertionError: 
                 print("This tag is available, proceeding with commit.")
         else:
@@ -213,8 +234,11 @@ class NeuroCAASImage(object):
         try:
             container.commit(repository=default_neurocaas_repo,tag=tag)
             print(f"Success! Container saved as image {image_tag}")
+            successcode = True
         except docker.errors.APIError:
             print(f"Unable to commit container. You can try manually from the command line by calling `docker commit [container name] {default_neurocaas_repo}:{tag}`")
+            successcode = False
+        return successcode    
 
     def run_analysis(self,command,env,image_tag=None):
         """Full-fledged test an analysis image. Expect outputs in the local environment after the analysis run, along with logs that the use would see.
@@ -229,7 +253,7 @@ class NeuroCAASImage(object):
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         job_id = f"job__{timestamp}"
 
-        env.sync_put() ## Sync again in case there wer any changes: 
+        env.sync_put() ## Sync again in case there were any changes: 
 
         container = self.client.containers.run(image = self.image_tag,
                 command = default_param_command.format(command),
