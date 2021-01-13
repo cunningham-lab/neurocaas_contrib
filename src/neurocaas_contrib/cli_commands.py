@@ -10,7 +10,7 @@ from .local import NeuroCAASImage,NeuroCAASLocalEnv
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
-template_dir= os.path.join(dir_loc,"local_envs","templatestack") 
+template_dir= os.path.join(dir_loc,"template_mats") 
 default_write_loc = os.path.join(dir_loc,"local_envs")
 
 if "pytest" in sys.modules:
