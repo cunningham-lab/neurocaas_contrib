@@ -81,6 +81,19 @@ def test_cli_get_blueprint():
     for key in outdict.keys():
         assert key in keys
 
+@pytest.mark.parametrize("initialized,info",[(False,["No info available."]),(True,["neurocaasdevcontainer","neurocaas/test:base"])])
+def test_cli_get_iae_info(remove_container,initialized,info):
+    runner = CliRunner()
+    name = "getiaeinfo"
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        if initialized is True:
+            result = eprint(runner.invoke(cli,["setup-development-container"]))
+        result = eprint(runner.invoke(cli,["get-iae-info"]))
+        outinfo = result.output
+        for inf in info:
+            assert inf in outinfo
+
 def test_cli_setup_development_container(remove_container):
     runner = CliRunner()
     name = "setupimage"
@@ -163,6 +176,24 @@ def test_cli_setup_inputs():
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
     assert blueprint["localenv"] == "./setupinputs"      
+
+def test_container_singleton(remove_named_container):
+    runner = CliRunner()
+    name = "resetcontainer"
+
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
+        with pytest.raises(Exception):
+            result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
+
+def test_reset_container(remove_named_container):            
+    runner = CliRunner()
+    name = "resetcontainer"
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        result = eprint(runner.invoke(cli,["reset-container","--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
 
 @pytest.mark.xfail ## issue with docker volumes in the runner isolated filesystem
 def test_cli_setup_development_container_env(remove_named_container):

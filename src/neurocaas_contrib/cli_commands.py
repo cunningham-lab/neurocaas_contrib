@@ -131,6 +131,32 @@ def init(blueprint,location,analysis_name):
             json.dump(config,f,indent = 4)
 
 
+@cli.command(help ="list all analyses.")
+@click.option(
+    "--location",
+    help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
+    default=default_write_loc,
+    type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True)
+        )
+def describe_analyses(location):
+    """List all of the analyses available to develop on. Takes a location parameter: by default will be the packaged local_envs location. 
+
+    """
+    all_contents = os.listdir(location) 
+    dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
+    ## Add a star for the current one. 
+    try:
+        with open(configpath,"r") as f:
+            config = json.load(f)
+        currentanalysis = config["analysis_name"]    
+    except FileNotFoundError:        
+        currentanalysis = None
+    dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
+
+    analyses = "\n".join(dirs_searched)
+    analyses_formatted = "\nNeuroCAAS Analyses Available for Development: \n\n"+analyses + "\n"
+    click.echo(analyses_formatted)
+
 @cli.command(help = "print the current blueprint.")
 @click.pass_obj
 def get_blueprint(blueprint):
@@ -139,6 +165,22 @@ def get_blueprint(blueprint):
     """
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     click.echo(string)
+
+@cli.command(help = "print information about the IAE.")
+@click.pass_obj
+def get_iae_info(blueprint):
+    """Prints the blueprint that CLI is currently configured to work with. Given in JSON format.  
+
+    """
+    string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
+    active_container = blueprint["blueprint"].active_container
+    active_image = blueprint["blueprint"].active_image
+    previous_container = blueprint["blueprint"].blueprint_dict.get("container_history",[None,None])[-2]
+    previous_image = blueprint["blueprint"].blueprint_dict.get("image_history",[None,None])[-2]
+    if active_container is None and active_image is None:
+        click.echo("No info available.")
+    else:    
+        click.echo(f"\nCurrent IAE info: \n\nactive_container: {active_container}\nactive_image: {active_image}\nprevious_container: {previous_container}\nprevious_image: {previous_image}\n")
 
 @click.option("-i",
         "--image",
@@ -169,7 +211,27 @@ def setup_development_container(blueprint,image,container):
     #blueprint["blueprint"].blueprint_dict["active_image"] = active_image.image_tag 
     blueprint["blueprint"].write()
 
-### TODO delete image. 
+@cli.command(help = "removes the current active container")
+@click.option("-c",
+        "--container",
+        help = "name of container to remove",
+        default = None)
+@click.pass_obj
+def reset_container(blueprint,container):
+    """Removes the currently active container. Useful if you want to launch from a new image. You can also remove a separate named container. Be careful, as you can lose progress if you reset a container that has not been saved into an image with `neurocaas_contrib save-development-container`   
+
+    """
+    if container is None:
+        container = blueprint["blueprint"].active_container
+    if container is None:    
+        raise click.ClickException("Can't find container to reset.")
+    image = NeuroCAASImage(None,None) 
+    try:
+        image.assign_default_container(container)
+        image.current_container.remove(force = True)    
+        click.echo(f"Container {container} removed. Safe to start a new one.")
+    except Exception: 
+        click.echo("Container not found. Run `setup-development-container` first.")
 
 @cli.command(help = "save a container to a new image.")
 @click.option("-t",
@@ -195,7 +257,7 @@ def save_developed_image(blueprint,tagid,force,container):
     try:
         image.assign_default_container(container)
     except Exception: 
-        click.echo("Image not found. Run `setup-development-container` first.")
+        click.echo("Container not found. Run `setup-development-container` first.")
         raise
     tag = "{}.{}".format(blueprint["analysis_name"],tagid)
     saved = image.save_container_to_image(tag,force)
@@ -205,31 +267,6 @@ def save_developed_image(blueprint,tagid,force,container):
         blueprint["blueprint"].write()
         #image.current_container.stop()
 
-@cli.command(help ="list all analyses.")
-@click.option(
-    "--location",
-    help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc,
-    type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True)
-        )
-def describe_analyses(location):
-    """List all of the analyses available to develop on. Takes a location parameter: by default will be the packaged local_envs location. 
-
-    """
-    all_contents = os.listdir(location) 
-    dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
-    ## Add a star for the current one. 
-    try:
-        with open(configpath,"r") as f:
-            config = json.load(f)
-        currentanalysis = config["analysis_name"]    
-    except FileNotFoundError:        
-        currentanalysis = None
-    dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
-
-    analyses = "\n".join(dirs_searched)
-    analyses_formatted = "\nNeuroCAAS Analyses Available for Development: \n\n"+analyses + "\n"
-    click.echo(analyses_formatted)
 
 @cli.command(help="enter the container to start development.")
 @click.option("-c",
