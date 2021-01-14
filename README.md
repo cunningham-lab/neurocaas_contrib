@@ -22,7 +22,7 @@ Now create and configure a conda environment as follows:
 Remember to deactivate your conda environment when you are done (`conda deactivate neurocaas`). 
 You can check if the install has gone smoothly by running the command `neurocaas_contrib --help` from the command line. You should see documentation for options and commands that you can append to this base command. If you experience any problems, please submit a new issue [here](https://github.com/cunningham-lab/neurocaas_contrib/issues).
 
-## Setting up a development environment  
+## Developing an analysis.  
 Once you've successfully installed NeuroCAAS Contrib, it's time to start developing. This is the process of taking some analysis code that you have written to process certain kinds of datasets, and making it usable through the NeuroCAAS platform. This process has three steps: 
 
 - 1. Setting up an *immutable analysis environment*. First, we need to install and setup your analysis code in a portable environment that can be run on your local machine, or a virtual machine hosted on the cloud. We will do this by means of a pre-configured docker container. We call this an *immutable analysis environment* because no analysis user will be able to change it, other than by submitting data to be analyzed by means of scripts that you write.   
@@ -38,41 +38,7 @@ With your code and example dataset in hand, there are two ways to go through dev
 ### Setting up an immutable analysis environment
 First, we will set up a docker container where you can install your own analysis software, and save that to a new docker image (if these words don't mean much to you, don't worry). 
 
-#### Working with the API (python console)
-If you are working with the API, first start up a python interpreter inside your local environment, on your local machine (tested on ipython 7.7.0): 
-
-`% ipython`
-
-Now, import the neurocaas\_contrib.local module to start local development:
-
-`>>> import neurocaas_contrib.local as local`
-
-Instantiate a NeuroCAASImage object. This will create an object that manages the environment in which you install and setup your software.  
-`>>> devimage = local.NeuroCAASImage()`
-
-Now you can create an isolated local environment where you should install your software by running:
-
-`>>> devimage.setup_container()`
-
-This will print a message that you can connect to a container, neurocaasdevcontainer, and give you commands to run so that you can connect to it. Go ahead and run that command from the command line in a separate window. (Do not close the ipython console if you can):   
-
-`docker exec -it neurocaasdevcontainer /bin/bash`
-
-You will now be moved to a containerized environment where you can install your software (you will see a different username). Note that in this environment, we have already installed neurocaas\_contrib, as well as an additional directory called io-dir. We will cover the function of this directory next. Go ahead and install and setup your analysis software in this container. 
-
-If you have previously launched a container through the API, you may run into an error message (409 Client Error: Conflict). In this case run the following from the command line to delete your previously created container: 
-
-```bash
-% docker container rm -f neurocaasdevcontainer`
-```
-
-Once you have installed your analysis software, you can save the container where you have installed your software to a new image by calling the following method in the console:  
-`>>> devimage.save_container_to_image(tag)`
-
-Where tag is a unique identifier of your analysis name and its current state (example "pcadev.[datetime]") 
-
-
-#### Working with the CLI 
+#### Installation  
 If you are working with the CLI, first check that the cli is correctly set up. You can run 
 
 `neurocaas_contrib --help` 
@@ -113,7 +79,15 @@ Next, you will want to start installing and setting up your software into your I
 
 `neurocaas_contrib setup-development-container`
 
-You will then recieve a prompt that tells you how to enter your development container:
+Note that you might get an error message if you were previously using the cli:
+
+![docs/images/setup-development-container-error.png](docs/images/setup-development-container-error.png)
+
+You can fix this by resetting the container: 
+
+`neurocaas_contrib reset-container`
+
+Once you have successfully run the setup step, you will then recieve a prompt that tells you how to enter your development container:
 
 ![docs/images/setup-development-container.png](docs/images/setup-development-container.png)
 
@@ -121,21 +95,51 @@ Running the given command will drop you directly into the container from the com
 
 ![docs/images/enter-container.png](docs/images/enter-container.png)
 
-Note that the user name should change to neurocaasdev@container code, and you will be in the base environment again. Once you are done installing and setting up your analysis, you can close the window by entering `exit` or `ctrl-D`.   
+Note that the user name should change to neurocaasdev@containerid code, and that there is a directory called io-dir. This directory will become important in the next step. Once you are done installing and setting up your analysis, you can close the window by entering `exit` or `ctrl-D`.   
 
 You can then save your progress by running:
 
 `neurocaas_contrib save-developed-image`
 
-You will be prompted to enter a unique tag id to distinguish the work you did in the container (we recommend the short version of your current github commit id + the date, or something unique like that). You will be told if the image was saved successfully. You can also save containers other than the one most recently started using the `setup-development-container ` command by passing the --container option.
+You will be prompted to enter a unique tag id to distinguish the work you did in the container (we recommend the short version of your current github commit id + the date, or something unique like that). You will be told if the image was saved successfully. You can also save containers other than the one most recently started using the `setup-development-container ` command by passing the name of the container you want to save to the --container option (see help for more).
+
+You can check the current container and image you are using by running: 
+
+`neurocaas_contrib get-iae-info`
+
+You will then see information about the most recently saved image (which will also be the image that new containers are launched from) and the current running container, as well as the names of the previous containers and images. You should recognize the last part of the active_image name as the tag id that you enetered. 
+
+![docs/images/get-iae-info.png](docs/images/get-iae-info.png)
+
 If you want to keep tweaking your container, run the entry command again:
 
 `neurocaas_contrib enter-container`
 
-Otherwise, if you want to delete you development container and start from the new image, run the setup command:  
+Otherwise, if you want to delete you development container and start from the new image, first run `neurocaas_contrib reset-container`, and run the setup command:  
 
 `neurocaas_contrib setup-development-container`
 
-The CLI records your most recently saved image, and will start a new container from it automatically. To start a container from a different image, you can pass the relevant docker image tag with the `--image` parameter.  
+The CLI will start a new container from the current active_image shown by the `get-iae-info` command. To start a container from a different image, you can pass the relevant docker image tag with the `--image` parameter.  
+
+#### Writing a workflow script
+Once you are happy with your installation and setup, it's time to write a script that will be applied to user data. If you'd like to see an example, take a look at [this file](mock/run_mock.sh). You can do anything you would like in this script- run python scripts, change directories, make new files, but there are three rules you must follow: 
+
+- Your script must be an executable (run `chmod +x [script name]`) that can be run from the container's home directory. 
+- You must assume the script will take two inputs (accessible at $1 and $2), providing the location of the data and configuration parameters that user submit.  
+- As a final step you must copy all results you would like the user to see to the directory ~/io-dir/results. 
+
+Finally, there are a few tricks to be aware of, like making sure that conda environments activate correctly (use source, not conda). See [todo] for more. 
+
+Once you have determined the workflow script you would like, exit your container, and run the save script again. This time however, provide the path from the container's home directory to the script option: 
+
+`neurocaas_contrib save-developed-image --script "path/to/script/in/container.sh"`
+
+This will let the CLI know that the script located at this location is what we should run when users submit analysis requests. 
+
+You can then run test jobs from outside the container by calling:
+
+`neurocaas_contrib run-analysis -d "path/to/data" -c "path/to/config"`
+
+This will trigger the a new container to start up from your image, and run the command `bash -c 'path/to/script/in/container.sh' path/to/data path/to/config` inside the container. You will be able to see the results of this analysis in real time at the local environment using the command `see command`
 
 
