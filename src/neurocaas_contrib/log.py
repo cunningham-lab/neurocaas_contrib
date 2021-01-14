@@ -109,6 +109,7 @@ class NeuroCAASLogObject(object):
         :param write_localpath: the localpath that we will write to. This should be passed defaults from global variables declared in this module. 
 
         """
+        self.logtype = type(self).__name__
         self.validate_path(s3_path)
         writeobj_dict = {
                 "loc":None,
@@ -130,7 +131,9 @@ class NeuroCAASLogObject(object):
             self.writeobj = WriteObj(writeobj_dict)
         except:
             e = traceback.format_exc()
-            print("Error getting certificate, not formatted for per-job logging. Message: {}\nLoading default certificate from local instead. Updates will be logged to file {}".format(e,write_localpath))
+            #print("Error getting certificate, not formatted for per-job logging. Message: {}\nLoading default certificate from local instead. Updates will be logged to file {}".format(e,write_localpath))
+            print(f"Error getting {self.logtype} object, not connecting to remote. Loading default {self.logtype} template from local instead.") 
+            #print("Updates will be logged to file {}".format(write_localpath))
             rawfile = self.get_default_rawfile()
             self.rawfile = rawfile
             writeobj_dict["loc"] = "local"

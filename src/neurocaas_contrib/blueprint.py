@@ -1,4 +1,5 @@
 ## Module to manage blueprint creation and updating. 
+import docker
 from collections import deque
 import json
 
@@ -42,12 +43,27 @@ class Blueprint(object):
     
     @property
     def active_container(self):
+        """First check if container is running
+
+        """
         return self.blueprint_dict.get("container_history",[None])[-1]
 
+    @property
+    def active_container_status(self):
+        """First check if container is running
 
-    #@active_container.getter
-    #def active_container(self):    
-    #    self._active_container = self.blueprint_dict.get("container_history",[None])[-1]
+        """
+        containername = self.blueprint_dict.get("container_history",[None])[-1]
+        if containername is None:
+            return containername
+        try:
+            client = docker.from_env()
+            cont = client.containers.get(containername)
+            status = cont.status
+            containernamestatus = f"{containername} ({status})"
+        except docker.errors.NotFound:    
+            containernamestatus = containername 
+        return containernamestatus 
 
     def update_image_history(self,image_name):    
         """Updates the image history with a most recent entry. #TODO check that this image exists.

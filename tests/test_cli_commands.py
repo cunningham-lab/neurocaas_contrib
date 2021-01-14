@@ -81,8 +81,9 @@ def test_cli_get_blueprint():
     for key in outdict.keys():
         assert key in keys
 
-@pytest.mark.parametrize("initialized,info",[(False,["No info available."]),(True,["neurocaasdevcontainer","neurocaas/test:base"])])
+@pytest.mark.parametrize("initialized,info",[(False,["No info available."]),(True,["neurocaasdevcontainer (running)","neurocaas/test:base"])])
 def test_cli_get_iae_info(remove_container,initialized,info):
+    #TODO include way to test command. 
     runner = CliRunner()
     name = "getiaeinfo"
     with runner.isolated_filesystem():
@@ -135,6 +136,31 @@ def test_cli_save_developed_image(remove_named_container):
         result = eprint(runner.invoke(cli,["save-developed-image","--tagid",testid,"--force","--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
+    imagetag = "{}:{}.{}".format(imagerepo,name,testid)
+    try:
+        docker_client.images.get(imagetag)
+        docker_client.images.remove(imagetag)
+    except docker.errors.ImageNotFound:
+        assert 0
+    assert blueprint["container_history"][-1] == namedcontainername
+    assert blueprint["image_history"][-1] == imagetag
+
+def test_cli_save_developed_image_script(remove_named_container):
+    runner = CliRunner()
+    name = "savedevelopedimage"
+    imagerepo = "neurocaas/test"
+    testid = "test01"
+    script = "./run.sh"
+
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+        assert os.path.exists("./"+name+"/stack_config_template.json") == True
+        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagerepo,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["save-developed-image","--tagid",testid,"--force","--container",namedcontainername,"--script",script]))
+        with open("./"+name+"/stack_config_template.json") as f: 
+            blueprint = json.load(f)
+        result = eprint(runner.invoke(cli,["get-iae-info"]))    
+        assert script in result.output
     imagetag = "{}:{}.{}".format(imagerepo,name,testid)
     try:
         docker_client.images.get(imagetag)

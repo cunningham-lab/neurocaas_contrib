@@ -179,7 +179,7 @@ class NeuroCAASImage(object):
             #container = self.client.containers.run(self.image_tag,default_base_command,name = container_name ,stdin_open = True,tty = True,detach = True)
             container = self.client.containers.run(self.image_tag,default_base_command,**run_kwargs)
 
-            print(f"Container is running as {container_name}. You can connect to it by running: \n\n  `neurocaas_contrib enter-container` \n\n from the command line.")
+            print(f"Container is running as: {container_name}, based on image: {self.image_tag}. \nYou can connect to it by running: \n\n  `neurocaas_contrib enter-container` \n\n from the command line.")
             ## Set 
             self.assign_default_container(container_name)
         except docker.errors.APIError:    
@@ -212,10 +212,11 @@ class NeuroCAASImage(object):
         except StopIteration:
             print("[Test Execution Done]")
 
-    def save_container_to_image(self,tag,force = False):
+    def save_container_to_image(self,tag,force = False,script = None):
         """Once you have made appropriate changes and tested, you will want to save your running container to a new image. This image will be specified as a tag; i.e., your image's name will be neurocaas/contrib:[tag]. 
         :param tag: The tag that will be used to identify this image. We recommend providing your tag as the name of your analysis repo + a git commit, like neurocaas/contrib:mockanalysis.356d78a, where 356d78a is the output of running `git rev-parse --short HEAD` from your git repo. If you provide a tag that is already in use, you will have to provide a "force=True" argument.   
         :param force: (optional) Whether or not to overwrite an image with this name already. Default is force = False
+        :param script: (optional) Path to a script inside the container that should be run at startup. Will be assigned to the dockerfile command as follows: ["bash","-c","script","${data}","${config}"], where data and config will be determined at runtime.  
         """
         ## First create the requested tag:
         image_tag = f"{default_neurocaas_repo}:{tag}"
@@ -232,7 +233,14 @@ class NeuroCAASImage(object):
             pass
         container = self.current_container
         try:
-            container.commit(repository=default_neurocaas_repo,tag=tag)
+            commit_args = {"repository":default_neurocaas_repo,
+                    "tag":tag}
+            if script is not None:
+                command = 'CMD ["bash","-c","'+script+' ${data} ${config}"]'
+
+                commit_args["changes"] = command
+            #container.commit(repository=default_neurocaas_repo,tag=tag)
+            container.commit(**commit_args)
             print(f"Success! Container saved as image {image_tag}")
             successcode = True
         except docker.errors.APIError:
@@ -257,6 +265,33 @@ class NeuroCAASImage(object):
 
         container = self.client.containers.run(image = self.image_tag,
                 command = default_param_command.format(command),
+                detach = True,
+                volumes = {env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
+        ## Initialize certificate and datastatus objects here. 
+        ## TODO implement real s3 connection. 
+        datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
+        certificate = NeuroCAASCertificate("s3://dummy_path")
+        output_gen = container.logs(stream = True,timestamps = True)
+        self.track_job(env,datastatus,certificate,job_id)
+
+    def run_analysis_parametrized(self,data,config,env,image_tag=None):
+        """Full-fledged test an analysis image. Expect outputs in the local environment after the analysis run, along with logs that the use would see. Don't need to submit a command, as it's assumed that this is baked in as the CMD command. instead, pass the data and config you would like to use.  
+
+        :param data: (str) the name of the dataset to use for analysis. Assumed to live in ~/io-dir/inputs/
+        :param config: (str) the name of the config file to use for analysis. Assumed to live in ~/io-dir/configs/
+        :param env: (NeuroCAASEnv) a NeuroCAASLocalEnv or NeuroCAASRemoteEnv instance. The outputs of analysis commands and results will be written to the directory referenced in this environment for easy inspection. 
+        :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
+        """
+        if image_tag is not None:
+            self.assign_default_image(image_tag)
+        ## Now generate a timestamp for this job: 
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        job_id = f"job__{timestamp}"
+
+        env.sync_put() ## Sync again in case there were any changes: 
+
+        container = self.client.containers.run(image = self.image_tag,
+                environment = {"data":data,"config":config},
                 detach = True,
                 volumes = {env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
         ## Initialize certificate and datastatus objects here. 
@@ -415,9 +450,14 @@ class NeuroCAASRemoteEnv(NeuroCAASEnv):
         """Creates a volume at the location specified by path on the remote machine. 
 
         """
-        volume = self.client.volumes.create(name = "test_remote_env_{}".format(self.remote_basename),
-                driver = "local",
-                driver_opts = {"type":None,"device":self.remote_io_path,"o":"bind"})  
+        volname = "test_remote_env_{}".format(self.basename)
+        try:
+            volume = self.client.volumes.get(volname)
+        except docker.errors.NotFound:     
+            volume = self.client.volumes.create(name = volname,
+                    driver = "local",
+                    driver_opts = {"type":None,"device":self.io_path,"o":"bind"})  
+
         return volume
 
     def sync_put(self):
@@ -453,12 +493,16 @@ class NeuroCAASLocalEnv(NeuroCAASEnv):
 
 
     def create_volume(self):
-        """Creates a volume at the location specified by path on the local machine. 
+        """Creates a volume at the location specified by path on the local machine. If volume already exists, just gets it.  
 
         """
-        volume = self.client.volumes.create(name = "test_local_env_{}".format(self.basename),
-                driver = "local",
-                driver_opts = {"type":None,"device":self.io_path,"o":"bind"})  
+        volname = "test_local_env_{}".format(self.basename)
+        try:
+            volume = self.client.volumes.get(volname)
+        except docker.errors.NotFound:     
+            volume = self.client.volumes.create(name = volname,
+                    driver = "local",
+                    driver_opts = {"type":None,"device":self.io_path,"o":"bind"})  
         return volume
 
     def sync_put(self):
