@@ -22,12 +22,56 @@ Now create and configure a conda environment as follows:
 Remember to deactivate your conda environment when you are done (`conda deactivate neurocaas`). 
 You can check if the install has gone smoothly by running the command `neurocaas_contrib --help` from the command line. You should see documentation for options and commands that you can append to this base command. If you experience any problems, please submit a new issue [here](https://github.com/cunningham-lab/neurocaas_contrib/issues).
 
-## Developing an analysis.  
-Once you've successfully installed NeuroCAAS Contrib, it's time to start developing. This is the process of taking some analysis code that you have written to process certain kinds of datasets, and making it usable through the NeuroCAAS platform. This process has three steps: 
+## Developing an analysis for NeuroCAAS.  
+Once you've successfully installed NeuroCAAS Contrib, it's time to start developing. This is the process of taking some analysis code that you have written to process certain kinds of datasets, and making it usable through the NeuroCAAS platform.
+
+In this guide, we will describe a process to _incrementally 
+automate_ all of the steps a user would need to take to set up and use your analysis. 
+This process includes automated installation and build (which you may recognize from 
+Docker-like services), but also includes setup of hardware, scripting 
+of your analysis workflow, and data transfer between 
+the machine where the compute is happening and a requesting user.  
+
+At the core of the process is a *blueprint* that records the steps you would like to 
+automate, as you determine them in the course of the development process. 
+
+### End Goal
+The goal is to offer data analysis to users in such a way that they can analyze
+their data without ever having to purchase, configure, or host analyses on their
+own machines. This goal follows the "software as a service" model that has become popular in industry.
+
+In this figure, you can see the resources and workflow that you will be able to 
+support with your analysis at the end of the development process: 
+<img src="./docs/images/Fig2_backend_12_14.png" />
+
+Key Points:
+- For users, data analysis can be done entirely by interacting with data storage in AWS [S3 buckets](https://aws.amazon.com/s3/) (more on setting this up later). Data storage is already structured for them, according to individual analyses and user groups.  
+```bash
+    s3://{analysis_name}   ## This is the name of the S3 bucket
+    |- {group_name}        ## Each NeuroCAAS user is a member of a group (i.e. lab, research group, etc.) 
+       |- configs
+       |- inputs
+       |- submissions
+       |  |- {id}_submit.json 
+       |- results
+          |- job_{timestamp}
+             |- logs
+             |- process_results
+```
+
+ When users want to trigger a particular analysis run, they upload a file indicating the data and parameters they want to analyze to a special directory called `submissions` (see the figure for content of this file). This upload triggers the automatic VM setup process described above, and users simply wait for the results to appear in a separate, designated subdirectory (`results`). Although shown as file storage here, most users will use NeuroCAAS through a web client that automates the process of uploading submission files.
+This S3 bucket and the relevant directory structure will be generated once you deploy your analysis scripts (see section: Deploying your blueprint). 
+If you want to see how the user interacts with this file structure, sign up for an account on [neurocaas.org](neurocaas.org). 
+- Your analysis will be hosted on cloud based virtual machines (VMs). These machines are automatically set up with your analysis software pre-loaded on them, and run automatically when given a dataset to analyze. The main point of this guide is to figure out the set of steps that will make this happen for your particular analysis, and record them in a document called a _blueprint_. 
+- A single virtual machine is  *entirely dedicated* to running your analysis on a given dataset. Once it is done analyzing a dataset, it will terminate itself. This means there are no history effects between successive analysis runs: each analysis is governed only by the automatic setup procedure described in your blueprint.  
+
+### Outline
+
+This process has three steps: 
 
 - 1. Setting up an *immutable analysis environment*. First, we need to install and setup your analysis code in a portable environment that can be run on your local machine, or a virtual machine hosted on the cloud. We will do this by means of a pre-configured docker container. We call this an *immutable analysis environment* because no analysis user will be able to change it, other than by submitting data to be analyzed by means of scripts that you write.   
-- 2. Setting up job management. Next, we need to make sure that users will be able to analyze all the different data types that you intend to offer, and that they will be seeing the output and logging information you want to make available. We have streamlined a lot of job management to make this process easy for you.   
-- 3. Migrating to cloud resources. Finally, we want to make sure that the workflow you designed works on cloud resources (computing on cloud virtual machines, transferring data with cloud storage). This is where you might worry about configuring your analysis to work with a GPU, if that's necessary, or parallelizing across a multi-core machine.  
+- 2. Setting up job management. Next, we need to make sure that users will be able to analyze all the different data types that you intend to offer, and that they will be seeing the output and logging information you want to make available. We have streamlined a lot of job management to make this process easy for you. (NOTE: Still migrating from workflow v1)  
+- 3. Migrating to cloud resources. Finally, we want to make sure that the workflow you designed works on cloud resources (computing on cloud virtual machines, transferring data with cloud storage). This is where you might worry about configuring your analysis to work with a GPU, if that's necessary, or parallelizing across a multi-core machine. (NOTE: Still migrating from workflow v1)  
 
 Before you start, it will be useful to have the following on hand: 
 - 1. the code you need to run you analysis in some easy to install format (i.e. a Github repo)
@@ -140,6 +184,9 @@ You can then run test jobs from outside the container by calling:
 
 `neurocaas_contrib run-analysis -d "path/to/data" -c "path/to/config"`
 
-This will trigger the a new container to start up from your image, and run the command `bash -c 'path/to/script/in/container.sh' path/to/data path/to/config` inside the container. You will be able to see the results of this analysis in real time at the local environment using the command `see command`
+This will trigger the a new container to start up from your image, and run the command `bash -c 'path/to/script/in/container.sh' path/to/data path/to/config` inside the container. 
+<!---
+# You will be able to see the results of this analysis in real time at the local environment using the command `see command`.
+-->
 
 
