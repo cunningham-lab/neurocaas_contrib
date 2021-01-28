@@ -41,7 +41,7 @@ else:
     default=None)
 @click.pass_context
 def cli(ctx,location,analysis_name):
-    """ Base command to interact with the neurocaas_contrib repo from the command line. Can be given location and analysis name parameters to run certain actions in a one-off manner, but preferred workflow is assigning these with the `configure` subcommand. Assigns parameters (analysis metadata, blueprint, active image) to be referenced in other subparameters.  
+    """ Base command to interact with the neurocaas_contrib repo from the command line. Can be given location and analysis name parameters to run certain actions in a one-off manner, but preferred workflow is assigning these with the `init` subcommand. Assigns parameters (analysis metadata, blueprint, active image) to be referenced in other subparameters.  
 
     """
     ## Determine those commands for which you don't require a specific blueprint.
@@ -68,7 +68,7 @@ def cli(ctx,location,analysis_name):
         except FileNotFoundError as e:
             raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
 
-@cli.command()
+@cli.command(help ="configure CLI to work with certain analysis.")
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
@@ -166,15 +166,17 @@ def get_blueprint(blueprint):
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     click.echo(string)
 
-@cli.command(help = "print information about the IAE.")
+@cli.command(help = "print information about the IAE from the blueprint.")
 @click.pass_obj
 def get_iae_info(blueprint):
-    """Prints the blueprint that CLI is currently configured to work with. Given in JSON format.  
+    """Prints information about the IAE from the blueprint that CLI is currently configured to work with. Given in JSON format.  
 
     """
-    string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
-    active_container = blueprint["blueprint"].active_container
+    active_container = blueprint["blueprint"].active_container_status
     active_image = blueprint["blueprint"].active_image
+    script = blueprint["blueprint"].blueprint_dict.get("script",None)
+
+    ## Check if the container is currently running: 
 
     container_history = [None,None] + blueprint["blueprint"].blueprint_dict.get("container_history",[None,None])
     image_history = [None,None] + blueprint["blueprint"].blueprint_dict.get("image_history",[None,None])   
@@ -183,7 +185,7 @@ def get_iae_info(blueprint):
     if active_container is None and active_image is None:
         click.echo("No info available.")
     else:    
-        click.echo(f"\nCurrent IAE info: \n\nactive_container: {active_container}\nactive_image: {active_image}\nprevious_container: {previous_container}\nprevious_image: {previous_image}\n")
+        click.echo(f"\nCurrent IAE info: \n\nactive_container: {active_container}\nactive_image: {active_image}\nscript: {script}\nprevious_container: {previous_container}\nprevious_image: {previous_image}\n")
 
 @click.option("-i",
         "--image",
@@ -210,11 +212,9 @@ def setup_development_container(blueprint,image,container):
     active_image.setup_container(**containerparams)
     blueprint["blueprint"].update_image_history(active_image.image_tag)
     blueprint["blueprint"].update_container_history(active_image.container_name)
-    #blueprint["blueprint"].blueprint_dict["active_container"] = active_image.container_name
-    #blueprint["blueprint"].blueprint_dict["active_image"] = active_image.image_tag 
     blueprint["blueprint"].write()
 
-@cli.command(help = "removes the current active container")
+@cli.command(help = "removes the current active container.")
 @click.option("-c",
         "--container",
         help = "name of container to remove",
@@ -249,8 +249,13 @@ def reset_container(blueprint,container):
         help = "name of the container to save.",
         default = None
         )
+@click.option("-s",
+        "--script",
+        help = "path to script inside the container.",
+        default = None
+        )
 @click.pass_obj
-def save_developed_image(blueprint,tagid,force,container):
+def save_developed_image(blueprint,tagid,force,container,script):
     """Saves a container into a new image, and saves that image as the new default for this analysis. """
     image = NeuroCAASImage(None,None) 
     if container is None:
@@ -263,13 +268,19 @@ def save_developed_image(blueprint,tagid,force,container):
         click.echo("Container not found. Run `setup-development-container` first.")
         raise
     tag = "{}.{}".format(blueprint["analysis_name"],tagid)
-    saved = image.save_container_to_image(tag,force)
+    script_args = {}
+    ## Check for default in the blueprint
+    if script is None:    
+        script = blueprint["blueprint"].blueprint_dict.get("script",None)
+    ## If exists, write to blueprint too.    
+    if script is not None:
+        script_args["script"] = script
+        blueprint["blueprint"].blueprint_dict["script"] = script
+        blueprint["blueprint"].write()
+    saved = image.save_container_to_image(tag,force,**script_args)
     if saved:
-        #blueprint["blueprint"].blueprint_dict["active_image"] = "{}:{}".format(image.repo_name,tag) 
         blueprint["blueprint"].update_image_history("{}:{}".format(image.repo_name,tag))
         blueprint["blueprint"].write()
-        #image.current_container.stop()
-
 
 @cli.command(help="enter the container to start development.")
 @click.option("-c",
@@ -320,8 +331,41 @@ def setup_inputs(blueprint,data,config):
     blueprint["blueprint"].blueprint_dict["localenv"] = analysis_location 
     blueprint["blueprint"].write()
     
-    
-#def wipe_containers
+@click.option("-i",
+        "--image",
+        help = "image to run analysis from.",
+        default = None)
+@click.option("-d",
+        "--data",
+        help = "name of the dataset you will analyze.",
+        default = None,
+        type = click.STRING)
+@click.option("-c",
+        "--config",
+        help = "name of the config file you will analyze.",
+        default = None,
+        type = click.STRING)
+@cli.command(help = "run analysis in a saved environment.")
+@click.pass_obj
+def run_analysis(blueprint,image,data,config):
+    """Launches a container from an image of your choice so that you can perform configuration."""
+    ## See if the blueprint has the fields you want:
+    if image is None:
+        image = blueprint["blueprint"].active_image
+   
+    try:
+        envloc = blueprint["blueprint"].blueprint_dict["localenv"]
+    except KeyError:    
+        raise click.ClickException("Inputs not configured. Run setup-inputs first.")
+
+    ncle = NeuroCAASLocalEnv(envloc) 
+    active_image = NeuroCAASImage(image,None)
+    active_image.run_analysis_parametrized(data,config,ncle)
+    ## we should probably write womething here... 
+
+@cli.command(help = "go home")
+def home():
+    subprocess.run(["cd","/Users/taigaabe"])
 
 
 

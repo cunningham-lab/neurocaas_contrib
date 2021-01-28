@@ -190,11 +190,13 @@ class Test_NeuroCAASLocalEnv(object):
     def test_NeuroCAASLocalEnv(self):
         ncle = NeuroCAASLocalEnv(os.path.join(testpath,"test_mats"))
 
+    @pytest.mark.xfail
     def test_NeuroCAASLocalEnv_create_volume(self):
-        pass
+        assert 0
 
+    @pytest.mark.xfail
     def test_NeuroCAASLocalEnv_config_io_path(self):
-        pass
+        assert 0
 
 class Test_NeuroCAASRemoteEnv(object):
     def test_NeuroCAASRemoteEnv(self):
