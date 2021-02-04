@@ -91,15 +91,14 @@ form = "%Y-%m-%dT%H:%M:%SZ"
 
 ### Module with tools to track usage for each individual stack.
 def check_bucket_exists(bucket):
-    s3 = boto3.resource('s3')
-    if s3.Bucket(bucket).creation_date is None:
+    if s3_resource.Bucket(bucket).creation_date is None:
         assert 0, "bucket {} does not exist".format(bucket)
     else:
         pass
 
 def get_users(dict_files):
     """
-    Presented with a dict of files (response of list_objects_v2), gets usernames from them.
+    Presented with a dict of files (response of list_objects_v2), gets usernames from them. Asserts that buckets must be correctly formatted for logging (have an active and logs subfolder.) 
     """
 
     users = [os.path.basename(li["Key"][:-1]) for li in dict_files["Contents"] if li["Key"].endswith("/")]
@@ -117,11 +116,20 @@ def get_users(dict_files):
 
     return users
 
+def get_jobs(dict_files):
+    """Given the raw response output, returns a flat list of all the jobs that have been run. 
 
+    :param dict_files: raw output of list objects api. 
+    """
+    activity = [li["Key"] for li in dict_files["Contents"] if li["Key"].endswith(".json")]
+    return activity
 
 def sort_activity_by_users(dict_files,userlist):
     """
-    When given the raw resposne output + list of usernames, returns a dictionary of files organized by that username.
+    When given the raw response output + list of usernames, returns a dictionary of files organized by that username. Passes on debugging logs and logs that are currently active. 
+    :param dict_files: raw output of list objects api. 
+    :param userlist: a list of usernames for whom we will assign jobs. 
+    :return: userdict, a dictionary indexed by user names, with values giving lists of jobs attributed to that user.
     """
     activity = [li["Key"] for li in dict_files["Contents"] if li["Key"].endswith(".json")]
     userdict = {name:[] for name in userlist}
@@ -145,7 +153,6 @@ def get_user_logs(bucket_name):
     :param bucket_name: the name of the s3 bucket we are looking for
     """
 
-    s3_client = boto3.client("s3")
     try:
 
         l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs")
@@ -181,6 +188,9 @@ def get_month(start):
 def calculate_usage(bucket_name,usage_list,user):
     """
     gets the json files containing the usage for a particular user, and returns the total (number of hours, cost, and number of jobs run) per month.
+    :param bucket_name: string giving the s3 bucket we are reading into.
+    :param usage_list: a list of job logs, for a particular user authorized to use this analysis. 
+    :param user: the user to whom we should assign this usage. 
     """
 
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
@@ -200,8 +210,23 @@ def calculate_usage(bucket_name,usage_list,user):
 
     return usage_compiled
 
+def calculate_parallelism(bucket_name,usage_list,user):
+    """calculates the paralellism of user's usage. How much of the total running job time was spent on jobs running together? 
 
+    """
+    by_job = {}
+    for job in usage_list:
+        usage_dict = load_json(bucket_name,job)
+        if None in [usage_dict["start"],usage_dict["end"]]:
+            continue
+        job = usage_dict["jobpath"]
+        try:
+            by_job[job]["instances"].append(usage_dict)
+            by_job[job]["durations"].append(get_duration(usage_dict["start"],usage_dict["end"]))
 
-
-
+        except KeyError:    
+            by_job[job] = {}
+            by_job[job]["instances"] = [usage_dict]
+            by_job[job]["durations"] = [get_duration(usage_dict["start"],usage_dict["end"])]
+    return by_job
 
