@@ -1,5 +1,6 @@
 ## Mimicking cli structure given in remote-docker-aws repository. 
 import subprocess
+import datetime
 import sys
 import shutil
 import click 
@@ -7,6 +8,7 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
+from .monitor import calculate_parallelism, get_user_logs
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -367,6 +369,25 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+
+### cli commands to monitor the stack. 
+@cli.command(help = "visualize the degree of parallelism of analysis usage.")
+@click.option("-p",
+        "--path",
+        type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
+        help = "path to which we should write the resulting graphic.")
+@click.pass_obj
+def visualize_parallelism(blueprint,path):
+    analysis_name = blueprint["analysis_name"] 
+    user_dict = get_user_logs(analysis_name)
+    for user,userinfo in user_dict.items():
+        parallelised = calculate_parallelism(analysis_name,userinfo,user)
+        now = str(datetime.datetime.now())
+        write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
+        with open(write_path,"w") as f:
+            json.dump(parallelised,f,indent = 4)
+    
+    
 
 
 

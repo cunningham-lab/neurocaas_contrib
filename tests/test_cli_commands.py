@@ -3,11 +3,14 @@ from pathlib import Path
 import traceback
 import docker
 from click.testing import CliRunner
+import localstack_client
 from neurocaas_contrib.cli_commands import *
 from neurocaas_contrib.local import default_neurocaas_repo
+import neurocaas_contrib.monitor as monitor
 
 docker_client = docker.from_env()
 
+bucket_name = "test-log-analysis"
 containername = "neurocaasdevcontainer"
 @pytest.fixture
 def remove_container(request):
@@ -29,6 +32,50 @@ def remove_named_container(request):
         container.remove(force=True)
     except:    
         pass
+
+@pytest.fixture
+def setup_log_bucket(monkeypatch):
+    """Sets up the module to use localstack, and creates a bucket in localstack called test-log-analysis with the following directory structure:
+    /
+    |-logs
+      |-bendeskylab
+        |-joblog1
+        |-joblog2
+        ...
+      |-sawtelllab
+        |-joblog1
+        |-joblog2
+        ...
+    This is the minimal working example for testing a monitoring function. This assumes that we will not be mutating the state of bucket logs. 
+    """
+    ## Start localstack and patch AWS clients:
+    session = localstack_client.session.Session()
+    s3_client = session.client("s3")
+    monkeypatch.setattr(monitor, "s3_client", session.client("s3")) ## TODO I don't think these are scoped correctly w/o a context manager.
+    monkeypatch.setattr(monitor, "s3_resource", session.resource("s3"))
+
+    ## Create bucket if not created:
+    try:
+        buckets = s3_client.list_buckets()["Buckets"]
+        bucketnames = [b["Name"] for b in buckets]
+        assert bucket_name in bucketnames
+        yield bucket_name
+    except AssertionError:    
+        s3_client.create_bucket(Bucket =bucket_name)
+
+        ## Get paths:
+        log_paths,dirpaths = get_paths(test_log_mats) 
+        try:
+            for f in log_paths:
+                s3_client.upload_file(os.path.join(test_log_mats,f),bucket_name,Key = f)
+            for dirpath in dirpaths:
+                s3dir = s3_resource.Object(bucket_name,dirpath)   
+                s3dir.put()
+        except ClientError as e:        
+            logging.error(e)
+            raise
+        yield bucket_name    
+        ## Now delete 
 
 def eprint(result):
     """Takes a result object returned by CliRunner.invoke, and prints full associated stack trace, including chained exceptions. Automatically throws an error if the exit code is not 0 to increase visibility of these errors.. Returns the result take as a parameter so this function can be used to wrap calls to invoke.  
@@ -242,3 +289,31 @@ def test_cli_setup_development_container_env(remove_named_container):
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
     assert blueprint["image_history"][-1] == imagename 
+
+### Test monitoring functions. 
+def test_visualize_parallelism(setup_log_bucket):
+    bucket_name = setup_log_bucket
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        os.mkdir("./logs")
+        result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
+        result = eprint(runner.invoke(cli,["visualize-parallelism","-p","./logs"]))
+        logfiles = os.listdir("./logs")
+        assert len(logfiles) == 2
+        labnames = ["bendeskylab","sawtelllab"]
+        for l in logfiles:
+            assert any([l.startswith(bucket_name+"_{}".format(f)) for f in labnames])
+            assert l.endswith("_parallel_logs.json")
+            with open(os.path.join("./logs",l),"r") as f:
+                jobdict = json.load(f)
+            ## caclualte number of instances:     
+            count = 0
+            for job in jobdict.values():
+                count += len(job["instances"])
+            if any([k.startswith("bendesky") for k in jobdict.keys()]):    
+                assert count == 157
+            elif any([k.startswith("sawtell") for k in jobdict.keys()]):    
+                assert count == 132
+
+
+

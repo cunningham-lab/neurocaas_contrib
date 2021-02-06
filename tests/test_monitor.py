@@ -124,10 +124,13 @@ def test_calculate_usage(setup_log_bucket):
         assert key in ["username","cost","duration"]
 
 def test_calculate_parallelism(setup_log_bucket):
-    path = "bendeskylab"
+    path = "sawtelllab"
     bucket_name = setup_log_bucket
     user_dict = monitor.get_user_logs(bucket_name) ## will assert 0 if does not exist.
-    usage_compiled = monitor.calculate_parallelism(bucket_name,user_dict["bendeskylab"],"bendeskylab")
+    usage_compiled = monitor.calculate_parallelism(bucket_name,user_dict["sawtelllab"],"sawtelllab")
+    logging.warning(usage_compiled.keys())
+    assert sum([len(l["instances"]) for l in usage_compiled.values()]) == 132 
+
 
 
    

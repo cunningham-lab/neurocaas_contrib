@@ -3,13 +3,63 @@
 # Cost monitoring
 # Active jobs
 # Job history
+import numpy as np
+import logging
 import boto3
+import localstack_client.session
+from botocore.exceptions import ClientError
 import json
 from datetime import datetime as datetime
 import os
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
+
+class RangeFinder():
+    """object class to keep track of the range of dates we are considering. 
+
+    """
+    def __init__(self):
+        self.form = "%Y-%m-%dT%H:%M:%SZ"
+        self.baseline = datetime.now()
+        ## Keep track of interval by calculating biggest and smallest differences to right now.  
+        self.diff_min = np.inf
+        self.diff_max = -np.inf
+        self.starttime = None
+        self.endtime = None
+
+    def diff(self,datetime_str):   
+        """Takes in a string formatted datetime (formatted as self.form), and compares it with now. 
+
+        """
+        timeform = datetime.strptime(datetime_str,self.form)
+        diff = self.baseline-timeform
+        diff_secs = diff.total_seconds()
+        logging.info(diff_secs)
+        return diff_secs
+
+    def update(self,datetime_str):
+        """Takes in a string formatted datetime, and updates the start and end dates if necessary.
+
+        """
+        if datetime_str is not None:
+            diff = self.diff(datetime_str)
+            logging.info("{}, {}, {}".format(diff,self.diff_max,self.diff_min))
+            if diff > self.diff_max: 
+                self.starttime = datetime_str
+                self.diff_max = diff
+            if diff < self.diff_min:   
+                self.endtime = datetime_str
+                self.diff_min = diff
+    def return_range(self):    
+        print("Started at {}, ended at {}".format(self.starttime,self.endtime))
+    
+    def range_months(self):
+        startdate = datetime.strptime(self.starttime,self.form)
+        enddate = datetime.strptime(self.endtime,self.form)
+        startmonth = "{}/{}".format(startdate.month,startdate.year)
+        endmonth = "{}/{}".format(enddate.month,enddate.year)
+        return startmonth,endmonth
 
 ## Cost monitoring
 
@@ -154,10 +204,11 @@ def get_user_logs(bucket_name):
     """
 
     try:
-
+        print(bucket_name)
         l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs")
     except ClientError as e:
         print(e.response["Error"])
+        raise
     checktruncated = l["IsTruncated"]
     if checktruncated:
         print("WARNING: not listing all results.")
@@ -215,18 +266,42 @@ def calculate_parallelism(bucket_name,usage_list,user):
 
     """
     by_job = {}
-    for job in usage_list:
-        usage_dict = load_json(bucket_name,job)
-        if None in [usage_dict["start"],usage_dict["end"]]:
+    for inst in usage_list:
+        rf_start = RangeFinder()
+        rf_end = RangeFinder()
+        usage_dict = load_json(bucket_name,inst)
+        if all([usage_dict[state] is None for state in ["start","end"]]):
+            logging.warning("skipping something for user {}".format(user))
+            print("skipping something for user {}".format(user))
             continue
+
+        rf_start.update(usage_dict["start"])
+        rf_end.update(usage_dict["end"])
+
         job = usage_dict["jobpath"]
         try:
             by_job[job]["instances"].append(usage_dict)
-            by_job[job]["durations"].append(get_duration(usage_dict["start"],usage_dict["end"]))
+            try:
+                by_job[job]["durations"][usage_dict["instance-id"]] = get_duration(usage_dict["start"],usage_dict["end"])
+            except TypeError:    
+                by_job[job]["durations"][usage_dict["instance-id"]] = None
+            by_job[job]["laststart"] = rf_start.endtime
+            by_job[job]["firstend"] = rf_end.starttime
 
         except KeyError:    
             by_job[job] = {}
             by_job[job]["instances"] = [usage_dict]
-            by_job[job]["durations"] = [get_duration(usage_dict["start"],usage_dict["end"])]
+            try:
+                by_job[job]["durations"] = {usage_dict["instance-id"]:get_duration(usage_dict["start"],usage_dict["end"])}
+            except TypeError:    
+                by_job[job]["durations"] = {usage_dict["instance-id"]:None}
+            by_job[job]["laststart"] = rf_start.endtime
+            by_job[job]["firstend"] = rf_end.starttime
+    ## postprocessing: if starts and ends are all none, remove job.         
+    to_del = []
+    for job in by_job.items():
+        if job[1]["laststart"] is None or job[1]["firstend"] is None:
+            to_del.append(job[0])
+    #[by_job.pop(td) for td in to_del]        
     return by_job
 
