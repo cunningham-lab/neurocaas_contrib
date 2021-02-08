@@ -308,17 +308,17 @@ def postprocess_jobdict(by_job):
     """
     ### postprocessing: if starts and ends are all none, remove job.         
     to_del = []
-    for job in by_job.items():
-        if job[1]["laststart"] is None or job[1]["firstend"] is None:
-            to_del.append(job[0])
-
     for jobname,jobdict in by_job.items():
+        if jobdict["laststart"] is None or jobdict["firstend"] is None:
+            to_del.append(jobname)
+            continue ## gonna delete this one
         for i in jobdict["instances"]:
+            if i["end"] is None:
+                to_del.append(jobname)
+                continue ## gonna delete this one
             if i["start"] is None:
                 i["start"] = jobdict["laststart"]
                 by_job[jobname]["durations"][i["instance-id"]] = get_duration(i["start"],i["end"])
-            if i["end"] is None:
-                to_del.append(jobname)
 
     [by_job.pop(td) for td in set(to_del)]        
     return by_job
