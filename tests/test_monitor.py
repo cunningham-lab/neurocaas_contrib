@@ -123,15 +123,37 @@ def test_calculate_usage(setup_log_bucket):
     for key in usage_compiled.keys():
         assert key in ["username","cost","duration"]
 
-def test_calculate_parallelism(setup_log_bucket):
-    path = "sawtelllab"
+@pytest.mark.parametrize("path,nb",[("sawtelllab",132),("bendeskylab",157)])
+def test_calculate_parallelism(setup_log_bucket,path,nb):
     bucket_name = setup_log_bucket
     user_dict = monitor.get_user_logs(bucket_name) ## will assert 0 if does not exist.
-    usage_compiled = monitor.calculate_parallelism(bucket_name,user_dict["sawtelllab"],"sawtelllab")
+    usage_compiled = monitor.calculate_parallelism(bucket_name,user_dict[path],path)
     logging.warning(usage_compiled.keys())
-    assert sum([len(l["instances"]) for l in usage_compiled.values()]) == 132 
+    assert sum([len(l["instances"]) for l in usage_compiled.values()]) == nb 
 
+@pytest.mark.parametrize("path,nb",[("sawtelllab",132),("bendeskylab",157)])
+def test_postprocess_jobdict(setup_log_bucket,path,nb):
+    bucket_name = setup_log_bucket
+    user_dict = monitor.get_user_logs(bucket_name) ## will assert 0 if does not exist.
+    usage_compiled = monitor.calculate_parallelism(bucket_name,user_dict[path],path)
+    usage_filtered = monitor.postprocess_jobdict(usage_compiled)
+    for uf in usage_filtered.values():
+        for inst in uf["instances"]:
+            assert inst["start"] is not None
+            assert inst["end"] is not None
+        assert all([a is not None for a in uf["durations"].values()])
+        
 
+    assert sum([len(l["instances"]) for l in usage_filtered.values()]) == nb 
+
+def test_RangeFinder():
+    rf = monitor.RangeFinder()
+    rf.update("2010-12-04T12:54:12Z")
+    rf.update("2010-12-04T12:55:12Z")
+    rf.return_range()
+    assert 0 
+    
 
    
+
    

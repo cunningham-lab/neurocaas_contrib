@@ -266,6 +266,7 @@ def calculate_parallelism(bucket_name,usage_list,user):
 
     """
     by_job = {}
+    job_rfs = {}
     for inst in usage_list:
         rf_start = RangeFinder()
         rf_end = RangeFinder()
@@ -275,33 +276,50 @@ def calculate_parallelism(bucket_name,usage_list,user):
             print("skipping something for user {}".format(user))
             continue
 
-        rf_start.update(usage_dict["start"])
-        rf_end.update(usage_dict["end"])
-
         job = usage_dict["jobpath"]
         try:
+            job_rfs[job]["rf_start"].update(usage_dict["start"])
+            job_rfs[job]["rf_end"].update(usage_dict["end"])
             by_job[job]["instances"].append(usage_dict)
             try:
                 by_job[job]["durations"][usage_dict["instance-id"]] = get_duration(usage_dict["start"],usage_dict["end"])
             except TypeError:    
                 by_job[job]["durations"][usage_dict["instance-id"]] = None
-            by_job[job]["laststart"] = rf_start.endtime
-            by_job[job]["firstend"] = rf_end.starttime
+            by_job[job]["laststart"] = job_rfs[job]["rf_start"].endtime
+            by_job[job]["firstend"] = job_rfs[job]["rf_end"].starttime
 
         except KeyError:    
-            by_job[job] = {}
-            by_job[job]["instances"] = [usage_dict]
+            job_rfs[job] = {"rf_start":RangeFinder(),"rf_end":RangeFinder()}
+            job_rfs[job]["rf_start"].update(usage_dict["start"])
+            job_rfs[job]["rf_end"].update(usage_dict["end"])
+            by_job[job] = {"instances":[usage_dict]}
+            #####by_job[job]["instances"] = [usage_dict]
             try:
                 by_job[job]["durations"] = {usage_dict["instance-id"]:get_duration(usage_dict["start"],usage_dict["end"])}
             except TypeError:    
                 by_job[job]["durations"] = {usage_dict["instance-id"]:None}
-            by_job[job]["laststart"] = rf_start.endtime
-            by_job[job]["firstend"] = rf_end.starttime
-    ## postprocessing: if starts and ends are all none, remove job.         
+            by_job[job]["laststart"] = job_rfs[job]["rf_start"].endtime
+            by_job[job]["firstend"] = job_rfs[job]["rf_end"].starttime
+
+    return by_job
+
+def postprocess_jobdict(by_job):
+    """Given a dictionary where the keys are job names, and the values are dictionaries with metadata about that job, looks in particular for jobs where some of the time entries have been neglected. If just the Start time has been neglected, replaces that with the last recorded start time as an esimate, and fills in the corresponding duration. If the whole job has no start or end times, remove it.     
+    """
+    ### postprocessing: if starts and ends are all none, remove job.         
     to_del = []
     for job in by_job.items():
         if job[1]["laststart"] is None or job[1]["firstend"] is None:
             to_del.append(job[0])
-    #[by_job.pop(td) for td in to_del]        
+
+    for jobname,jobdict in by_job.items():
+        for i in jobdict["instances"]:
+            if i["start"] is None:
+                i["start"] = jobdict["laststart"]
+                by_job[jobname]["durations"][i["instance-id"]] = get_duration(i["start"],i["end"])
+            if i["end"] is None:
+                to_del.append(jobname)
+
+    [by_job.pop(td) for td in set(to_del)]        
     return by_job
 
