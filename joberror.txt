@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 parse error: Expected another key-value pair at line 8, column 5
 parse error: Expected another key-value pair at line 8, column 5
 parse error: Expected another key-value pair at line 8, column 5
@@ -33,3 +34,6 @@ Traceback (most recent call last):
   File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 676, in __init__
     self._session = tf_session.TF_NewSessionRef(self._graph._c_graph, opts)
 KeyboardInterrupt
+=======
+bash: : No such file or directory
+>>>>>>> a7d265a5a5a05e036e602d6a03869528d7ea2041

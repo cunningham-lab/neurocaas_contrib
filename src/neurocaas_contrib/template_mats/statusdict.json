@@ -1,0 +1,16 @@
+{
+    "status": null, 
+    "cpu_usage": [
+        null 
+    ], 
+    "stdout": {
+        null
+    }, 
+    "instance":null, 
+    "reason": [
+        null 
+    ], 
+    "command": null, 
+    "stderr": {}, 
+    "input": null
+}
