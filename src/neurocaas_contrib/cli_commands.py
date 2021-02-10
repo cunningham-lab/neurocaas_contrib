@@ -7,6 +7,7 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
+from .scripting import get_yaml_field
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -45,7 +46,7 @@ def cli(ctx,location,analysis_name):
 
     """
     ## Determine those commands for which you don't require a specific blueprint.
-    no_blueprint = ['init','describe-analyses']
+    no_blueprint = ['init','describe-analyses',"read-yaml"]
     if ctx.invoked_subcommand in no_blueprint:
         return ## move on and run configure. 
     else:
@@ -54,7 +55,7 @@ def cli(ctx,location,analysis_name):
                 with open(configpath,"r") as f:
                     defaultconfig = json.load(f)
             except FileNotFoundError:    
-                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib configure` to initialize the cli.")
+                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
             if location is None:
                 location = defaultconfig["location"]
             if analysis_name is None:    
@@ -367,6 +368,22 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+## scripting tools 
+
+@click.option("-p",
+        "--path",
+        help = "path to yaml file",
+        type = click.Path(exists = True,file_okay = True,readable = True,resolve_path = True)
+        )
+@click.option("-f",
+        "--field",
+        help = "field to extract from yaml file"
+        )
+@cli.command(help = "extract field from a yaml file as a string.")
+def read_yaml(path,field):
+    output = get_yaml_field(path,field)
+    print(output)
+    #click.echo(output)
 
 
 
