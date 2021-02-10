@@ -21,7 +21,7 @@ else:
     
 subdirs = ["configs","inputs","logs","results"]
 
-cfn_client = boto3.client("cloudformation")
+#cfn_client = boto3.client("cloudformation")
 
 docker_client = docker.from_env()
 if docker_client.api.base_url == "http://localhost:2375":
