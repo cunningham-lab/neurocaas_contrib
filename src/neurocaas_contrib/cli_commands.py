@@ -8,7 +8,7 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
-from .monitor import calculate_parallelism, get_user_logs
+from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -382,10 +382,11 @@ def visualize_parallelism(blueprint,path):
     user_dict = get_user_logs(analysis_name)
     for user,userinfo in user_dict.items():
         parallelised = calculate_parallelism(analysis_name,userinfo,user)
+        postprocessed = postprocess_jobdict(parallelised)
         now = str(datetime.datetime.now())
         write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
         with open(write_path,"w") as f:
-            json.dump(parallelised,f,indent = 4)
+            json.dump(postprocessed,f,indent = 4)
     
     
 

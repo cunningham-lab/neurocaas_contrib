@@ -2,6 +2,7 @@
 import logging
 import numpy as np
 import datetime
+from neurocaas_contrib.monitor import RangeFinder
 import matplotlib.pyplot as plt
 import json 
 import os
@@ -25,51 +26,51 @@ logging.basicConfig(level = logging.WARNING)
 
 """
 
-class RangeFinder():
-    """object class to keep track of the range of dates we are considering. 
-
-    """
-    def __init__(self):
-        self.form = "%Y-%m-%dT%H:%M:%SZ"
-        self.baseline = datetime.datetime.now()
-        ## Keep track of interval by calculating biggest and smallest differences to right now.  
-        self.diff_min = np.inf
-        self.diff_max = -np.inf
-        self.starttime = None
-        self.endtime = None
-    def diff(self,datetime_str):   
-        """Takes in a string formatted datetime (formatted as self.form), and compares it with now. 
-
-        """
-        timeform = datetime.datetime.strptime(datetime_str,self.form)
-        diff = self.baseline-timeform
-        diff_secs = diff.total_seconds()
-        logging.info(diff_secs)
-        return diff_secs
-
-    def update(self,datetime_str):
-        """Takes in a string formatted datetime, and updates the start and end dates if necessary.
-
-        """
-        diff = self.diff(datetime_str)
-        logging.info("{}, {}, {}".format(diff,self.diff_max,self.diff_min))
-        if diff > self.diff_max: 
-            self.starttime = datetime_str
-            self.diff_max = diff
-        elif diff < self.diff_min:   
-            self.endtime = datetime_str
-            self.diff_min = diff
-        else:    
-            pass
-    def return_range(self):    
-        print("Started at {}, ended at {}".format(self.starttime,self.endtime))
-    
-    def range_months(self):
-        startdate = datetime.datetime.strptime(self.starttime,self.form)
-        enddate = datetime.datetime.strptime(self.endtime,self.form)
-        startmonth = "{}/{}".format(startdate.month,startdate.year)
-        endmonth = "{}/{}".format(enddate.month,enddate.year)
-        return startmonth,endmonth
+#class RangeFinder():
+#    """object class to keep track of the range of dates we are considering. 
+#
+#    """
+#    def __init__(self):
+#        self.form = "%Y-%m-%dT%H:%M:%SZ"
+#        self.baseline = datetime.datetime.now()
+#        ## Keep track of interval by calculating biggest and smallest differences to right now.  
+#        self.diff_min = np.inf
+#        self.diff_max = -np.inf
+#        self.starttime = None
+#        self.endtime = None
+#    def diff(self,datetime_str):   
+#        """Takes in a string formatted datetime (formatted as self.form), and compares it with now. 
+#
+#        """
+#        timeform = datetime.datetime.strptime(datetime_str,self.form)
+#        diff = self.baseline-timeform
+#        diff_secs = diff.total_seconds()
+#        logging.info(diff_secs)
+#        return diff_secs
+#
+#    def update(self,datetime_str):
+#        """Takes in a string formatted datetime, and updates the start and end dates if necessary.
+#
+#        """
+#        diff = self.diff(datetime_str)
+#        logging.info("{}, {}, {}".format(diff,self.diff_max,self.diff_min))
+#        if diff > self.diff_max: 
+#            self.starttime = datetime_str
+#            self.diff_max = diff
+#        elif diff < self.diff_min:   
+#            self.endtime = datetime_str
+#            self.diff_min = diff
+#        else:    
+#            pass
+#    def return_range(self):    
+#        print("Started at {}, ended at {}".format(self.starttime,self.endtime))
+#    
+#    def range_months(self):
+#        startdate = datetime.datetime.strptime(self.starttime,self.form)
+#        enddate = datetime.datetime.strptime(self.endtime,self.form)
+#        startmonth = "{}/{}".format(startdate.month,startdate.year)
+#        endmonth = "{}/{}".format(enddate.month,enddate.year)
+#        return startmonth,endmonth
 
 if __name__ == "__main__":
     rf = RangeFinder()
@@ -95,10 +96,10 @@ if __name__ == "__main__":
             ## Per job we only need one startdate.
             rf.update(job["instances"][0]["start"])
             try:
-                all_durations[len(job["durations"])]+=sum(job["durations"])
+                all_durations[len(job["durations"])]+=sum(job["durations"].values())
             except KeyError:    
-                all_durations[len(job["durations"])] =sum(job["durations"])
-            if len(job["durations"]) > 40:   
+                all_durations[len(job["durations"])] =sum(job["durations"].values())
+            if len(job["durations"]) > 50:   
                 logging.warning(json.dumps(job["instances"][0],indent = 4))
                 count += 1
         duration_keys = list(all_durations.keys())
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     startdate,enddate = rf.range_months()
     logging.info(str(startdate)+" "+str(enddate))
     fig,ax = plt.subplots(2,1,sharex = True)
-    ax[0].hist(all_parallelism,bins = 50,log = True)
+    ax[0].hist(all_parallelism,bins = 70,log = True)
     ax[0].set_ylabel("Total Job Count")
     ax[1].bar(duration_keys,duration_values)
     ax[1].set_yscale('log')
