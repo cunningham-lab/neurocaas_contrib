@@ -5,11 +5,11 @@ execpath="$0"
 scriptpath="$(dirname "$execpath")/ncap_utils"
 ## Get in absolute path loader: 
 source "$scriptpath/paths.sh"
-userhome="/home/ubuntu"
 
 ## Now declare remote directory name for here and all sourced files: 
 set -a
 neurocaasrootdir=$(dirname $(get_abs_filename "$execpath"))
+userhome="/home/ubuntu"
 set +a
 
 source "$scriptpath/workflow.sh"
@@ -39,24 +39,23 @@ echo $configname >> "/home/ubuntu/check_vars.txt"
 echo $configpath >> "/home/ubuntu/check_vars.txt" 
  
 ## Set up Error Status Reporting:
-#errorlog_init 
+errorlog_init 
 
 ## Set up STDOUT and STDERR Monitoring:
-#errorlog_background & 
+errorlog_background & 
 background_pid=$!
 echo $background_pid, "is the pid of the background process"
-echo "entering script"
-echo "$5"
+
 ## MAIN SCRIPT GOES HERE #####################
 #bash wait 20 #   "$5" #/home/ubuntu/ncap_remote/run_yass.sh
 bash "$5" > "$neurocaasrootdir"/joboutput.txt 2>"$neurocaasrootdir"/joberror.txt
 ##############################################
 ## Cleanup: figure out how the actual processing went. 
 ## MUST BE RUN IMMEDIATELY AFTER PROCESSING SCRIPTS TO GET ERROR CODE CORRECTLY.
-#errorlog_final
+errorlog_final
 
 ## Once this is all over, send the config and end.txt file
 aws s3 cp s3://"$bucketname"/"$configpath" s3://"$bucketname"/"$groupdir"/"$processdir"/$configname
 aws s3 cp "$neurocaasrootdir"/update.txt s3://"$bucketname"/"$groupdir"/"$processdir"/
-#kill "$background_pid"
+kill "$background_pid"
 

@@ -1,27 +1,22 @@
 #!/bin/bash
-userhome="/home/ubuntu"
-echo entered script
 execpath="$0"
 scriptpath="$neurocaasrootdir/ncap_utils"
-
 
 source "$scriptpath/workflow.sh"
 
 ## Import functions for data transfer 
 source "$scriptpath/transfer.sh"
 
-#errorlog
+errorlog
 
 call_proj_init () {
     echo "Project init $1"
     python "../neurocaas_ensembles/project_init.py"
 }
 
-#datastore="deepgraphpose/data/ensembles"
 datastore="ncapdata/localdata"
 configstore="ncapdata/localconfig"
 outstore="ncapdata/localout"
-taskname=$(basename $dataname .zip)
 
 source .dlamirc
 
@@ -42,7 +37,6 @@ task=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "t
 scorer=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
 jobnb=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
 videotype=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
-#task,scorer,jobnb,videotype=$(python configscript.py "$userhome/$configstore/")
 
 ## create project from raw data: 
 python neurocaas_ensembles/project_init.py "$task" "$scorer" "2030-01-0$jobnb" "$userhome/$datastore/" 
@@ -51,4 +45,4 @@ python neurocaas_ensembles/project_init.py "$task" "$scorer" "2030-01-0$jobnb" "
 cd "$userhome/deepgraphpose"
 python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/"
 
-aws s3 sync "$userhome/$datastore/$taskname/$task-$scorer-2030-01-0$jobnb/" "s3://$bucketname/$groupdir/$processdir/$jobnb/"
+aws s3 sync "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" "s3://$bucketname/$groupdir/$processdir/$jobnb/"
