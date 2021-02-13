@@ -21,57 +21,19 @@ logging.basicConfig(level = logging.WARNING)
     - caiman-ncap-stable
     - polleuxmonitored
     - dlc-ncap-demo
+    - carceamonitored
 
 :param path: the path to the directory.
 
 """
 
-#class RangeFinder():
-#    """object class to keep track of the range of dates we are considering. 
-#
-#    """
-#    def __init__(self):
-#        self.form = "%Y-%m-%dT%H:%M:%SZ"
-#        self.baseline = datetime.datetime.now()
-#        ## Keep track of interval by calculating biggest and smallest differences to right now.  
-#        self.diff_min = np.inf
-#        self.diff_max = -np.inf
-#        self.starttime = None
-#        self.endtime = None
-#    def diff(self,datetime_str):   
-#        """Takes in a string formatted datetime (formatted as self.form), and compares it with now. 
-#
-#        """
-#        timeform = datetime.datetime.strptime(datetime_str,self.form)
-#        diff = self.baseline-timeform
-#        diff_secs = diff.total_seconds()
-#        logging.info(diff_secs)
-#        return diff_secs
-#
-#    def update(self,datetime_str):
-#        """Takes in a string formatted datetime, and updates the start and end dates if necessary.
-#
-#        """
-#        diff = self.diff(datetime_str)
-#        logging.info("{}, {}, {}".format(diff,self.diff_max,self.diff_min))
-#        if diff > self.diff_max: 
-#            self.starttime = datetime_str
-#            self.diff_max = diff
-#        elif diff < self.diff_min:   
-#            self.endtime = datetime_str
-#            self.diff_min = diff
-#        else:    
-#            pass
-#    def return_range(self):    
-#        print("Started at {}, ended at {}".format(self.starttime,self.endtime))
-#    
-#    def range_months(self):
-#        startdate = datetime.datetime.strptime(self.starttime,self.form)
-#        enddate = datetime.datetime.strptime(self.endtime,self.form)
-#        startmonth = "{}/{}".format(startdate.month,startdate.year)
-#        endmonth = "{}/{}".format(enddate.month,enddate.year)
-#        return startmonth,endmonth
+#bins = [1,2,5,17,65,64*4+1]
+base = 2
+power = 8
+bins = [base**i for i in range(8)]
+sum_intervals = [[bins[i],bins[i+1]] for i in range(len(bins)-1)]
 
+#sum_intervals = [[0,1],[2,4],[5,16],[17,64],[64,80]]
 if __name__ == "__main__":
     rf = RangeFinder()
     path = sys.argv[1]
@@ -90,6 +52,13 @@ if __name__ == "__main__":
         except json.decoder.JSONDecodeError:        
             continue
         for job in loginfo.values():
+            print(job["instances"][0]["jobpath"])
+            if job["instances"][0]["jobpath"].startswith("reviewers"):
+                continue
+            if job["instances"][0]["jobpath"].startswith("debuggers"):
+                continue
+            if job["instances"][0]["jobpath"].startswith("examplegroup2"):
+                continue
             if job["instances"][0]["jobpath"] in ["sawtelllab/results/job__dlc-ncap-web_1595302867","sawtelllabdlcdevelop/results/job__dlc-ncap-stable_20200720_16_47"]: 
                 continue ## These are breaking bugs that also influence graph interpretation, exclude.
             all_parallelism.append(len(job["instances"]))
@@ -102,16 +71,24 @@ if __name__ == "__main__":
             if len(job["durations"]) > 50:   
                 logging.warning(json.dumps(job["instances"][0],indent = 4))
                 count += 1
-        duration_keys = list(all_durations.keys())
-        duration_values = [all_durations[v]/3600 for v in duration_keys]
+    duration_keys = list(all_durations.keys())
+    duration_values = [all_durations[v]/3600 for v in duration_keys]
+    duration_array = np.zeros(90,)    
+    for dk in duration_keys:
+        duration_array[dk] = all_durations[dk]/3600
+    values_binned = [sum(duration_array[interval[0]:interval[1]+1]) for interval in sum_intervals]    
     logging.info(count) ## nb jobs greater than 1
     startdate,enddate = rf.range_months()
     logging.info(str(startdate)+" "+str(enddate))
-    fig,ax = plt.subplots(2,1,sharex = True)
-    ax[0].hist(all_parallelism,bins = 70,log = True)
+    fig,ax = plt.subplots(2,1,sharex = False)
+    ax[0].hist(all_parallelism,bins = bins,log = True)
     ax[0].set_ylabel("Total Job Count")
-    ax[1].bar(duration_keys,duration_values)
+    ax[0].set_xscale("log",basex = base)
+    #ax[1].bar(duration_keys,duration_values)
+    #ax[1].bar([i for i in range(len(values_binned))],values_binned)
+    ax[1].bar(bins[:-1],values_binned,width = np.diff(bins),log = True,ec = "k",align = "edge")
     ax[1].set_yscale('log')
+    ax[1].set_xscale('log',basex = base)
     ax[1].set_xlabel("Number of datasets per job")
     ax[1].set_ylabel("Total Compute Hours")
     ax[0].set_title("Job size statistics for NeuroCAAS web service, {} to {}".format(startdate,enddate))
