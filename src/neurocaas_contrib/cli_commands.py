@@ -379,10 +379,19 @@ def home():
         "--field",
         help = "field to extract from yaml file"
         )
+@click.option("-d",
+        "--default",
+        help = "default output to give if not found")
 @cli.command(help = "extract field from a yaml file as a string.")
-def read_yaml(path,field):
-    output = get_yaml_field(path,field)
-    print(output)
+def read_yaml(path,field,default = None):
+    try:
+        output = get_yaml_field(path,field)
+        print(output)
+    except KeyError:    
+        if default is None: 
+            raise
+        else:
+            print(default)
     #click.echo(output)
 
 
