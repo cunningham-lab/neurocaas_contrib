@@ -85,7 +85,7 @@ pytz==2019.1
 PyYAML==5.1.2
 requests==2.23.0
 responses==0.10.15
-rsa==3.4.2
+rsa==4.1
 s3transfer==0.3.3
 six==1.12.0
 snowballstemmer==2.0.0
