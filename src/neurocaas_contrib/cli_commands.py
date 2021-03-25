@@ -56,7 +56,7 @@ def cli(ctx,location,analysis_name):
                 with open(configpath,"r") as f:
                     defaultconfig = json.load(f)
             except FileNotFoundError:    
-                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib configure` to initialize the cli.")
+                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
             if location is None:
                 location = defaultconfig["location"]
             if analysis_name is None:    
@@ -119,6 +119,7 @@ def init(blueprint,location,analysis_name):
         ## First set the analysis name in the config file:
         analysis_settings = {"analysis_name":analysis_name,
                              "location":location
+                             "remote_hist":{} ## history of remote development per analysis name. 
                             }
         ## Get dictionary:
         try:
@@ -151,6 +152,7 @@ def describe_analyses(location):
         with open(configpath,"r") as f:
             config = json.load(f)
         currentanalysis = config["analysis_name"]    
+        ## Todo 
     except FileNotFoundError:        
         currentanalysis = None
     dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
