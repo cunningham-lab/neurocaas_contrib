@@ -391,10 +391,60 @@ def visualize_parallelism(blueprint,path):
             json.dump(postprocessed,f,indent = 4)
     
     
+### cli commands to manage a remote aws resources. 
+## Initialize a new NeuroCAASAMI object, or get . 
+@cli.command(help = "Initialize a NeuroCAASAMI object")
+@click.pass_obj
+def develop_remote(blueprint):
+    """Set up a NeuroCAASAMI object from the given analysis name and location. Checks to see if a NeuroCAASAMI object for this analysis already exists- if so, reloads from that object.  
+
+    """
+
+@cli.command(help = "Assign a new instance to a NeuroCAASAMI object")
+@click.option("-i",
+        "--id",
+        type = click.STRING,
+        help = "instand id to assign to this instance. ")
+@click.pass_obj
+def assign_instance(blueprint):    
+    """Assign an existing instance from its instance ID to a NeuroCAASAMI object so you can start developing on it. 
+
+    """
+
+def submit_job(blueprint):
+    """Submit a job to the instance you're developing on. 
+
+    """
 
 
+def job_output(blueprint):    
+    """Read stdout and stderr from the instance you're developing on.  
 
+    """
 
+def save_image(blueprint):    
+    """Save the image of the instance you're developing on.   
 
+    """
 
+def update_blueprint(blueprint):    
+    """Update the blueprint of the instance you're developing on.   
 
+    """
+
+def launch_devinstance(blueprint):
+    """Launch a new instance. 
+
+    """
+def start_devinstance(blueprint):
+    """Start an existing instance. 
+
+    """
+def stop_devinstance(blueprint):
+    """Stop an existing instance. 
+
+    """
+def terminate_devinstance(blueprint):
+    """Terminate an existing instance. 
+
+    """
