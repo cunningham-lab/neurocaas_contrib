@@ -558,7 +558,7 @@ def get_lifetime(blueprint):
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = NeuroCAASAMI.from_dict(devdict)
-    ami.get_lifetime()
+    click.echo(ami.get_lifetime())
 
 @cli.command(help = "Get the lifetime of the instance")
 @click.option("-m",
