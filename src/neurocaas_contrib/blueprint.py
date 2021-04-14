@@ -81,3 +81,12 @@ class Blueprint(object):
     #@active_image.getter
     #def active_image(self):
     #    self._active_image = self.blueprint_dict.get("image_history",[None])[-1]
+
+    def update_develop_history(self,develop_dict):        
+        """Updates the development history with a most recent entry. 
+
+        :param develop_dict: development dictionary to specify the NeuroCAASAMI object.
+        """
+        develop_history = deque(self.blueprint_dict.get("develop_history",[]),maxlen = 5)
+        develop_history.append(develop_dict)
+        self.blueprint_dict["develop_history"] = list(develop_history)

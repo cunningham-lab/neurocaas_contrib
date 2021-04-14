@@ -81,9 +81,14 @@ if __name__ == "__main__":
     startdate,enddate = rf.range_months()
     logging.info(str(startdate)+" "+str(enddate))
     fig,ax = plt.subplots(2,1,sharex = False)
-    ax[0].hist(all_parallelism,bins = bins,log = True)
+    ax[0].hist(all_parallelism,bins = bins,log = True,edgecolor = "black")
     ax[0].set_ylabel("Total Job Count")
     ax[0].set_xscale("log",basex = base)
+    ax[0].tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    labelbottom=False,
+    bottom = False) # labels along the bottom edge are off
     #ax[1].bar(duration_keys,duration_values)
     #ax[1].bar([i for i in range(len(values_binned))],values_binned)
     ax[1].bar(bins[:-1],values_binned,width = np.diff(bins),log = True,ec = "k",align = "edge")

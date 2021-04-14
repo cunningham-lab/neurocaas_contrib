@@ -1,0 +1,14 @@
+{
+    "instance": "i-00000000000000000",
+    "command": "aaaaaaaa-1111-4444-0000-999999999999",
+    "input": "groupname/inputs/dataset.ext",
+    "status": "success",
+    "reason": "",
+    "memory_usage": "N/A MB",
+    "cpu_usage": "0 %",
+    "job_start": "2021-01-14T15:23:09.4698932Z",
+    "job_finish": "2021-01-14T15:23:09.4682892Z",
+    "std": {
+        "0": ""
+    }
+}

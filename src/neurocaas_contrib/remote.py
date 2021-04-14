@@ -96,6 +96,25 @@ class NeuroCAASAMI(object):
     devenv.terminate_devinstance() ## clean up after done developing
     ```
     """
+    @classmethod
+    def from_dict(cls,d):
+        """Initialize an instance from another instance's __dict__: 
+
+        """
+        path = os.path.dirname(d["config_fullpath"])
+        inst = cls(path)
+        #TODO FInish implementing this. You need to initialize, then assign the new config, then assign the instance + ami and command histories. 
+        inst.config = d["config"]
+        if d["instance_id"] is not None:
+            inst.assign_instance(d["instance_id"])
+            inst.ip = d.get("ip",None)
+        inst.instance_hist = [ec2_resource.Instance(i) for i in d["instance_hist"]]
+        inst.ami_hist = d["ami_hist"]
+        inst.commands = d["commands"]
+        inst.instance_saved = d["instance_saved"]
+        
+        return inst
+        
     def __init__(self,path):
         config_filepath = 'stack_config_template.json'
         config_fullpath = os.path.join(path,config_filepath)
@@ -342,7 +361,7 @@ class NeuroCAASAMI(object):
         dataset_dir = re.findall("(.+)/{}/".format(gpdict["input_directory"]),data_filename)[0]
         status_name = "DATASET_NAME:{}_STATUS.txt".format(dataset_basename)
         status_path = os.path.join(dataset_dir,outdir,gpdict["log_directory"],status_name)
-        statusobj = s3_resource.Object(self.config['PipelineName'],status_path)
+        statusobj = s3.Object(self.config['PipelineName'],status_path)
         statusobj.put(Body = (bytes(json.dumps(template_dict).encode("UTF-8"))))
 
         time.sleep(5)
@@ -512,10 +531,13 @@ class NeuroCAASAMI(object):
         else:
             pass
         ## now, commit the current version of the stack config template and indicate this as the Parent ID in the template. 
-        subprocess.call(["git","add",self.config_fullpath])
-        subprocess.call(["git","commit","-m","automatic commit to document pipeline {} before update at {}".format(self.config_filepath,str(datetime.datetime.now()))])
-        old_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
-        print("old commit has hash: {}".format(old_hash))
+        try:
+            subprocess.call(["git","add",self.config_fullpath])
+            subprocess.call(["git","commit","-m","automatic commit to document pipeline {} before update at {}".format(self.config_filepath,str(datetime.datetime.now()))])
+            old_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
+            print("old commit has hash: {}".format(old_hash))
+        except subprocess.CalledProcessError:    
+            print("not run in a git repo. not committing")
 
         ## now change the config to reflect your most recent ami edits:
         if self.config["Lambda"]["LambdaConfig"]["AMI"] == ami_id:
@@ -528,10 +550,13 @@ class NeuroCAASAMI(object):
                 json.dump(self.config,configfile,indent = 4)
                 print("Blueprint updated with ami {}".format(ami_id))
             
+        try:
             subprocess.call(["git","add",self.config_fullpath])
             subprocess.call(["git","commit","-m","automatic commit to document pipeline {} after update at {}. Purpose: {}".format(self.config_filepath,str(datetime.datetime.now()),message)])
             new_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
             print("new commit has hash: {}".format(new_hash))
+        except subprocess.CalledProcessError:    
+            print("not run in a git repo. not committing")
 
 
 
@@ -603,6 +628,25 @@ class NeuroCAASAMI(object):
                 
 
         return condition
+
+    def to_dict(self):
+        """Save out the defining elements of this instance to a dictionary. Since the instance itself is not JSON serializable, we replace it with the instance id.   
+
+        """
+        attdict = {}
+        for k,v in self.__dict__.items():
+            if k == "instance":
+                if v is not None:
+                    attdict["instance_id"] = v.instance_id
+                else:    
+                    attdict["instance_id"] = None
+            elif k == "instance_hist":    
+                attdict["instance_hist"] = [vi.instance_id for vi in v]
+
+            else:    
+                attdict[k] = v
+        return attdict
+
 
 
 

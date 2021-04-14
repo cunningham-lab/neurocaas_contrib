@@ -323,3 +323,42 @@ def postprocess_jobdict(by_job):
     [by_job.pop(td) for td in set(to_del)]        
     return by_job
 
+def calculate_parallelism_nones(bucket_name,usage_list,user):
+    """ Organizes individual runs into jobs, enven if none. 
+
+    """
+    by_job = {}
+    job_rfs = {}
+    for inst in usage_list:
+        rf_start = RangeFinder()
+        rf_end = RangeFinder()
+        usage_dict = load_json(bucket_name,inst)
+        if all([usage_dict[state] is None for state in ["start","end"]]):
+            pass
+
+        job = usage_dict["jobpath"]
+        try:
+            job_rfs[job]["rf_start"].update(usage_dict["start"])
+            job_rfs[job]["rf_end"].update(usage_dict["end"])
+            by_job[job]["instances"].append(usage_dict)
+            try:
+                by_job[job]["durations"][usage_dict["instance-id"]] = get_duration(usage_dict["start"],usage_dict["end"])
+            except TypeError:    
+                by_job[job]["durations"][usage_dict["instance-id"]] = None
+            by_job[job]["laststart"] = job_rfs[job]["rf_start"].endtime
+            by_job[job]["firstend"] = job_rfs[job]["rf_end"].starttime
+
+        except KeyError:    
+            job_rfs[job] = {"rf_start":RangeFinder(),"rf_end":RangeFinder()}
+            job_rfs[job]["rf_start"].update(usage_dict["start"])
+            job_rfs[job]["rf_end"].update(usage_dict["end"])
+            by_job[job] = {"instances":[usage_dict]}
+            #####by_job[job]["instances"] = [usage_dict]
+            try:
+                by_job[job]["durations"] = {usage_dict["instance-id"]:get_duration(usage_dict["start"],usage_dict["end"])}
+            except TypeError:    
+                by_job[job]["durations"] = {usage_dict["instance-id"]:None}
+            by_job[job]["laststart"] = job_rfs[job]["rf_start"].endtime
+            by_job[job]["firstend"] = job_rfs[job]["rf_end"].starttime
+
+    return by_job
