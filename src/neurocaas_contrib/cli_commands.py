@@ -7,7 +7,7 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
-from .scripting import get_yaml_field
+from .scripting import get_yaml_field,parse_zipfile
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -393,6 +393,23 @@ def read_yaml(path,field,default = None):
         else:
             print(default)
     #click.echo(output)
+
+@cli.command(help ="extract zipped folder into the same directory, and get name of the folder that is created.")
+@click.option("-z",
+        "--zippath",
+        help = "path to zip file",
+        type = click.Path(exists = True,file_okay = True,readable = True,resolve_path = True)
+        )
+@click.option("-o",
+        "--outpath",
+        help = "outpath",
+        type = click.Path(exists = True,file_okay = True,readable = True,resolve_path = True),
+        default = None
+        )
+def parse_zip(zippath,outpath):
+    output = parse_zipfile(zippath,outpath)
+    click.echo(output)
+
 
 
 
