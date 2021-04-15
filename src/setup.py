@@ -15,7 +15,7 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts":[
-            "neurocaas_contrib = neurocaas_contrib.main:main",
+            "neurocaas-contrib = neurocaas_contrib.main:main",
         ]
     },
     classifiers=[
