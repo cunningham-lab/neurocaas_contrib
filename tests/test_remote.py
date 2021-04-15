@@ -87,12 +87,12 @@ class Test_NeuroCAASAMI():
         print(ddict)
         config.write_text(json.dumps(ddict)) ## successful write = pass
 
-    @pytest.mark.parametrize("condition",["empty","full"])
+    @pytest.mark.parametrize("condition",["empty","full","full_noinst"])
     def test_from_dict(self,mock_boto3_for_remote,tmp_path,condition):
         tempdir = tmp_path / "dir"
         tempdir.mkdir()
         config = tempdir / "dict.json"
-        if condition == "full":
+        if condition in ["full","full_noinst"]:
             submit = tmp_path / "submit.json"
             submit.write_text(json.dumps({"dataname":"zz","configname":"yy","timestamp":"uu"}))
             amiid = mock_boto3_for_remote
@@ -110,9 +110,19 @@ class Test_NeuroCAASAMI():
         ## compare: 
         with open(config) as f:
             dict_recovered = json.load(f)
-        ami2 = NeuroCAASAMI.from_dict(dict_recovered)
-        for k,v in ami.__dict__.items():
-            assert ami2.__dict__[k] == v
+        if condition in ["empty","full"]:
+            ami2 = NeuroCAASAMI.from_dict(dict_recovered)
+            for k,v in ami.__dict__.items():
+                assert ami2.__dict__[k] == v
+        else:
+            dict_recovered["instance_id"] = "noexists"
+            dict_recovered["instance_hist"] = ["garb","age"]
+            ami2 = NeuroCAASAMI.from_dict(dict_recovered)
+            for k,v in ami.__dict__.items():
+                if k in ["instance","instance_hist"]:
+                    pass
+                else:
+                    assert ami2.__dict__[k] == v
 
 
 

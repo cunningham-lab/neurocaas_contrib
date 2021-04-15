@@ -407,7 +407,7 @@ def test_develop_remote_existing(setup_log_bucket):
             stackconfig = json.load(f)
         with open(".neurocaas_contrib_config_test.json") as f:
             configdict = json.load(f)
-        assert configdict["develop_dict"] == none 
+        assert configdict["develop_dict"] == None 
         result = eprint(runner.invoke(cli,["develop-remote"],input = "{}".format("y")))
         with open(".neurocaas_contrib_config_test.json") as f:
             configdict_full = json.load(f)
@@ -543,12 +543,19 @@ def test_update_blueprint(setup_log_bucket,mock_boto3_for_remote):
         result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
         stackconfig = os.path.join(here,"test_mats","stack_config_template.json")
         shutil.copy(stackconfig,os.path.join("./",bucket_name,"stack_config_template.json"))
+        subprocess.call(["git","init","./{}".format(bucket_name)])
+        os.chdir("./".format(bucket_name))
+        subprocess.call(["git","add","stack_config_template.json"])
+        subprocess.call(["git","commit","-m","initial commit"])
         with open(stackconfig) as f:
             sc_old = json.load(f)
             ami_old = sc_old["Lambda"]["LambdaConfig"]["AMI"]
         result = eprint(runner.invoke(cli,["develop-remote"],input = "{}".format("y")))
         eprint(runner.invoke(cli,["assign-instance","-i",instance.id]))
         eprint(runner.invoke(cli,["create-devami","-n","falseami"]))
+        print(os.getcwd())
+        os.chdir("./".format(bucket_name))
+        print(os.getcwd())
         eprint(runner.invoke(cli,["update-blueprint"]))
         with open(stackconfig) as f:
             sc_new = json.load(f)
@@ -568,7 +575,8 @@ def test_update_history(setup_log_bucket,mock_boto3_for_remote):
         os.mkdir("./logs")
         result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
         
-        shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+        stackconfig = os.path.join("./",bucket_name,"stack_config_template.json")
+        shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),stackconfig)
         with open(stackconfig) as f:
             sc_old = json.load(f)
             hist_old = sc_old["develop_history"]
