@@ -106,7 +106,10 @@ class NeuroCAASAMI(object):
         #TODO FInish implementing this. You need to initialize, then assign the new config, then assign the instance + ami and command histories. 
         inst.config = d["config"]
         if d["instance_id"] is not None:
-            inst.assign_instance(d["instance_id"])
+            try:
+                inst.assign_instance(d["instance_id"])
+            except ClientError as e:    
+                print("Instance {} does not exist, not assigning ".format(d["instance_id"]))
             inst.ip = d.get("ip",None)
         inst.instance_hist = [ec2_resource.Instance(i) for i in d["instance_hist"]]
         inst.ami_hist = d["ami_hist"]
@@ -537,7 +540,8 @@ class NeuroCAASAMI(object):
             old_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
             print("old commit has hash: {}".format(old_hash))
         except subprocess.CalledProcessError:    
-            print("not run in a git repo. not committing")
+            print("This function must be called inside a git repository to properly document blueprint updates. Exiting.")
+            raise
 
         ## now change the config to reflect your most recent ami edits:
         if self.config["Lambda"]["LambdaConfig"]["AMI"] == ami_id:
