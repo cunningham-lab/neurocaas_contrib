@@ -1,4 +1,5 @@
 import neurocaas_contrib.scripting as scripting
+import shlex
 import pytest
 import os
 
@@ -25,3 +26,13 @@ def test_parse_zipfile(name,value):
         folder = scripting.parse_zipfile(zippath)
         assert folder == "1"
         assert os.path.exists(os.path.join(os.path.dirname(zippath),folder))
+
+def test_log_process():        
+    badscript = os.path.join(loc,"test_mats","sendtime_br.sh")
+    goodscript = os.path.join(loc,"test_mats","sendtime.sh")
+    logpath = os.path.join(loc,"test_mats","log")
+
+    brcode = scripting.log_process(shlex.split(badscript),"logpath","s3://fakepath")
+    gdcode = scripting.log_process(shlex.split(goodscript),"logpath","s3://fakepath")
+    assert brcode == 127
+    assert gdcode == 0
