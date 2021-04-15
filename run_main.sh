@@ -9,6 +9,7 @@ source "$scriptpath/paths.sh"
 ## Now declare remote directory name for here and all sourced files: 
 set -a
 neurocaasrootdir=$(dirname $(get_abs_filename "$execpath"))
+userhome="/home/ubuntu"
 set +a
 
 source "$scriptpath/workflow.sh"
@@ -21,7 +22,7 @@ source "$scriptpath/transfer.sh"
 # Results Directory $resultdir
 # Analysis Output Directory $process
 # Dataset Name (without path) $dataname
-# Dataset Full Path $datapath
+# Dataset Full Path $inputpath (fka $datapath)
 # Configuration Name # configname
 # Configuration Path # configpath
 set -a

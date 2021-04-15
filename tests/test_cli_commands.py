@@ -184,8 +184,8 @@ def test_cli_get_iae_info(remove_container,initialized,info):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         if initialized is True:
-            result = eprint(runner.invoke(cli,["setup-development-container"]))
-        result = eprint(runner.invoke(cli,["get-iae-info"]))
+            result = eprint(runner.invoke(cli,["local","setup-development-container"]))
+        result = eprint(runner.invoke(cli,["local","get-iae-info"]))
         outinfo = result.output
         for inf in info:
             assert inf in outinfo
@@ -198,7 +198,7 @@ def test_cli_setup_development_container(remove_container):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container"]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container"]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == containername
@@ -212,7 +212,7 @@ def test_cli_setup_development_container_named(remove_named_container):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagename,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--image",imagename,"--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
@@ -227,8 +227,8 @@ def test_cli_save_developed_image(remove_named_container):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagerepo,"--container",namedcontainername]))
-        result = eprint(runner.invoke(cli,["save-developed-image","--tagid",testid,"--force","--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--image",imagerepo,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","save-developed-image","--tagid",testid,"--force","--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
     imagetag = "{}:{}.{}".format(imagerepo,name,testid)
@@ -250,11 +250,11 @@ def test_cli_save_developed_image_script(remove_named_container):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagerepo,"--container",namedcontainername]))
-        result = eprint(runner.invoke(cli,["save-developed-image","--tagid",testid,"--force","--container",namedcontainername,"--script",script]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--image",imagerepo,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","save-developed-image","--tagid",testid,"--force","--container",namedcontainername,"--script",script]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-        result = eprint(runner.invoke(cli,["get-iae-info"]))    
+        result = eprint(runner.invoke(cli,["local","get-iae-info"]))    
         assert script in result.output
     imagetag = "{}:{}.{}".format(imagerepo,name,testid)
     try:
@@ -290,7 +290,7 @@ def test_cli_setup_inputs():
         Path(datapath2).touch()
         Path(confpath).touch()
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-        result = eprint(runner.invoke(cli,["setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
+        result = eprint(runner.invoke(cli,["local","setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
         assert os.path.exists(os.path.join("setupinputs","io-dir","inputs","data.txt"))
         assert os.path.exists(os.path.join("setupinputs","io-dir","inputs","data2.txt"))
         assert os.path.exists(os.path.join("setupinputs","io-dir","configs","config.json"))
@@ -304,17 +304,17 @@ def test_container_singleton(remove_named_container):
 
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-        result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--container",namedcontainername]))
         with pytest.raises(Exception):
-            result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
+            result = eprint(runner.invoke(cli,["local","setup-development-container","--container",namedcontainername]))
 
 def test_reset_container(remove_named_container):            
     runner = CliRunner()
     name = "resetcontainer"
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-        result = eprint(runner.invoke(cli,["reset-container","--container",namedcontainername]))
-        result = eprint(runner.invoke(cli,["setup-development-container","--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","reset-container","--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--container",namedcontainername]))
 
 @pytest.mark.xfail ## issue with docker volumes in the runner isolated filesystem
 def test_cli_setup_development_container_env(remove_named_container):
@@ -330,9 +330,9 @@ def test_cli_setup_development_container_env(remove_named_container):
         Path(datapath2).touch()
         Path(confpath).touch()
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-        result = eprint(runner.invoke(cli,["setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
+        result = eprint(runner.invoke(cli,["local","setup-inputs","-d",datapath,"-d",datapath2,"-c",confpath]))
         assert os.path.exists("./"+name+"/stack_config_template.json") == True
-        result = eprint(runner.invoke(cli,["setup-development-container","--image",imagename,"--container",namedcontainername]))
+        result = eprint(runner.invoke(cli,["local","setup-development-container","--image",imagename,"--container",namedcontainername]))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
