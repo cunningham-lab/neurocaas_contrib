@@ -289,7 +289,12 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         with open(path, "wb") as f:
             f.write(body.encode("utf-8"))
 
-class NeuroCAASDataStatus(NeuroCAASLogObject):
+class NeuroCAASDataStats(NeuroCAASLogObject):
+    """Base class for original and docker based DataStatus log objects. 
+
+    """
+
+class NeuroCAASDataStatus(NeuroCAASDataStats):
     """Per-instance log file that captures details about each individual dataset analysis run: entire history of messages printed to stdout/stderr, the exit code, any error information, etc. Written as a json file for convenience. Takes a running docker container and does everything needed to parse out relevant arguments from it. This includes the output to stdout and stderr, the current cpu usage and memory usage, the  docker container object that we will be querying for relevant status information. Note that this file is also assumed to be initialized by a lambda generated file, so we should treat it like the certificate file with similar failsafes to fall back on local processing. We inherit an init method from NeuroCAASLogObject to enable this. 
 
     :param dataset_name: name of the dataset this status object is tracking. 
