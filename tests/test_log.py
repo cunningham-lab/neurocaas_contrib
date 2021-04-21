@@ -1,4 +1,5 @@
 import localstack_client.session
+import datetime
 import json
 import pdb
 import docker
@@ -258,6 +259,110 @@ class Test_NeuroCAASDataStatus():
         for key in datadict:
             assert datadict[key] == ncds.rawfile[key]
 
+class Test_NeuroCAASDataStatusLegacy():
+    @classmethod
+    def setup_class(cls):
+        """setup a docker container that's just printing every second. Equivalent to the command:
+            docker run -it neurocaas/contrib:base /bin/bash -c 'while sleep 1; do ls; done'
+        """
+        create_mock_data("caiman-ncap-web","reviewers/results/job__caiman-ncap-web_1589650394/logs/DATASET_NAME-dataset.ext_STATUS.txt.json",localstatuspath)
+
+    @classmethod
+    def teardown_class(cls):    
+        empty_and_delete_bucket("caiman-ncap-web")
+
+    def test_NeuroCAASDataStatusLegacy(self):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        assert ncds.writeobj.init_dict["loc"] == "s3" 
+
+    def test_NeuroCAASDataStatusLegacy_get_default_rawfile(self):    
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        assert type(ncds.rawfile) == dict
+
+    def test_NeuroCAASDataStatusLegacy_get_stdout(self):    
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        logfile = os.path.join(testdir,"test_mats","log")
+        output = ncds.get_stdout(logfile)
+        assert type(output) == list
+        assert type(output[0]) == str 
+    
+    def test_NeuroCAASDataStatusLegacy_get_status(self):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        status = ncds.get_status()
+
+    def test_NeuroCAASDataStatusLegacy_get_status_success(self,monkeypatch):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        status = ncds.get_status(starttime = starttime,finishtime=finishtime,exit_code=0)
+        assert status["status"] == "SUCCESS"
+
+    def test_NeuroCAASDataStatusLegacy_get_status_failed(self,monkeypatch):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        status = ncds.get_status(starttime = starttime,finishtime=finishtime,exit_code=127)
+        assert status["status"] == "FAILED"
+
+    def test_NeuroCAASDataStatusLegacy_get_status_running(self,monkeypatch):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        status = ncds.get_status(starttime = starttime)
+        assert status["status"] == "IN PROGRESS"
+
+    @pytest.mark.xfail
+    def test_NeuroCAASDataStatusLegacy_get_usage(self):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        usagedict = ncds.get_usage()
+        for key in usagedict.keys():
+            assert key in ["cpu_total","memory_total_mb"]
+        for value in usagedict.values():
+            assert type(value) in [int,float,str]
+        assert usagedict["cpu_total"] >= 0 
+        
+    def test_NeuroCAASDataStatusLegacy_update_file(self): 
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        logfile = os.path.join(testdir,"test_mats","log")
+        ncds.update_file(logfile,starttime,finishtime)
+        print(ncds.rawfile)
+        assert 0 
+
+    def test_NeuroCAASDataStatusLegacy_write_local(self):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        ncds = log.NeuroCAASDataStatusLegacy("s3://fake.ext")
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        logfile = os.path.join(testdir,"test_mats","log")
+        ncds.update_file(logfile,starttime,finishtime)
+        ncds.write()
+
+    def test_NeuroCAASDataStatusLegacy_write_s3(self,monkeypatch):
+        create_mock_data(statusbucket,statuskey,localstatuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        logfile = os.path.join(testdir,"test_mats","log")
+        ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        ncds.update_file(logfile,starttime,finishtime)
+        ncds.write()
+        self.session_ls = localstack_client.session.Session()
+        s3_localclient = self.session_ls.client("s3")
+        remote = self.session_ls.resource("s3").Object(statusbucket,statuskey).get()["Body"].read().decode("utf-8")
+        datadict = json.loads(remote)
+        for key in datadict:
+            assert datadict[key] == ncds.rawfile[key]
+
 
 class Test_WriteObj():
     def setup_method(self):
@@ -309,7 +414,6 @@ class Test_WriteObj():
             
         for k in data_dict:    
             assert data_dict[k] == data[k]
-
         
     def teardown_method(self):
         s3_localclient = self.session_ls.client("s3")

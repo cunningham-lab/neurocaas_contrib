@@ -2,15 +2,17 @@
     "instance": "i-00000000000000000",
     "command": "aaaaaaaa-1111-4444-0000-999999999999",
     "input": "groupname/inputs/dataset.ext",
-    "status": "success",
-    "reason": "",
+    "status": "SUCCESS",
+    "reason": 0,
     "memory_usage": "N/A MB",
-    "cpu_usage": "0 %",
-    "job_start": "2020-12-29T02:43:11.280665571Z",
-    "job_finish": "2020-12-29T02:43:11.280239808Z",
+    "cpu_usage": "b'$[100-$(vmstat 1 2|tail -1|awk {print $15})]\\n' %",
+    "job_start": "2021-04-15T17:35:52Z",
+    "job_finish": "2021-04-15T17:35:57Z",
     "std": {
-        "0": "io-dir",
-        "1": "neurocaas_contrib",
-        "2": ""
+        "0": "Thu Apr 15 17:35:53 EDT 2021\n",
+        "1": "Thu Apr 15 17:35:54 EDT 2021\n",
+        "2": "Thu Apr 15 17:35:55 EDT 2021\n",
+        "3": "Thu Apr 15 17:35:56 EDT 2021\n",
+        "4": "Thu Apr 15 17:35:57 EDT 2021\n"
     }
 }
