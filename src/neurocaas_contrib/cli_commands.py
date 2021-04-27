@@ -46,7 +46,7 @@ def cli(ctx,location,analysis_name):
 
     """
     ## Determine those commands for which you don't require a specific blueprint.
-    no_blueprint = ['init','describe-analyses',"read-yaml"]
+    no_blueprint = ['init','describe-analyses',"scripting"]
     if ctx.invoked_subcommand in no_blueprint:
         return ## move on and run configure. 
     else:
@@ -167,7 +167,11 @@ def get_blueprint(blueprint):
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     click.echo(string)
 
-@cli.command(help = "print information about the IAE from the blueprint.")
+@cli.group(help = "develop locally in a docker container.")
+def local():
+    pass 
+
+@local.command(help = "print information about the IAE from the blueprint.")
 @click.pass_obj
 def get_iae_info(blueprint):
     """Prints information about the IAE from the blueprint that CLI is currently configured to work with. Given in JSON format.  
@@ -196,7 +200,7 @@ def get_iae_info(blueprint):
         "--container",
         help = "name to give to containers",
         default="neurocaasdevcontainer")
-@cli.command(help = "set up an environment to develop in.")
+@local.command(help = "set up an environment to develop in.")
 @click.pass_obj
 def setup_development_container(blueprint,image,container):
     """Launches a container from an image of your choice so that you can perform configuration."""
@@ -215,7 +219,7 @@ def setup_development_container(blueprint,image,container):
     blueprint["blueprint"].update_container_history(active_image.container_name)
     blueprint["blueprint"].write()
 
-@cli.command(help = "removes the current active container.")
+@local.command(help = "removes the current active container.")
 @click.option("-c",
         "--container",
         help = "name of container to remove",
@@ -237,7 +241,7 @@ def reset_container(blueprint,container):
     except Exception: 
         click.echo("Container not found. Run `setup-development-container` first.")
 
-@cli.command(help = "save a container to a new image.")
+@local.command(help = "save a container to a new image.")
 @click.option("-t",
         "--tagid",
         help = "unique tag identifier to identify this image. Will generate image name as neurocaas/contrib:[analysisname].[tagid]",
@@ -283,7 +287,7 @@ def save_developed_image(blueprint,tagid,force,container,script):
         blueprint["blueprint"].update_image_history("{}:{}".format(image.repo_name,tag))
         blueprint["blueprint"].write()
 
-@cli.command(help="enter the container to start development.")
+@local.command(help="enter the container to start development.")
 @click.option("-c",
         "--container",
         help = "name of the container to enter.",
@@ -301,7 +305,7 @@ def enter_container(blueprint,container):
     else:
         subprocess.run(["docker","exec","-it",container,"/bin/bash"])
 
-@cli.command(help = "prepare sample input data.")
+@local.command(help = "prepare sample input data.")
 @click.option("-d",
         "--data",
         help = "path to test dataset.",
@@ -346,7 +350,7 @@ def setup_inputs(blueprint,data,config):
         help = "name of the config file you will analyze.",
         default = None,
         type = click.STRING)
-@cli.command(help = "run analysis in a saved environment.")
+@local.command(help = "run analysis in a saved environment.")
 @click.pass_obj
 def run_analysis(blueprint,image,data,config):
     """Launches a container from an image of your choice so that you can perform configuration."""
@@ -369,6 +373,12 @@ def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
 ## scripting tools 
+@cli.group()
+def scripting():
+    """Scripting functions.
+    """
+
+    return 
 
 @click.option("-p",
         "--path",
@@ -382,7 +392,7 @@ def home():
 @click.option("-d",
         "--default",
         help = "default output to give if not found")
-@cli.command(help = "extract field from a yaml file as a string.")
+@scripting.command(help = "extract field from a yaml file as a string.")
 def read_yaml(path,field,default = None):
     try:
         output = get_yaml_field(path,field)
@@ -394,7 +404,7 @@ def read_yaml(path,field,default = None):
             print(default)
     #click.echo(output)
 
-@cli.command(help ="extract zipped folder into the same directory, and get name of the folder that is created.")
+@scripting.command(help ="extract zipped folder into the same directory, and get name of the folder that is created.")
 @click.option("-z",
         "--zippath",
         help = "path to zip file",
