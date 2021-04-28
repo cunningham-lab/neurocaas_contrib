@@ -516,6 +516,7 @@ class NeuroCAASAMI(object):
 
     def update_blueprint(self,ami_id=None,message=None):
         """
+        NOTE: update 4/28: this function will no longer update the whole blueprint, but only the ami id. For most cases, this should not matter, but it will when you change the command to run a development job, or initialize blueprints from a separate blueprint.  
         Method to take more recently developed amis, and assign them to the stack_config_template of the relevant instance, and create a git commit to document this change. 
 
         Inputs: 
@@ -524,7 +525,10 @@ class NeuroCAASAMI(object):
         """
         ## First, get the ami we want to use:
         if ami_id is None:
-            ami_id = self.ami_hist[-1]["ImageId"]
+            try:
+                ami_id = self.ami_hist[-1]["ImageId"]
+            except IndexError:    
+                raise AssertionError("There is no record of an AMI that can be used to update the blueprint.")
         else:
             pass
 
@@ -549,9 +553,12 @@ class NeuroCAASAMI(object):
         else:
             self.config["Lambda"]["LambdaConfig"]["AMI"] = ami_id
 
-            ## now open and write to the stack config file:
+            ## now open and get state of current blueprint:
+            with open(self.config_fullpath,"r") as configfile:
+                blueprintstate = json.load(configfile)
+            blueprintstate["Lambda"]["LambdaConfig"]["AMI"] = ami_id
             with open(self.config_fullpath,"w") as configfile:
-                json.dump(self.config,configfile,indent = 4)
+                json.dump(blueprintstate,configfile,indent = 4)
                 print("Blueprint updated with ami {}".format(ami_id))
             
         try:

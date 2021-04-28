@@ -123,6 +123,23 @@ class Test_NeuroCAASAMI():
                     pass
                 else:
                     assert ami2.__dict__[k] == v
+    
+    def test_update_blueprint(self,mock_boto3_for_remote,tmp_path):
+        ami = NeuroCAASAMI(os.path.join(test_mats))
+        ami.config["Addfield"] = "zz"
+        # First try with failure: 
+        with pytest.raises(AssertionError):
+            ami.update_blueprint()
+        # Now try with an ami id in place: 
+        ami_id = mock_boto3_for_remote
+        ami.update_blueprint(ami_id = ami_id)
+        with open(os.path.join(test_mats,"stack_config_template.json")) as f:
+            blueprint = json.load(f) 
+        assert blueprint["Lambda"]["LambdaConfig"]["AMI"] == ami_id
+        assert not blueprint.get("Addfield",False)
+
+
+
 
 
 
