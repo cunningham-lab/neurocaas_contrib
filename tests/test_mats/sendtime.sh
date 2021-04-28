@@ -8,4 +8,3 @@ do
     now=$(date)
     echo $now
 done     
-

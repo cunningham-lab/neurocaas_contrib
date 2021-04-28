@@ -9,3 +9,4 @@ do
     echo $now
 done     
 
+ezep

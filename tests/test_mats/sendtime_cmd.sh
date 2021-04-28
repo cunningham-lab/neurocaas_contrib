@@ -6,6 +6,6 @@ for i in {1..5}
 do     
     sleep 1
     now=$(date)
-    echo $now
+    echo $now $1
 done     
 
