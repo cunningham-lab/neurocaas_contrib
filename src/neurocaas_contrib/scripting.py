@@ -26,6 +26,10 @@ else:
     configname = ".neurocaas_contrib_dataconfig.json"
     configpath = os.path.join(os.path.expanduser("~"),configname)
 
+def mkdir_notexists(dirname):
+    if not os.path.isdir(dirname):
+        os.makedirs(dirname)
+
 def get_yaml_field(yamlfile,fieldname):
     """returns the value of a field in a yaml file. 
 
@@ -138,7 +142,7 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["data"]["s3"] == s3path
+        self.registration["data"]["s3"] = s3path
         self.write()
 
     def register_config(self,s3path):
@@ -147,7 +151,7 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["config"]["s3"] == s3path
+        self.registration["config"]["s3"] = s3path
         self.write()
 
     def register_file(self,name,s3path):
@@ -162,12 +166,79 @@ class NeuroCAASScriptManager(object):
         self.registration["additional_files"][name]["s3"] = s3path
         self.write()
 
-    def get_data(self,path = None):    
+    def get_data(self,path = None,force = False,display = False):    
         """Get currently registered data. If desired, you can pass a path where you would like data to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
         :param path: (optional) the location you want to write data to. 
+        :param force: (optional) by default, will not redownload if data of the same name already lives here. Can override with force = True
+        :param display: (optional) by default, will not display downlaod progress. 
 
         """
+        try:
+            data_s3path = self.registration["data"]["s3"]
+            assert data_s3path is not None
+            data_name = os.path.basename(data_s3path)
+        except AssertionError:     
+            raise AssertionError("Data not registered. Run register_data first.") 
 
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["data"])
+            mkdir_notexists(path)
+        data_localpath = os.path.join(path,data_name)
+
+        if not force: 
+            assert not os.path.exists(data_localpath), "Data already exists at this location. Set force = true to overwrite"
+        download(data_s3path,data_localpath)    
+
+            
+    def get_config(self,path = None,force = False,display = False):    
+        """Get currently registered config. If desired, you can pass a path where you would like config to be moved. Otherwise, it will be moved to self.path/self.subdirs[config]
+        :param path: (optional) the location you want to write data to. 
+        :param force: (optional) by default, will not redownload if config of the same name already lives here. Can override with force = True
+        :param display: (optional) by default, will not display downlaod progress. 
+
+        """
+        try:
+            config_s3path = self.registration["config"]["s3"]
+            assert config_s3path is not None
+            config_name = os.path.basename(config_s3path)
+        except AssertionError:     
+            raise AssertionError("Config not registered. Run register_config first.") 
+
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["config"])
+            mkdir_notexists(path)
+        config_localpath = os.path.join(path,config_name)
+
+        if not force: 
+            assert not os.path.exists(config_localpath), "Data already exists at this location. Set force = true to overwrite"
+        download(config_s3path,config_localpath)    
+
+    def get_file(self,filename,path = None,force = False,display = False):    
+        """Get currently registered file. If desired, you can pass a path where you would like file to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
+        :param path: (optional) the location you want to write data to. 
+        :param force: (optional) by default, will not redownload if file of the same name already lives here. Can override with force = True
+        :param display: (optional) by default, will not display downlaod progress. 
+
+        """
+        try:
+            file_s3path = self.registration["additional_files"][filename]["s3"]
+        except KeyError:    
+            raise AssertionError("File not registered. Run register_file first.") 
+        try:
+            assert file_s3path is not None
+            file_name = os.path.basename(file_s3path)
+        except AssertionError:     
+            raise AssertionError("Config not registered. Run register_file first.") 
+
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["data"])
+            mkdir_notexists(path)
+        file_localpath = os.path.join(path,file_name)
+
+        if not force: 
+            assert not os.path.exists(file_localpath), "Data already exists at this location. Set force = true to overwrite"
+        download(file_s3path,file_localpath)    
+         
 ## cli tools. 
 def register_data(s3_datapath):
     """Register the dataset. Get the dataset name and local path, and write it to a persistent file stored at "configpath".  
