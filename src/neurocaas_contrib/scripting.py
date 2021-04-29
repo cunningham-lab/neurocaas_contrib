@@ -77,6 +77,7 @@ def log_process(command,logpath,s3status):
         starttime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         process = subprocess.Popen(command,stdout = writer,stderr = writer)
         ## initialize a legacy logging object. starttime
+        sys.stdout.write("\n\n-------Start Process Log-------\n\n")
         while process.poll() is None:
             sys.stdout.write(reader.read().decode("utf-8"))
             ncds.update_file(logpath,starttime)
@@ -84,6 +85,7 @@ def log_process(command,logpath,s3status):
             time.sleep(0.5)
             ## update logging. 
         sys.stdout.write(reader.read().decode("utf-8"))
+        sys.stdout.write("\n--------End Process Log--------\n\n")
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         ncds.update_file(logpath,starttime,finishtime,process.returncode)
         ncds.write()
@@ -193,6 +195,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         download(data_s3path,data_localpath)    
+        self.registration["data"]["local"] = data_localpath
         return 1
 
             
@@ -223,11 +226,13 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         download(config_s3path,config_localpath)    
+        self.registration["config"]["local"] = config_localpath
         return 1
 
 
-    def get_file(self,filename,path = None,force = False,display = False):    
+    def get_file(self,varname,path = None,force = False,display = False):    
         """Get currently registered file. If desired, you can pass a path where you would like file to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
+        :param varname: name of the file key in the registration dictionary.  
         :param path: (optional) the location you want to write data to. 
         :param force: (optional) by default, will not redownload if file of the same name already lives here. Can override with force = True
         :param display: (optional) by default, will not display downlaod progress. 
@@ -235,7 +240,7 @@ class NeuroCAASScriptManager(object):
 
         """
         try:
-            file_s3path = self.registration["additional_files"][filename]["s3"]
+            file_s3path = self.registration["additional_files"][varname]["s3"]
         except KeyError:    
             raise AssertionError("File not registered. Run register_file first.") 
         try:
@@ -256,9 +261,77 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         download(file_s3path,file_localpath)    
+        self.registration["additional_files"][varname]["local"] = file_localpath
         return 1
 
-         
+    def get_name(self,contents):
+        """Given a generic dictionary of structure self.pathtemplate, correctly returns the filename if available. 
+        :param contents: a dictionary of structure {"s3":location,"local":location}
+        """
+        assert contents["local"] is not None, "local path does not exist."
+        return os.path.basename(contents["s3"])
+
+    def get_group(self,contents):
+        """Given a generic dictionary of structure self.pathtemplate, correctly returns the filename if available. 
+        :param contents: a dictionary of structure {"s3":location,"local":location}
+        """
+        assert contents["s3"] is not None, "s3 path does not exist. "
+        bucketname, groupname, subkey = contents["s3"].split("s3://")[-1].split("/",2)
+        return groupname 
+
+    def get_path(self,contents):
+        """Given a generic dictionary of structure self.pathtemplate, correctly returns the local filepath if available. 
+        :param contents: a dictionary of structure {"s3":location,"local":location}
+        """
+        assert contents["local"] is not None, "local path does not exist. "
+        return contents["local"]
+
+    def get_dataname(self):
+        """Get name of data
+
+        """
+        return self.get_name(self.registration["data"]) 
+
+    def get_configname(self):
+        """Get name of config
+
+        """
+        return self.get_name(self.registration["config"]) 
+
+    def get_filename(self,varname):
+        """Get name of file
+
+        """
+        return self.get_name(self.registration["additional_files"][varname]) 
+
+    def get_datapath(self):
+        """Get path of data
+
+        """
+        return self.get_path(self.registration["data"]) 
+
+    def get_configpath(self):
+        """Get path of config
+
+        """
+        return self.get_path(self.registration["config"]) 
+
+    def get_filepath(self,varname):
+        """Get path of file
+
+        """
+        return self.get_path(self.registration["additional_files"][varname]) 
+
+    def log_command(self,command,s3log,path=None):
+        """Wrapper around bare log_process function to provide the local logpath. 
+        :param path: path to a directory where you want to write the log outputs to tmplog.txt
+
+        """
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["logs"])
+            mkdir_notexists(path)
+        log_process(command,os.path.join(path,"log.txt"),s3log)    
+
 ## cli tools. 
 def register_data(s3_datapath):
     """Register the dataset. Get the dataset name and local path, and write it to a persistent file stored at "configpath".  
