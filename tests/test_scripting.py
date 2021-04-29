@@ -86,5 +86,52 @@ def test_get_config_name(created):
         assert config == os.path.basename(s3configpath)
     os.remove("./.neurocaas_contrib_dataconfig.json")
     
+class Test_NeuroCAASScriptManager():    
+    def test_init(self,tmp_path):
+        subdir = tmp_path / "subdir"
+        with pytest.raises(AssertionError):
+            ncsm = scripting.NeuroCAASScriptManager(subdir)
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir,write = False)
+        assert not os.path.exists(os.path.join(subdir,"registration.json"))
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        assert os.path.exists(os.path.join(subdir,"registration.json"))
+
+    def test_register_dataset(self,tmp_path):
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_data("s3://bucket/groupname/inputs/filename.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            data = json.load(fp)
+        data["data"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+
+    def test_register_config(self,tmp_path):    
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_config("s3://bucket/groupname/configs/filename.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            config = json.load(fp)
+        config["config"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+
+    def test_register_file(self,tmp_path):    
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_file("addfile","s3://bucket/groupname/configs/addfile.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            fi = json.load(fp)
+        fi["additional_files"]["addfile"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+
+    def test_from_registration(self,tmp_path):
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm2 = scripting.NeuroCAASScriptManager.from_registration(subdir)
+        assert ncsm.registration == ncsm2.registration
+        
+
+        
     
 

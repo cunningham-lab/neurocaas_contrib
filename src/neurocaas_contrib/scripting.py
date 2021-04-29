@@ -8,7 +8,8 @@ import sys
 import yaml
 import json
 import zipfile
-from .log import NeuroCAASCertificate,NeuroCAASDataStatus
+from .log import NeuroCAASCertificate,NeuroCAASDataStatus,NeuroCAASDataStatusLegacy
+from .Interface_S3 import download,upload
 
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 
@@ -89,12 +90,83 @@ class NeuroCAASScriptManager(object):
     """An object to take care of the management logic of handling input/output and logging on a NeuroCAAS job. Has all of its state stored in a json file called "registration.json" in the io-dir folder where job inputs and outputs are kept. 
 
     """
-    def __init__(self,path):
+    def __init__(self,path,write = True):
         """Initialize the script manager with a location where we will keep all of its data.
+        Creates a file "registration.json" at that location. 
+        This file contains a field to register 
+        :param path: path to the directory where we will write the file registration.json
+        :param write: boolean, if we should write the file or not. Useful if initializing from existing class. 
 
         """
+        assert os.path.isdir(path); "Must give path to existing input/output directory"
+        self.path = path
+        ## The subdirectories to expect/create at the given location. 
+        self.subdirs = {"data":"inputs","config":"configs","results":"results","logs":"logs"}
+        self.pathtemplate = {"s3":None,"local":None}
+        self.registration = {
+                "data":{k:v for k,v in self.pathtemplate.items()},
+                "config":{k:v for k,v in self.pathtemplate.items()},
+                "additional_files":{}
+                }
 
+        if write is True:
+            self.write()
 
+    def write(self):        
+        with open(os.path.join(self.path,"registration.json"),"w") as reg: 
+            json.dump(self.registration,reg)
+
+    @classmethod
+    def from_registration(cls,path):       
+        """If a registration file "registration.json" already exists at a given location, initialize from this file.   
+
+        """
+        assert os.path.isdir(path); "Must give path to existing input/output directory"
+        try:
+            with open(os.path.join(path,"registration.json"),"r") as reg:
+                registration = json.load(reg)
+        except FileNotFoundError:        
+            raise FileNotFoundError("no registration found at this location.")
+
+        inst = cls(path,write = False)
+        inst.registration = registration
+        return inst
+
+    def register_data(self,s3path):
+        """Given an s3 path, registers that as the location of the data we care about. 
+        :param s3path: path to a file in aws s3, given in "s3://bucket/path" format
+
+        """
+        ## canc check existence later. 
+        self.registration["data"]["s3"] == s3path
+        self.write()
+
+    def register_config(self,s3path):
+        """Given an s3 path, registers that as the location of the data we care about. 
+        :param s3path: path to a file in aws s3, given in "s3://bucket/path" format
+
+        """
+        ## canc check existence later. 
+        self.registration["config"]["s3"] == s3path
+        self.write()
+
+    def register_file(self,name,s3path):
+        """Given an s3 path, registers that as the location of the data we care about. 
+        :param name: name of the file to register this data path under.  
+        :param s3path: path to a file in aws s3, given in "s3://bucket/path" format
+
+        """
+        ## initialize
+        self.registration["additional_files"][name] = {k:v for k,v in self.pathtemplate.items()} 
+        ## populate
+        self.registration["additional_files"][name]["s3"] = s3path
+        self.write()
+
+    def get_data(self,path = None):    
+        """Get currently registered data. If desired, you can pass a path where you would like data to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
+        :param path: (optional) the location you want to write data to. 
+
+        """
 
 ## cli tools. 
 def register_data(s3_datapath):
