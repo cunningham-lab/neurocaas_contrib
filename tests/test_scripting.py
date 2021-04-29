@@ -175,13 +175,11 @@ class Test_NeuroCAASScriptManager():
         with pytest.raises(AssertionError):
             ncsm.get_data()
         ncsm.register_data(s3path)
-        ncsm.get_data()
-        with pytest.raises(AssertionError):
-            ncsm.get_data()
-        ncsm.get_data(force = True)    
-        ncsm.get_data(path = tmp_path)    
-        with pytest.raises(AssertionError):
-            ncsm.get_data(path = tmp_path)
+        assert ncsm.get_data()
+        assert not ncsm.get_data()
+        assert ncsm.get_data(force = True)    
+        assert ncsm.get_data(path = tmp_path)    
+        assert not ncsm.get_data(path = tmp_path)
 
 
     def test_get_config(self,tmp_path,setup_full_bucket):
@@ -194,13 +192,11 @@ class Test_NeuroCAASScriptManager():
         with pytest.raises(AssertionError):
             ncsm.get_config()
         ncsm.register_config(s3path)
-        ncsm.get_config()
-        with pytest.raises(AssertionError):
-            ncsm.get_config()
-        ncsm.get_config(force = True)    
-        ncsm.get_config(path = tmp_path)    
-        with pytest.raises(AssertionError):
-            ncsm.get_config(path = tmp_path)
+        assert ncsm.get_config()
+        assert not ncsm.get_config()
+        assert ncsm.get_config(force = True)    
+        assert ncsm.get_config(path = tmp_path)    
+        assert not ncsm.get_config(path = tmp_path)
 
     def test_get_file(self,tmp_path,setup_full_bucket):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
@@ -213,13 +209,11 @@ class Test_NeuroCAASScriptManager():
         with pytest.raises(AssertionError):
             ncsm.get_file(filename)
         ncsm.register_file(filename,s3path)
-        ncsm.get_file(filename)
-        with pytest.raises(AssertionError):
-            ncsm.get_file(filename)
-        ncsm.get_file(filename,force = True)    
-        ncsm.get_file(filename,path = tmp_path)    
-        with pytest.raises(AssertionError):
-            ncsm.get_file(filename,path = tmp_path)
+        assert ncsm.get_file(filename)
+        assert not ncsm.get_file(filename)
+        assert ncsm.get_file(filename,force = True)    
+        assert ncsm.get_file(filename,path = tmp_path)    
+        assert not ncsm.get_file(filename,path = tmp_path)
         
 
         

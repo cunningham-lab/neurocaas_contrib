@@ -171,6 +171,7 @@ class NeuroCAASScriptManager(object):
         :param path: (optional) the location you want to write data to. 
         :param force: (optional) by default, will not redownload if data of the same name already lives here. Can override with force = True
         :param display: (optional) by default, will not display downlaod progress. 
+        :return: bool (True if downloaded, False if not)
 
         """
         try:
@@ -186,8 +187,13 @@ class NeuroCAASScriptManager(object):
         data_localpath = os.path.join(path,data_name)
 
         if not force: 
-            assert not os.path.exists(data_localpath), "Data already exists at this location. Set force = true to overwrite"
+            if os.path.exists(data_localpath):
+                print("Data already exists at this location. Set force = true to overwrite")
+                return 0
+            else:   
+                pass
         download(data_s3path,data_localpath)    
+        return 1
 
             
     def get_config(self,path = None,force = False,display = False):    
@@ -195,6 +201,7 @@ class NeuroCAASScriptManager(object):
         :param path: (optional) the location you want to write data to. 
         :param force: (optional) by default, will not redownload if config of the same name already lives here. Can override with force = True
         :param display: (optional) by default, will not display downlaod progress. 
+        :return: bool (True if downloaded, False if not)
 
         """
         try:
@@ -210,14 +217,21 @@ class NeuroCAASScriptManager(object):
         config_localpath = os.path.join(path,config_name)
 
         if not force: 
-            assert not os.path.exists(config_localpath), "Data already exists at this location. Set force = true to overwrite"
+            if os.path.exists(config_localpath):
+                print("Config already exists at this location. Set force = true to overwrite")
+                return 0 
+            else:   
+                pass
         download(config_s3path,config_localpath)    
+        return 1
+
 
     def get_file(self,filename,path = None,force = False,display = False):    
         """Get currently registered file. If desired, you can pass a path where you would like file to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
         :param path: (optional) the location you want to write data to. 
         :param force: (optional) by default, will not redownload if file of the same name already lives here. Can override with force = True
         :param display: (optional) by default, will not display downlaod progress. 
+        :return: bool (True if downloaded, False if not)
 
         """
         try:
@@ -236,8 +250,14 @@ class NeuroCAASScriptManager(object):
         file_localpath = os.path.join(path,file_name)
 
         if not force: 
-            assert not os.path.exists(file_localpath), "Data already exists at this location. Set force = true to overwrite"
+            if os.path.exists(file_localpath):
+                print("Config already exists at this location. Set force = true to overwrite")
+                return 0
+            else:   
+                pass
         download(file_s3path,file_localpath)    
+        return 1
+
          
 ## cli tools. 
 def register_data(s3_datapath):
