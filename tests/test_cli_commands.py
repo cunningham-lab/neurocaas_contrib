@@ -5,6 +5,10 @@ import docker
 from click.testing import CliRunner
 from neurocaas_contrib.cli_commands import *
 from neurocaas_contrib.local import default_neurocaas_repo
+import localstack_client.session
+import neurocaas_contrib.Interface_S3 as Interface_S3
+
+testdir = os.path.dirname(os.path.abspath(__file__))
 
 docker_client = docker.from_env()
 
@@ -29,6 +33,34 @@ def remove_named_container(request):
         container.remove(force=True)
     except:    
         pass
+
+@pytest.fixture
+def setup_simple_bucket(monkeypatch):
+    """Makes a simple bucket in localstack named testinterface with the following internal structure:  
+    s3://testinterface
+    |- user
+     |-file.json
+     |-config.json
+    """
+    bucketname = "testinterface"
+    username = "user"
+    contents = {
+            "file.json":{"data":"element"},
+            "config.json":{"param1":1}
+        }
+
+    session = localstack_client.session.Session()
+    s3_client = session.client("s3")
+    s3_resource = session.resource("s3")
+    monkeypatch.setattr(Interface_S3, "s3_client", session.client("s3")) ## TODO I don't think these are scoped correctly w/o a context manager.
+    monkeypatch.setattr(Interface_S3, "s3", session.resource("s3"))
+    s3_client.create_bucket(Bucket = bucketname)
+    for name,content in contents.items():
+        key = os.path.join(username,name)
+        writeobj = s3_resource.Object(bucketname,key)
+        content = bytes(json.dumps(content).encode("UTF-8"))
+        writeobj.put(Body = content)
+    return bucketname,username,contents,s3_client,s3_resource    
 
 def eprint(result):
     """Takes a result object returned by CliRunner.invoke, and prints full associated stack trace, including chained exceptions. Automatically throws an error if the exit code is not 0 to increase visibility of these errors.. Returns the result take as a parameter so this function can be used to wrap calls to invoke.  
@@ -242,3 +274,293 @@ def test_cli_setup_development_container_env(remove_named_container):
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
     assert blueprint["image_history"][-1] == imagename 
+
+class Test_workflow():    
+    def test_workflow(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = eprint(runner.invoke(cli,["workflow"]))
+
+    def test_initialize_job(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            assert os.path.exists("./registration.json")
+
+    def test_register_dataset(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-p","keypath/key.txt"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["data"]["s3"] == "s3://bucketname/keypath/key.txt"    
+
+    def test_register_config(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["config"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            
+    def test_register_file(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-b","bucketname","-k","keypath/key.txt"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["additional_files"]["filename"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            
+    def test_get_data(self,setup_simple_bucket):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-data","-o","outputpath","-f","-d"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            result = eprint(runner.invoke(cli,["workflow","get-data"]))
+            assert os.path.exists("./inputs/file.json") 
+            ## now make sure it's not changed if we don't force: 
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                d["data"] = "element2"
+            with open("./inputs/file.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-data"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-data","-f"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element"
+            result = eprint(runner.invoke(cli,["workflow","get-data","-o","./"]))
+            assert os.path.exists("./file.json") 
+            with open("./file.json","r") as f:
+                d = json.load(f)
+                d["data"] = "element2"
+            with open("./file.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-data","-o","./"]))
+            with open("./file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-data","-f","-o","./"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element"
+
+    def test_get_config(self,setup_simple_bucket):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-config","-o","outputpath","-f","-d"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","testinterface","-k","user/config.json"]))
+            result = eprint(runner.invoke(cli,["workflow","get-config"]))
+            assert os.path.exists("./configs/config.json") 
+            ## now make sure it's not changed if we don't force: 
+            with open("./configs/config.json","r") as f:
+                d = json.load(f)
+                d["param1"] = "element2"
+            with open("./configs/config.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-config"]))
+            with open("./configs/config.json","r") as f:
+                d = json.load(f)
+                assert d["param1"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-config","-f"]))
+            with open("./configs/config.json","r") as f:
+                d = json.load(f)
+                assert d["param1"] == 1 
+            result = eprint(runner.invoke(cli,["workflow","get-config","-o","./"]))
+            assert os.path.exists("./config.json") 
+            with open("./config.json","r") as f:
+                d = json.load(f)
+                d["param1"] = "element2"
+            with open("./config.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-config","-o","./"]))
+            with open("./config.json","r") as f:
+                d = json.load(f)
+                assert d["param1"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-config","-f","-o","./"]))
+            with open("./configs/config.json","r") as f:
+                d = json.load(f)
+                assert d["param1"] == 1
+
+    def test_get_file(self,setup_simple_bucket):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-file","-n","filename","-o","outputpath","-f","-d"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+                storage = json.load(f)
+            assert storage["path"] == os.path.abspath("./")
+            print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","addfile","-b","testinterface","-k","user/file.json"]))
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile"]))
+            assert os.path.exists("./inputs/file.json") 
+            ## now make sure it's not changed if we don't force: 
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                d["data"] = "element2"
+            with open("./inputs/file.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile","-f"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element"
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile","-o","./"]))
+            assert os.path.exists("./file.json") 
+            with open("./file.json","r") as f:
+                d = json.load(f)
+                d["data"] = "element2"
+            with open("./file.json","w") as f:
+                json.dump(d,f)
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile","-o","./"]))
+            with open("./file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element2"
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","addfile","-f","-o","./"]))
+            with open("./inputs/file.json","r") as f:
+                d = json.load(f)
+                assert d["data"] == "element"
+
+    def test_get_dataname(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-dataname"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            with pytest.raises(AssertionError):#assert result.output == "file.json"
+                dataname = eprint(runner.invoke(cli,["workflow","get-dataname"]))
+            result = eprint(runner.invoke(cli,["workflow","get-data"]))
+            dataname = eprint(runner.invoke(cli,["workflow","get-dataname"]))
+            print(dataname.output,"all output")
+            assert dataname.output == "file.json\n"
+
+    def test_get_configname(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-configname"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","testinterface","-k","user/config.json"]))
+            with pytest.raises(AssertionError):#assert result.output == "file.json"
+                configname = eprint(runner.invoke(cli,["workflow","get-configname"]))
+            result = eprint(runner.invoke(cli,["workflow","get-config"]))
+            configname = eprint(runner.invoke(cli,["workflow","get-configname"]))
+            print(configname.output,"all output")
+            assert configname.output == "config.json\n"
+
+    def test_get_filename(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-filename"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","namevar","-b","testinterface","-k","user/file.json"]))
+            #assert result.output == "file.json"
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","namevar"]))
+            filename = eprint(runner.invoke(cli,["workflow","get-filename","-n","namevar"]))
+            print(filename.output,"all output")
+            assert filename.output == "file.json\n"
+
+    def test_get_datapath(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-datapath"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            with pytest.raises(AssertionError):#assert result.output == "file.json"
+                datapath = eprint(runner.invoke(cli,["workflow","get-datapath"]))
+            result = eprint(runner.invoke(cli,["workflow","get-data"]))
+            datapath = eprint(runner.invoke(cli,["workflow","get-datapath"]))
+            print(datapath.output,"all output")
+            assert datapath.output == os.path.join(os.path.abspath("./"),"inputs","file.json\n")
+
+    def test_get_configpath(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-configpath"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","testinterface","-k","user/config.json"]))
+            with pytest.raises(AssertionError):#assert result.output == "file.json"
+                configpath = eprint(runner.invoke(cli,["workflow","get-configpath"]))
+            result = eprint(runner.invoke(cli,["workflow","get-config"]))
+            configpath = eprint(runner.invoke(cli,["workflow","get-configpath"]))
+            print(configpath.output,"all output")
+            assert configpath.output == os.path.join(os.path.abspath("./"),"configs","config.json\n")
+
+    def test_get_filepath(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-filepath"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","namevar","-b","testinterface","-k","user/file.json"]))
+            #assert result.output == "file.json"
+            result = eprint(runner.invoke(cli,["workflow","get-file","-n","namevar"]))
+            filepath = eprint(runner.invoke(cli,["workflow","get-filepath","-n","namevar"]))
+            print(filepath.output,"all output")
+            assert filepath.output == os.path.join(os.path.abspath("./"),"inputs","file.json\n")
+
+    def test_log_command(self,setup_simple_bucket):       
+        runner = CliRunner()
+        scriptpath = os.path.join(testdir,"test_mats","sendtime.sh")
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","log-command","-c","echo hi","-b","testinterface","-r","path/to/results"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","log-command","-c","echo hi","-b","testinterface","-r","path/to/results"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            result = eprint(runner.invoke(cli,["workflow","get-data"]))
+            result = eprint(runner.invoke(cli,["workflow","log-command","-c",scriptpath,"-b","testinterface","-r","path/to/results"]))
+ 
+            assert os.path.exists(os.path.join("./","logs","log.txt"))
+

@@ -196,6 +196,7 @@ class NeuroCAASScriptManager(object):
                 pass
         download(data_s3path,data_localpath)    
         self.registration["data"]["local"] = data_localpath
+        self.write()
         return 1
 
             
@@ -227,6 +228,7 @@ class NeuroCAASScriptManager(object):
                 pass
         download(config_s3path,config_localpath)    
         self.registration["config"]["local"] = config_localpath
+        self.write()
         return 1
 
 
@@ -262,6 +264,7 @@ class NeuroCAASScriptManager(object):
                 pass
         download(file_s3path,file_localpath)    
         self.registration["additional_files"][varname]["local"] = file_localpath
+        self.write()
         return 1
 
     def get_name(self,contents):
