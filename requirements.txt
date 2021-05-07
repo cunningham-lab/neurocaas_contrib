@@ -6,3 +6,4 @@ paramiko==2.7.2
 pytest
 PyYAML==5.4
 psutil==5.8.0
+numpy==1.16.4

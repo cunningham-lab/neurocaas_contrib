@@ -2,16 +2,47 @@ import pytest
 from pathlib import Path
 import traceback
 import docker
+from testpaths import get_dict_file 
 from click.testing import CliRunner
+import localstack_client
 from neurocaas_contrib.cli_commands import *
+from botocore.exceptions import ClientError
 from neurocaas_contrib.local import default_neurocaas_repo
+import neurocaas_contrib.monitor as monitor
 import localstack_client.session
 import neurocaas_contrib.Interface_S3 as Interface_S3
 
 testdir = os.path.dirname(os.path.abspath(__file__))
+test_log_mats = os.path.join(testdir,"test_mats","test_aws_resource","test_logfolder")
 
 docker_client = docker.from_env()
+session = localstack_client.session.Session()
+s3_client = session.client("s3")
+s3_resource = session.resource("s3")
+ 
+def get_paths(rootpath):
+    """Gets paths to all files relative to a given top level path. 
 
+    """
+    walkgen = os.walk(rootpath)
+    paths = []
+    dirpaths = []
+    for p,dirs,files in walkgen:
+        relpath = os.path.relpath(p,rootpath)
+        if len(files) > 0 or len(dirs) > 0:
+            for f in files:
+                localfile = os.path.join(relpath,f)
+                paths.append(localfile)
+            ## We should upload the directories explicitly, as they will be treated in s3 like their own objects and we perform checks on them.    
+            for d in dirs:
+                localdir = os.path.join(relpath,d,"")
+                if localdir == "./logs/":
+                    dirpaths.append("logs/")
+                else:
+                    dirpaths.append(localdir)
+    return paths,dirpaths            
+
+bucket_name = "test-log-analysis"
 containername = "neurocaasdevcontainer"
 @pytest.fixture
 def remove_container(request):
@@ -33,6 +64,50 @@ def remove_named_container(request):
         container.remove(force=True)
     except:    
         pass
+
+@pytest.fixture
+def setup_log_bucket(monkeypatch):
+    """Sets up the module to use localstack, and creates a bucket in localstack called test-log-analysis with the following directory structure:
+    /
+    |-logs
+      |-bendeskylab
+        |-joblog1
+        |-joblog2
+        ...
+      |-sawtelllab
+        |-joblog1
+        |-joblog2
+        ...
+    This is the minimal working example for testing a monitoring function. This assumes that we will not be mutating the state of bucket logs. 
+    """
+    ## Start localstack and patch AWS clients:
+    session = localstack_client.session.Session()
+    s3_client = session.client("s3")
+    monkeypatch.setattr(monitor, "s3_client", session.client("s3")) ## TODO I don't think these are scoped correctly w/o a context manager.
+    monkeypatch.setattr(monitor, "s3_resource", session.resource("s3"))
+
+    ## Create bucket if not created:
+    try:
+        buckets = s3_client.list_buckets()["Buckets"]
+        bucketnames = [b["Name"] for b in buckets]
+        assert bucket_name in bucketnames
+        yield bucket_name
+    except AssertionError:    
+        s3_client.create_bucket(Bucket =bucket_name)
+
+        ## Get paths:
+        log_paths,dirpaths = get_paths(test_log_mats) 
+        try:
+            for f in log_paths:
+                s3_client.upload_file(os.path.join(test_log_mats,f),bucket_name,Key = f)
+            for dirpath in dirpaths:
+                s3dir = s3_resource.Object(bucket_name,dirpath)   
+                s3dir.put()
+        except ClientError as e:        
+            logging.error(e)
+            raise
+        yield bucket_name    
+        ## Now delete 
 
 @pytest.fixture
 def setup_simple_bucket(monkeypatch):
@@ -274,6 +349,35 @@ def test_cli_setup_development_container_env(remove_named_container):
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
     assert blueprint["image_history"][-1] == imagename 
+
+### Test monitoring functions. 
+@pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on logs.")
+def test_visualize_parallelism(setup_log_bucket):
+    bucket_name = setup_log_bucket
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        os.mkdir("./logs")
+        result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
+        result = eprint(runner.invoke(cli,["visualize-parallelism","-p","./logs"]))
+        logfiles = os.listdir("./logs")
+        assert len(logfiles) == 2
+        labnames = ["bendeskylab","sawtelllab"]
+        for l in logfiles:
+            assert any([l.startswith(bucket_name+"_{}".format(f)) for f in labnames])
+            assert l.endswith("_parallel_logs.json")
+            with open(os.path.join("./logs",l),"r") as f:
+                jobdict = json.load(f)
+            ## caclualte number of instances:     
+            count = 0
+            for job in jobdict.values():
+                count += len(job["instances"])
+            if any([k.startswith("bendesky") for k in jobdict.keys()]):    
+                assert count == 157
+            elif any([k.startswith("sawtell") for k in jobdict.keys()]):    
+                assert count == 132
+
+
+
 
 class Test_workflow():    
     def test_workflow(self):

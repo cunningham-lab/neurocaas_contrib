@@ -1,5 +1,6 @@
 ## Mimicking cli structure given in remote-docker-aws repository. 
 import subprocess
+import datetime
 import sys
 import shutil
 import click 
@@ -8,6 +9,7 @@ import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
 from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
+from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -122,7 +124,8 @@ def init(blueprint,location,analysis_name):
     if create or initialize:
         ## First set the analysis name in the config file:
         analysis_settings = {"analysis_name":analysis_name,
-                             "location":location
+                             "location":location,
+                             "remote_hist":{} ## history of remote development per analysis name. 
                             }
         ## Get dictionary:
         try:
@@ -155,6 +158,7 @@ def describe_analyses(location):
         with open(configpath,"r") as f:
             config = json.load(f)
         currentanalysis = config["analysis_name"]    
+        ## Todo 
     except FileNotFoundError:        
         currentanalysis = None
     dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
@@ -377,6 +381,26 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+
+### cli commands to monitor the stack. 
+@cli.command(help = "visualize the degree of parallelism of analysis usage.")
+@click.option("-p",
+        "--path",
+        type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
+        help = "path to which we should write the resulting graphic.")
+@click.pass_obj
+def visualize_parallelism(blueprint,path):
+    analysis_name = blueprint["analysis_name"] 
+    user_dict = get_user_logs(analysis_name)
+    for user,userinfo in user_dict.items():
+        parallelised = calculate_parallelism(analysis_name,userinfo,user)
+        postprocessed = postprocess_jobdict(parallelised)
+        now = str(datetime.datetime.now())
+        write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
+        with open(write_path,"w") as f:
+            json.dump(postprocessed,f,indent = 4)
+    
+    
 ## scripting tools 
 @cli.group()
 def scripting():
