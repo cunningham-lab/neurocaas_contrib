@@ -1,6 +1,7 @@
 import datetime
 import subprocess
 import shlex
+import psutil
 from collections import OrderedDict
 import pdb
 import re
@@ -375,10 +376,10 @@ class NeuroCAASDataStatusLegacy(NeuroCAASDataStats):
             "memory_total_mb":memory_total_mb
             }
         """        
-        cpu = subprocess.check_output(shlex.split("echo $[100-$(vmstat 1 2|tail -1|awk '{print $15}')]"))
-        memory = "N/A" ## check this in linux. 
+        cpu = psutil.cpu_percent(0.5)
+        memory = psutil.virtual_memory().total >> 20  ## check this in linux. 
         outdict = {"cpu_total":cpu,
-                "memory_total_mb":memory}
+                "memory_total_mb":str(memory)}
         return outdict
 
     def get_status(self,starttime,finishtime=None,exit_code=None):
