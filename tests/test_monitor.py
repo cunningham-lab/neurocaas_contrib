@@ -150,11 +150,11 @@ def test_postprocess_jobdict(setup_log_bucket,path,nb):
     assert sum([len(l["instances"]) for l in usage_filtered.values()]) == nb 
 
 def test_RangeFinder():
+    "WrITE ASSERTS "
     rf = monitor.RangeFinder()
     rf.update("2010-12-04T12:54:12Z")
     rf.update("2010-12-04T12:55:12Z")
     rf.return_range()
-    assert 0 
     
 
    
