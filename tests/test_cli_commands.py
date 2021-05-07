@@ -389,7 +389,7 @@ def test_develop_remote(setup_log_bucket):
         result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
         with open(".neurocaas_contrib_config_test.json") as f:
             configdict = json.load(f)
-        assert configdict["develop_dict"] == {}
+        assert configdict["develop_dict"] == None
         result = eprint(runner.invoke(cli,["develop-remote"]))
         with open(".neurocaas_contrib_config_test.json") as f:
             configdict_full = json.load(f)
