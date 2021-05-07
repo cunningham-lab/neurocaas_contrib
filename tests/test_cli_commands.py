@@ -11,6 +11,7 @@ import localstack_client.session
 import neurocaas_contrib.Interface_S3 as Interface_S3
 
 testdir = os.path.dirname(os.path.abspath(__file__))
+test_log_mats = os.path.join(testdir,"test_mats","test_aws_resource","test_logfolder")
 
 docker_client = docker.from_env()
  
