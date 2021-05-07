@@ -5,6 +5,7 @@ import docker
 from click.testing import CliRunner
 import localstack_client
 from neurocaas_contrib.cli_commands import *
+from botocore.exceptions import ClientError
 from neurocaas_contrib.local import default_neurocaas_repo
 import neurocaas_contrib.monitor as monitor
 import localstack_client.session
