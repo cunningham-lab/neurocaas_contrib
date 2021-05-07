@@ -530,6 +530,27 @@ def register_file(obj,name,bucket,key):
     path = os.path.join("s3://",bucket,key)
     ncsm.register_file(name,path)
 
+@workflow.command(help="register a result path to store results.")
+@click.option("-b",
+        "--bucket",
+        help = "bucket where results should be located",
+        type = click.STRING)
+@click.option("-k",
+        "--key",
+        help = "key of the folder where results are stored within the indicated bucket",
+        type = click.STRING)
+@click.pass_obj
+def register_resultpath(obj,bucket,key):        
+    """Register a config file with the scriptmanager. 
+
+    """
+    ## Get registration:
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    path = os.path.join("s3://",bucket,key)
+    ncsm.register_resultpath(path)
+
+
 @workflow.command(help = "get a registered dataset from S3")
 @click.option("-o",
         "--outputpath",
@@ -616,6 +637,27 @@ def get_file(obj,name,outputpath,force,display):
     kwargs["display"] = display   
     ncsm.get_file(**kwargs)
 
+@workflow.command(help = "put a file into the result directory in s3")
+@click.option("-r",
+        "--resultpath",
+        help = "local location of result file",
+        default = None)
+@click.option("-d",
+        "--display",
+        help = "if true, will show download progress",
+        is_flag = True)
+@click.pass_obj
+def put_result(obj,resultpath,display):
+    """puts a local file at the registered s3 location. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    kwargs = {}
+    kwargs["localfile"] = resultpath
+    kwargs["display"] = display   
+    ncsm.put_result(**kwargs)
+
 @workflow.command(help = "get the name of the dataset you registered")    
 @click.pass_obj
 def get_dataname(obj):
@@ -690,6 +732,19 @@ def get_filepath(obj,name):
     filepath = ncsm.get_filepath(name)
     print(filepath)
 
+@workflow.command(help = "get the s3 path a local file or directory would be uploaded to")    
+@click.option("-l",
+        "--locpath",
+        help = "path to file you want to get remote path for.",
+        type = click.Path(exists = True,file_okay = True, dir_okay= True, resolve_path = True))
+@click.pass_obj
+def get_resultpath(obj,locpath):
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    resultpath = ncsm.get_resultpath(locpath)
+    print(resultpath)
+
+
 @workflow.command(help = "runs a script with commands, all specified as a string")
 @click.option("-c",
         "--command",
@@ -721,3 +776,10 @@ def log_command(obj,command,bucket,resultfolder,suffix = None):
         logpath = os.path.join("s3://",bucket,resultfolder,"logs","DATASET_NAME:"+dataname+"_STATUS.txt")
         
     ncsm.log_command(command,logpath) 
+
+@workflow.command(help = "takes care of post processing: sends end and config files to the bucket.")
+@click.pass_obj
+def cleanup(obj):
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    ncsm.cleanup()

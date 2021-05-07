@@ -72,23 +72,52 @@ def log_process(command,logpath,s3status):
     :param s3status: s3 path where the dataset is stored  
     :return: return code of the command. 
     """
+    ## Initialize datastatus object. 
     ncds = NeuroCAASDataStatusLegacy(s3status)
+    ## Initialize certificate object. 
+    s3certificate = os.path.join(os.path.dirname(s3status),"certificate.txt")
+    localcertificate = os.path.join(os.path.dirname(logpath),"certificate.txt")
+    ncc = NeuroCAASCertificate(s3certificate,localcertificate)
+    dataname = os.path.basename(ncds.rawfile["input"])
+    updatedict = {
+        "t" : datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
+        "n" : dataname,
+        "s" : ncds.rawfile["status"],
+        "r" : "N/A",
+        "u" : "N/A",
+    }
+    ncc.update_instance_info(updatedict)
     with io.open(logpath,"wb") as writer, io.open(logpath,"rb",1) as reader:
         starttime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         process = subprocess.Popen(command,stdout = writer,stderr = writer)
         ## initialize a legacy logging object. starttime
         sys.stdout.write("\n\n-------Start Process Log-------\n\n")
         while process.poll() is None:
-            sys.stdout.write(reader.read().decode("utf-8"))
+            stdlatest = reader.read().decode("utf-8")
+            sys.stdout.write(stdlatest)
             ncds.update_file(logpath,starttime)
             ncds.write()
+            updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            updatedict["s"] = ncds.rawfile["status"]
+            updatedict["r"] = stdlatest.replace("\n"," ")
+            updatedict["u"] = ncds.rawfile["cpu_usage"]
+            ncc.update_instance_info(updatedict)
+            ncc.write()
             time.sleep(0.5)
             ## update logging. 
-        sys.stdout.write(reader.read().decode("utf-8"))
+            
+        stdlast = reader.read().decode("utf-8")
+        sys.stdout.write(stdlast)
         sys.stdout.write("\n--------End Process Log--------\n\n")
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         ncds.update_file(logpath,starttime,finishtime,process.returncode)
         ncds.write()
+        updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + " (finished)"
+        updatedict["s"] = ncds.rawfile["status"]
+        updatedict["r"] = stdlast.replace("\n"," ")
+        updatedict["u"] = ncds.rawfile["cpu_usage"]
+        ncc.update_instance_info(updatedict)
+        ncc.write()
         ## finish logging, get end log time + exit code. 
     return process.returncode    
 
@@ -112,7 +141,8 @@ class NeuroCAASScriptManager(object):
         self.registration = {
                 "data":{k:v for k,v in self.pathtemplate.items()},
                 "config":{k:v for k,v in self.pathtemplate.items()},
-                "additional_files":{}
+                "additional_files":{},
+                "resultpath":None
                 }
 
         if write is True:
@@ -168,6 +198,13 @@ class NeuroCAASScriptManager(object):
         self.registration["additional_files"][name]["s3"] = s3path
         self.write()
 
+    def register_resultpath(self,s3path):    
+        """Given an s3 path, registers that as the location where we will upload job data. Give a folder, where you want to generate two subdirectories, "logs", and "process_results". Logs and analysis results will be sent to these respective locations.  
+
+        """
+        self.registration["resultpath"] = s3path
+        self.write()
+
     def get_data(self,path = None,force = False,display = False):    
         """Get currently registered data. If desired, you can pass a path where you would like data to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
         :param path: (optional) the location you want to write data to. 
@@ -199,7 +236,6 @@ class NeuroCAASScriptManager(object):
         self.write()
         return 1
 
-            
     def get_config(self,path = None,force = False,display = False):    
         """Get currently registered config. If desired, you can pass a path where you would like config to be moved. Otherwise, it will be moved to self.path/self.subdirs[config]
         :param path: (optional) the location you want to write data to. 
@@ -267,6 +303,17 @@ class NeuroCAASScriptManager(object):
         self.write()
         return 1
 
+    def put_result(self,localfile,display = False):
+        """
+        :param localfile: the location you want to write data from. 
+        :param display: (optional) by default, will not display upload progress. 
+        :return: bool (True if uploaded, False if not)
+        """
+        filename = os.path.basename(localfile)
+        assert self.registration["resultpath"] is not None; "result path must be registered. "
+        fullpath = os.path.join(self.registration["resultpath"],"process_results",filename)
+        upload(localfile,fullpath)
+
     def get_name(self,contents):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the filename if available. 
         :param contents: a dictionary of structure {"s3":location,"local":location}
@@ -324,6 +371,14 @@ class NeuroCAASScriptManager(object):
 
         """
         return self.get_path(self.registration["additional_files"][varname]) 
+    
+    def get_resultpath(self,filepath):
+        """Given the path to a file or directory locally, give the path we would upload it to in S3 (useful for using aws s3 sync)
+
+        """
+        assert self.registration["resultpath"] is not None, "result path must be registered"
+        basename = os.path.basename(os.path.normpath(filepath))
+        return os.path.join(self.registration["resultpath"],"process_results",basename)
 
     def log_command(self,command,s3log,path=None):
         """Wrapper around bare log_process function to provide the local logpath. 
@@ -334,6 +389,20 @@ class NeuroCAASScriptManager(object):
             path = os.path.join(self.path,self.subdirs["logs"])
             mkdir_notexists(path)
         log_process(command,os.path.join(path,"log.txt"),s3log)    
+
+    def cleanup(self):    
+        """Indicates the end of registered workflow. Sends the relevant config file to the results directory, and sends a file called "update.txt" as well.
+
+        """
+        ## get config file: 
+        assert self.get_config()
+        configpath = self.get_configpath()
+        loadpath = os.path.join(os.path.dirname(configpath),"update.txt")
+        self.put_result(configpath)
+        with open(os.path.join(loadpath),"w") as f: 
+            f.close()
+        self.put_result(loadpath)
+
 
 ## cli tools. 
 def register_data(s3_datapath):
