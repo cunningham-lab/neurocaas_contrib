@@ -6,6 +6,9 @@ import os
 import localstack_client.session
 import neurocaas_contrib.monitor as monitor
 
+if get_dict_file() == "ci":
+    pytest.skip("skipping tests that rely upon logging data", allow_module_level=True)
+
 loc = os.path.dirname(os.path.realpath(__file__))
 test_log_mats = os.path.join(loc,"test_mats","test_aws_resource","test_logfolder")
 bucket_name = "test-log-analysis"
@@ -13,7 +16,6 @@ bucket_name = "test-log-analysis"
 session = localstack_client.session.Session()
 s3_client = session.client("s3")
 s3_resource = session.resource("s3")
-
 
 def get_paths(rootpath):
     """Gets paths to all files relative to a given top level path. 
