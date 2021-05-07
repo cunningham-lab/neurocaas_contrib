@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import traceback
 import docker
+from testpaths import get_dict_file 
 from click.testing import CliRunner
 import localstack_client
 from neurocaas_contrib.cli_commands import *
@@ -350,6 +351,7 @@ def test_cli_setup_development_container_env(remove_named_container):
     assert blueprint["image_history"][-1] == imagename 
 
 ### Test monitoring functions. 
+@pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on logs.")
 def test_visualize_parallelism(setup_log_bucket):
     bucket_name = setup_log_bucket
     runner = CliRunner()
