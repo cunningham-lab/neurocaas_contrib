@@ -1,0 +1,20 @@
+{
+    "status": "INITIALIZING", 
+    "cpu_usage": [
+        "0"
+    ], 
+    "stdout": {
+        "0": "init", 
+        "1": "done"
+    }, 
+    "instance": "i-00000000000000000", 
+    "reason": [
+        "cd $userhome"
+    ], 
+    "command": "aaaaaaaa-1111-4444-0000-999999999999", 
+    "stderr": {
+        "0": "zz", 
+        "1": "bb"
+    }, 
+    "input": "groupname/inputs/dataset.ext"
+}

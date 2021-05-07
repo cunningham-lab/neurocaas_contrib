@@ -1,0 +1,9 @@
+## Config file for neurocaas. 
+task: iblright
+scorer: kelly
+jobnb: 1
+ensemble_size: 5  
+videotype: avi
+testing: True  
+__duration__: 400 
+
