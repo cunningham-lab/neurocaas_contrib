@@ -2,17 +2,18 @@
     "instance": "i-00000000000000000",
     "command": "aaaaaaaa-1111-4444-0000-999999999999",
     "input": "groupname/inputs/dataset.ext",
-    "status": "SUCCESS",
-    "reason": 0,
-    "memory_usage": "N/A MB",
-    "cpu_usage": "b'$[100-$(vmstat 1 2|tail -1|awk {print $15})]\\n' %",
-    "job_start": "2021-04-15T17:35:52Z",
-    "job_finish": "2021-04-15T17:35:57Z",
+    "status": "IN PROGRESS",
+    "reason": null,
+    "memory_usage": "8192 MB",
+    "cpu_usage": "0.0 %",
+    "job_start": "0001-01-01T00:00:00Z",
+    "job_finish": "2021-05-07T16:12:26Z",
     "std": {
-        "0": "Thu Apr 15 17:35:53 EDT 2021\n",
-        "1": "Thu Apr 15 17:35:54 EDT 2021\n",
-        "2": "Thu Apr 15 17:35:55 EDT 2021\n",
-        "3": "Thu Apr 15 17:35:56 EDT 2021\n",
-        "4": "Thu Apr 15 17:35:57 EDT 2021\n"
+        "0": "Thu Apr 15 15:49:07 EDT 2021\n",
+        "1": "Thu Apr 15 15:49:08 EDT 2021\n",
+        "2": "Thu Apr 15 15:49:09 EDT 2021\n",
+        "3": "Thu Apr 15 15:49:10 EDT 2021\n",
+        "4": "Thu Apr 15 15:49:11 EDT 2021\n",
+        "5": "./sendtime_br.sh: line 12: ezep: command not found\n"
     }
 }
