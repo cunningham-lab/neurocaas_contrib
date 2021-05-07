@@ -5,6 +5,7 @@ import logging
 import os
 import localstack_client.session
 import neurocaas_contrib.monitor as monitor
+from testpaths import get_dict_file 
 
 if get_dict_file() == "ci":
     pytest.skip("skipping tests that rely upon logging data", allow_module_level=True)
