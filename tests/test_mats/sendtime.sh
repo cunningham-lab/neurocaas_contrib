@@ -4,7 +4,7 @@ nowfile="/home/ubuntu/neurocaas_contrib/src/neurocaas_contrib/template_mats/nowf
 
 for i in {1..5}
 do     
-    sleep 1
+    sleep 0.1
     now=$(date)
     echo $now
 done     

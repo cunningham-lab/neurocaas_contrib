@@ -247,6 +247,20 @@ class Test_NeuroCAASScriptManager():
         assert ncsm.get_file(filename,path = tmp_path)    
         assert ncsm.registration["additional_files"][filename]["local"] == str(tmp_path / "extra.json") 
         assert not ncsm.get_file(filename,path = tmp_path)
+
+    def test_put_result(self,tmp_path,setup_full_bucket):    
+        bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        fullpath = subdir / "file.txt"
+        fullpath.open("w")
+        s3path = f"s3://{bucketname}/{username}/results/job__test"
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        with pytest.raises(AssertionError):
+            ncsm.put_result(str(fullpath))
+        ncsm.register_resultpath(s3path)
+        ncsm.put_result(str(fullpath))
+        loc =  s3_client.download_file(bucketname,f"{username}/results/job__test/process_results/file.txt",str(subdir / "file2.txt"))
         
     def test_get_name(self,tmp_path):
         contents_empty = {"s3":None,"local":None}
@@ -343,6 +357,18 @@ class Test_NeuroCAASScriptManager():
             ncsm.get_file(name)
             assert ncsm.get_filepath(name) == os.path.join(subdir,"inputs",os.path.basename(contentkey))
 
+    def test_get_resultpath(self,tmp_path,setup_full_bucket):
+        bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        s3path = f"s3://{bucketname}/{username}/results/job__test"
+        ncsm.register_resultpath(s3path)
+        s3filepath = ncsm.get_resultpath("path/to/file.txt")
+        s3dirpath = ncsm.get_resultpath("path/to/dir")
+        assert s3filepath == os.path.join(s3path,"process_results","file.txt")
+        assert s3dirpath == os.path.join(s3path,"process_results","dir")
+
     @pytest.mark.parametrize("logging",("local","s3"))
     def test_log_command(self,tmp_path,setup_full_bucket,logging):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
@@ -385,5 +411,18 @@ class Test_NeuroCAASScriptManager():
             with open(os.path.join(subdir,"status.json"),"r") as f:
                 status = json.load(f) 
 
+    def test_cleanup(self,tmp_path,setup_full_bucket):
+        bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
+        s3path = f"s3://{bucketname}/{username}/results/job__test"
+        contentkey = "configs/config.json"
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_config(f"s3://{bucketname}/{username}/{contentkey}")
+        ncsm.register_resultpath(s3path)
+        ncsm.cleanup()
+        update =  s3_client.download_file(bucketname,f"{username}/results/job__test/process_results/update.txt",str(subdir / "update.txt"))
+        config =  s3_client.download_file(bucketname,f"{username}/results/job__test/process_results/config.json",str(subdir / "config.json"))
+        
 
 
