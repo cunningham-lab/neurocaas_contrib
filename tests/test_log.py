@@ -295,7 +295,7 @@ class Test_NeuroCAASDataStatusLegacy():
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
         starttime = "0001-01-01T00:00:00Z"
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        status = ncds.get_status()
+        status = ncds.get_status(starttime = starttime)
 
     def test_NeuroCAASDataStatusLegacy_get_status_success(self,monkeypatch):
         create_mock_data(statusbucket,statuskey,localstatuspath)
