@@ -13,6 +13,28 @@ import neurocaas_contrib.Interface_S3 as Interface_S3
 testdir = os.path.dirname(os.path.abspath(__file__))
 
 docker_client = docker.from_env()
+ 
+def get_paths(rootpath):
+    """Gets paths to all files relative to a given top level path. 
+
+    """
+    walkgen = os.walk(rootpath)
+    paths = []
+    dirpaths = []
+    for p,dirs,files in walkgen:
+        relpath = os.path.relpath(p,rootpath)
+        if len(files) > 0 or len(dirs) > 0:
+            for f in files:
+                localfile = os.path.join(relpath,f)
+                paths.append(localfile)
+            ## We should upload the directories explicitly, as they will be treated in s3 like their own objects and we perform checks on them.    
+            for d in dirs:
+                localdir = os.path.join(relpath,d,"")
+                if localdir == "./logs/":
+                    dirpaths.append("logs/")
+                else:
+                    dirpaths.append(localdir)
+    return paths,dirpaths            
 
 bucket_name = "test-log-analysis"
 containername = "neurocaasdevcontainer"
