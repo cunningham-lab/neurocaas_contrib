@@ -15,6 +15,9 @@ testdir = os.path.dirname(os.path.abspath(__file__))
 test_log_mats = os.path.join(testdir,"test_mats","test_aws_resource","test_logfolder")
 
 docker_client = docker.from_env()
+session = localstack_client.session.Session()
+s3_client = session.client("s3")
+s3_resource = session.resource("s3")
  
 def get_paths(rootpath):
     """Gets paths to all files relative to a given top level path. 
