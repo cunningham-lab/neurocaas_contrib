@@ -124,7 +124,7 @@ def init(blueprint,location,analysis_name):
     if create or initialize:
         ## First set the analysis name in the config file:
         analysis_settings = {"analysis_name":analysis_name,
-                             "location":location
+                             "location":location,
                              "remote_hist":{} ## history of remote development per analysis name. 
                             }
         ## Get dictionary:
@@ -401,13 +401,6 @@ def visualize_parallelism(blueprint,path):
             json.dump(postprocessed,f,indent = 4)
     
     
-
-
-
-
-
-
-
 ## scripting tools 
 @cli.group()
 def scripting():
