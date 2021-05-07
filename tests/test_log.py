@@ -290,8 +290,11 @@ class Test_NeuroCAASDataStatusLegacy():
         assert type(output[0]) == str 
     
     def test_NeuroCAASDataStatusLegacy_get_status(self):
+        "NOT ASSERTED"
         create_mock_data(statusbucket,statuskey,localstatuspath)
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
+        starttime = "0001-01-01T00:00:00Z"
+        finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         status = ncds.get_status()
 
     def test_NeuroCAASDataStatusLegacy_get_status_success(self,monkeypatch):
@@ -330,6 +333,7 @@ class Test_NeuroCAASDataStatusLegacy():
         assert usagedict["cpu_total"] >= 0 
         
     def test_NeuroCAASDataStatusLegacy_update_file(self): 
+        ## WARNING: NO ASSERTS
         create_mock_data(statusbucket,statuskey,localstatuspath)
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
         starttime = "0001-01-01T00:00:00Z"
@@ -337,7 +341,6 @@ class Test_NeuroCAASDataStatusLegacy():
         logfile = os.path.join(testdir,"test_mats","log")
         ncds.update_file(logfile,starttime,finishtime)
         print(ncds.rawfile)
-        assert 0 
 
     def test_NeuroCAASDataStatusLegacy_write_local(self):
         create_mock_data(statusbucket,statuskey,localstatuspath)
