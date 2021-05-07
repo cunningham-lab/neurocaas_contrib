@@ -1,0 +1,18 @@
+{
+    "instance": "i-00000000000000000",
+    "command": "aaaaaaaa-1111-4444-0000-999999999999",
+    "input": "groupname/inputs/dataset.ext",
+    "status": "SUCCESS",
+    "reason": 0,
+    "memory_usage": "8192 MB",
+    "cpu_usage": "10.9 %",
+    "job_start": "2021-05-07T17:57:23Z",
+    "job_finish": "2021-05-07T17:57:24Z",
+    "std": {
+        "0": "Fri May 7 17:57:24 EDT 2021\n",
+        "1": "Fri May 7 17:57:24 EDT 2021\n",
+        "2": "Fri May 7 17:57:24 EDT 2021\n",
+        "3": "Fri May 7 17:57:24 EDT 2021\n",
+        "4": "Fri May 7 17:57:24 EDT 2021\n"
+    }
+}
