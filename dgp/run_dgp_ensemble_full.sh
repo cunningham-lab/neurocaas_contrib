@@ -37,16 +37,16 @@ accessdir "$userhome/$outstore"
 aws s3 cp "s3://$bucketname/$inputpath" "$userhome/$datastore/"
 aws s3 cp "s3://$bucketname/$configpath" "$userhome/$configstore/"
 ## first unzip the training folder. 
-datafolder=$(neurocaas_contrib parse-zip -z "$userhome/$datastore/$dataname")
+datafolder=$(neurocaas-contrib scripting parse-zip -z "$userhome/$datastore/$dataname")
 ## get the manual labels: 
 ## read in important metadata from config: 
-task=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "task")
-scorer=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
-jobnb=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
-videotype=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
-testing=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "testing")
-nb_frames=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "nb_frames" -d "")
-seed=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "seed" -d "")
+task=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "task")
+scorer=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
+jobnb=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
+videotype=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
+testing=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "testing")
+nb_frames=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "nb_frames" -d "")
+seed=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "seed" -d "")
 
 python neurocaas_ensembles/read_manual_labels.py "$userhome/$datastore/$datafolder" "$userhome/$datastore/" ".$videotype"
 ## This creates a folder called raw_data in the datastore folder. 

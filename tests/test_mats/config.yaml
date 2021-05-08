@@ -2,6 +2,8 @@
 task: iblright
 scorer: kelly
 jobnb: 1
+ensemble_size: 5  
 videotype: avi
-__timeout__: 360
+testing: True  
+__duration__: 400 
 

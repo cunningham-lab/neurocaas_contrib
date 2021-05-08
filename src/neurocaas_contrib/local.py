@@ -212,6 +212,41 @@ class NeuroCAASImage(object):
         except StopIteration:
             print("[Test Execution Done]")
 
+    def save_container_to_image_workflow(self,tag,force = False,script = None):
+        """UNTESTED Once you have made appropriate changes and tested, you will want to save your running container to a new image. This version of the code is compatible with the scripting module, and assumes that the whole neurocaas_contrib workflow will be dockerized. This means that the docker container will recieve bucket, datapath, resultpath, and configpath parameters.  
+        :param tag: The tag that will be used to identify this image. We recommend providing your tag as the name of your analysis repo + a git commit, like neurocaas/contrib:mockanalysis.356d78a, where 356d78a is the output of running `git rev-parse --short HEAD` from your git repo. If you provide a tag that is already in use, you will have to provide a "force=True" argument.   
+        :param force: (optional) Whether or not to overwrite an image with this name already. Default is force = False
+        :param script: (optional) Path to a script inside the container that should be run at startup. Will be assigned to the dockerfile command as follows: ["bash","-c","script","${bucketname}","${data}","${result}","${config}"], where data and config will be determined at runtime.  
+        """
+        ## First create the requested tag:
+        image_tag = f"{default_neurocaas_repo}:{tag}"
+        ## See if this exists:
+        if force is False:
+            try:
+                self.find_image(image_tag)
+                print("An image with name {image_tag} already exists. To overwrite it, call this method with parameter force = True")
+                successcode = False
+                return successcode
+            except AssertionError: 
+                print("This tag is available, proceeding with commit.")
+        else:
+            pass
+        container = self.current_container
+        try:
+            commit_args = {"repository":default_neurocaas_repo,
+                    "tag":tag}
+            if script is not None:
+                command = 'CMD ["bash","-c","'+script+'$ {bucketname} ${data} ${result} ${config}"]'
+
+                commit_args["changes"] = command
+            #container.commit(repository=default_neurocaas_repo,tag=tag)
+            container.commit(**commit_args)
+            print(f"Success! Container saved as image {image_tag}")
+            successcode = True
+        except docker.errors.APIError:
+            print(f"Unable to commit container. You can try manually from the command line by calling `docker commit [container name] {default_neurocaas_repo}:{tag}`")
+            successcode = False
+        return successcode    
     def save_container_to_image(self,tag,force = False,script = None):
         """Once you have made appropriate changes and tested, you will want to save your running container to a new image. This image will be specified as a tag; i.e., your image's name will be neurocaas/contrib:[tag]. 
         :param tag: The tag that will be used to identify this image. We recommend providing your tag as the name of your analysis repo + a git commit, like neurocaas/contrib:mockanalysis.356d78a, where 356d78a is the output of running `git rev-parse --short HEAD` from your git repo. If you provide a tag that is already in use, you will have to provide a "force=True" argument.   
@@ -273,6 +308,35 @@ class NeuroCAASImage(object):
         certificate = NeuroCAASCertificate("s3://dummy_path")
         output_gen = container.logs(stream = True,timestamps = True)
         self.track_job(env,datastatus,certificate,job_id)
+
+    def run_analysis_workflow(self,bucket,data,result,config,env,image_tag=None):
+        """UNTESTED New version of run_analysis (May 7th) to integrate docker infrastructure built here with the scripting module. Assumes you will pass the bucketname, datapath, resultpath, configpath variables as expected. 
+
+        :param bucket: (str) the name of the bucket where these datasets are located. . 
+        :param data: (str) the path to the dataset to use for analysis. 
+        :param result: (str) the path to the result folder where we will store outputs. 
+        :param config: (str) the path to the config file to use for analysis. 
+        :param env: (NeuroCAASEnv) a NeuroCAASLocalEnv or NeuroCAASRemoteEnv instance. The outputs of analysis commands and results will be written to the directory referenced in this environment for easy inspection. 
+        :param image_tag: (optional) The name of an image, with the tag parameter specified. If given, will launch a container from this image, and set this object to interface with that image tag from now on (start containers from that image, test that image, etc.) 
+        """
+        if image_tag is not None:
+            self.assign_default_image(image_tag)
+        ## Now generate a timestamp for this job: 
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        job_id = f"job__{timestamp}"
+
+        env.sync_put() ## Sync again in case there were any changes: 
+
+        container = self.client.containers.run(image = self.image_tag,
+                environment = {"data":data,"config":config,"bucket":bucket,"result":result},
+                detach = True,
+                volumes = {env.volume.name:{"bind":"/home/neurocaasdev/io-dir","mode":"rw"}})
+        ### Initialize certificate and datastatus objects here. 
+        ### TODO implement real s3 connection. 
+        #datastatus = NeuroCAASDataStatus("s3://dummy_path",container)
+        #certificate = NeuroCAASCertificate("s3://dummy_path")
+        #output_gen = container.logs(stream = True,timestamps = True)
+        #self.track_job(env,datastatus,certificate,job_id)
 
     def run_analysis_parametrized(self,data,config,env,image_tag=None):
         """Full-fledged test an analysis image. Expect outputs in the local environment after the analysis run, along with logs that the use would see. Don't need to submit a command, as it's assumed that this is baked in as the CMD command. instead, pass the data and config you would like to use.  
