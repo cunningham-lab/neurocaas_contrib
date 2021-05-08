@@ -242,3 +242,19 @@ def test_cli_setup_development_container_env(remove_named_container):
             blueprint = json.load(f)
     assert blueprint["container_history"][-1] == namedcontainername
     assert blueprint["image_history"][-1] == imagename 
+
+def test_read_yaml():    
+    runner = CliRunner()
+    name = "getyaml"
+    result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+    result = eprint(runner.invoke(cli,["read-yaml","--path","./test_mats/config.yaml","--field","scorer"]))
+    assert result.output == "kelly"
+
+def test_parse_zipfile():    
+    runner = CliRunner()
+    name = "parsezip"
+    zippath = "/home/ubuntu/ensembledata_3/zz.zip"
+    result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+    result = eprint(runner.invoke(cli,["parse-zipfile","-z",zippath]))
+    assert result.output == "Reaching-Mackenzie-2018-08-30"
+

@@ -1,0 +1,7 @@
+## Config file for neurocaas. 
+task: iblright
+scorer: kelly
+jobnb: 1
+videotype: avi
+__timeout__: 360
+
