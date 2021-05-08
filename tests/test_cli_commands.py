@@ -414,7 +414,10 @@ def test_develop_remote_existing(setup_log_bucket):
  
         ## assert that the development history saved into the cli tool config file is the same that was recorded in the blueprint. 
         assert type(configdict_full["develop_dict"]) == dict
-    assert stackconfig["develop_history"][0] == configdict_full["develop_dict"]
+
+    assert stackconfig.get("develop_history",[None])[0] == configdict_full["develop_dict"]
+    ## This assumes that develop history exists already - replace with the above. We should separately test the case where the config file contains a blueprint in the develop history. 
+    #assert stackconfig["develop_history"][0] == configdict_full["develop_dict"]
 
 def test_assign_instance(setup_log_bucket,mock_boto3_for_remote):
     instance,ami = mock_boto3_for_remote
