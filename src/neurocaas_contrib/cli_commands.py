@@ -826,24 +826,17 @@ def cleanup(obj):
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
     ncsm.cleanup()
-        type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
-        help = "path to which we should write the resulting graphic.")
-@click.pass_obj
-def visualize_parallelism(blueprint,path):
-    analysis_name = blueprint["analysis_name"] 
-    user_dict = get_user_logs(analysis_name)
-    for user,userinfo in user_dict.items():
-        parallelised = calculate_parallelism(analysis_name,userinfo,user)
-        postprocessed = postprocess_jobdict(parallelised)
-        now = str(datetime.datetime.now())
-        write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
-        with open(write_path,"w") as f:
-            json.dump(postprocessed,f,indent = 4)
     
+@cli.group(help = "develop remotely on an AWS instance.")
+@click.pass_context
+def remote(ctx):
+    """remote functions.
+    """
+    return 
     
 ### cli commands to manage a remote aws resources. 
 ## Initialize a new NeuroCAASAMI object, or get . 
-@cli.command(help = "Initialize a NeuroCAASAMI object")
+@remote.command(help = "Initialize a NeuroCAASAMI object")
 @click.option("-i",
         "--index",
         help = "if there are multiple development histories saved, index into them",
@@ -880,7 +873,7 @@ def develop_remote(blueprint,index):
     save_ami_to_cli(ami)
     
 
-@cli.command(help = "Assign a new instance to a NeuroCAASAMI object")
+@remote.command(help = "Assign a new instance to a NeuroCAASAMI object")
 @click.option("-i",
         "--instance",
         type = click.STRING,
@@ -896,7 +889,7 @@ def assign_instance(blueprint,instance):
     ami.assign_instance(instance)
     save_ami_to_cli(ami)
         
-@cli.command(help = "Launch a new instance from an ami")
+@remote.command(help = "Launch a new instance from an ami")
 @click.option("-a",
         "--amiid",
         type = click.STRING,
@@ -923,7 +916,7 @@ def launch_devinstance(blueprint,amiid,volumesize,timeout):
     ami.launch_devinstance(ami = amiid,volume_size = volumesize,timeout = timeout)
     save_ami_to_cli(ami)
 
-@cli.command(help = "Start the current instance")
+@remote.command(help = "Start the current instance")
 @click.option("-t",
         "--timeout",
         type = click.STRING,
@@ -940,7 +933,7 @@ def start_devinstance(blueprint,timeout):
     ami.start_devinstance(timeout = timeout)
     save_ami_to_cli(ami)
 
-@cli.command(help = "Stop the current instance")
+@remote.command(help = "Stop the current instance")
 @click.pass_obj
 def stop_devinstance(blueprint):
     """Stop an existing instance. 
@@ -952,7 +945,7 @@ def stop_devinstance(blueprint):
     ami.stop_devinstance()
     save_ami_to_cli(ami)
 
-@cli.command(help = "Terminate the current development instance")
+@remote.command(help = "Terminate the current development instance")
 @click.option("-f",
         "--force",
         type = click.BOOL,
@@ -969,7 +962,7 @@ def terminate_devinstance(blueprint,force):
     ami.terminate_devinstance(force = force)
     save_ami_to_cli(ami)
 
-@cli.command(help = "Get the ip address of the instance.")
+@remote.command(help = "Get the ip address of the instance.")
 @click.pass_obj
 def get_ip(blueprint):
     """Get ip address of an instance.  
@@ -980,7 +973,7 @@ def get_ip(blueprint):
     ami = NeuroCAASAMI.from_dict(devdict)
     click.echo(ami.ip)
 
-@cli.command(help = "Get the lifetime of the instance")
+@remote.command(help = "Get the lifetime of the instance")
 @click.pass_obj
 def get_lifetime(blueprint):
     """Get the lifetime remaining on an active instance.  
@@ -991,7 +984,7 @@ def get_lifetime(blueprint):
     ami = NeuroCAASAMI.from_dict(devdict)
     click.echo(ami.get_lifetime())
 
-@cli.command(help = "Get the lifetime of the instance")
+@remote.command(help = "Get the lifetime of the instance")
 @click.option("-m",
         "--minutes",
         help = "number of minutes to extend lifetime by.",
@@ -1007,7 +1000,7 @@ def extend_lifetime(blueprint,minutes):
     ami = NeuroCAASAMI.from_dict(devdict)
     ami.extend_lifetime(minutes)
 
-@cli.command(help = "submit a job to your instance. Optionally, you can upload datasets and config files to s3 if you will be referencing them in your submitpath for a faster turnaround.")
+@remote.command(help = "submit a job to your instance. Optionally, you can upload datasets and config files to s3 if you will be referencing them in your submitpath for a faster turnaround.")
 @click.option("-s",
         "--submitpath",
         help = "path to submitfile",
@@ -1045,7 +1038,7 @@ def submit_job(blueprint,submitpath,data,config):
     ami.submit_job(submitpath)
     save_ami_to_cli(ami)
 
-@cli.command(help = "get the output from the most recently run job.")
+@remote.command(help = "get the output from the most recently run job.")
 @click.option("-j",
         "--jobind",
         help = "index of job to get the output for",
@@ -1062,7 +1055,7 @@ def job_output(blueprint,jobind):
     ami.job_output(jobind)
     save_ami_to_cli(ami)
 
-@cli.command(help = "save the current development instance into an ami.")
+@remote.command(help = "save the current development instance into an ami.")
 @click.option("-n",
         "--name",
         help = "name to give to the new ami",
@@ -1079,7 +1072,7 @@ def create_devami(blueprint,name):
     ami.create_devami(name)
     save_ami_to_cli(ami)
 
-@cli.command(help = "update the blueprint with most recently developed amis.")
+@remote.command(help = "update the blueprint with most recently developed amis.")
 @click.option("-a",
         "--amiid",
         help = "id of new ami (will default to newest in list if not given)",
@@ -1103,7 +1096,7 @@ def update_blueprint(blueprint,amiid,message):
     ami.update_blueprint(amiid,message)
     save_ami_to_cli(ami)
 
-@click.command(help = "save to development history")
+@remote.command(help = "save to development history")
 @click.pass_obj
 def update_history(blueprint):
     """Add this ami's current state to development history. 
