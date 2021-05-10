@@ -305,6 +305,15 @@ class Test_workflow():
             with open("./registration.json") as f:
                 reg = json.load(f)
             assert reg["data"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["data"]["localsource"] == "localpath/file.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["data"]["s3"] == "s3://bucketname/keypath/key.txt"    
 
     def test_register_config(self):
         runner = CliRunner()
@@ -316,6 +325,15 @@ class Test_workflow():
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["config"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-config","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["config"]["localsource"] == "localpath/file.txt"    
             result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
@@ -337,6 +355,15 @@ class Test_workflow():
             with open("./registration.json") as f:
                 reg = json.load(f)
             assert reg["additional_files"]["filename"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["additional_files"]["filename"]["localsource"] == "localpath/file.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["additional_files"]["filename"]["s3"] == "s3://bucketname/keypath/key.txt"    
             
     def test_register_resultpath(self):
         runner = CliRunner()
@@ -352,7 +379,17 @@ class Test_workflow():
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
                 reg = json.load(f)
-            assert reg["resultpath"] == "s3://bucketname/keypath/"    
+            assert reg["resultpath"]["s3"] == "s3://bucketname/keypath/"    
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-l","localoutpath/"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["resultpath"]["localsource"] == "localoutpath/"    
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b","bucketname","-k","keypath/"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["resultpath"]["s3"] == "s3://bucketname/keypath/"    
 
     def test_get_data(self,setup_simple_bucket):
         runner = CliRunner()
