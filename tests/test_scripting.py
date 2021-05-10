@@ -155,7 +155,16 @@ class Test_NeuroCAASScriptManager():
         ncsm.register_data("s3://bucket/groupname/inputs/filename.txt")
         with open(os.path.join(subdir,"registration.json"),"r") as fp:
             data = json.load(fp)
-        data["data"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+        assert data["data"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+
+    def test_register_dataset_local(self,tmp_path):
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_data_local("groupname/inputs/filename.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            data = json.load(fp)
+        assert data["data"]["localsource"] == "groupname/inputs/filename.txt"    
 
     def test_register_config(self,tmp_path):    
         subdir = tmp_path / "subdir"
@@ -164,7 +173,16 @@ class Test_NeuroCAASScriptManager():
         ncsm.register_config("s3://bucket/groupname/configs/filename.txt")
         with open(os.path.join(subdir,"registration.json"),"r") as fp:
             config = json.load(fp)
-        config["config"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+        assert config["config"]["s3"] == "s3://bucket/groupname/configs/filename.txt"    
+
+    def test_register_config_local(self,tmp_path):    
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_config_local("groupname/configs/filename.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            config = json.load(fp)
+        assert config["config"]["localsource"] == "groupname/configs/filename.txt"    
 
     def test_register_file(self,tmp_path):    
         subdir = tmp_path / "subdir"
@@ -173,7 +191,16 @@ class Test_NeuroCAASScriptManager():
         ncsm.register_file("addfile","s3://bucket/groupname/configs/addfile.txt")
         with open(os.path.join(subdir,"registration.json"),"r") as fp:
             fi = json.load(fp)
-        fi["additional_files"]["addfile"]["s3"] == "s3://bucket/groupname/inputs/filename.txt"    
+        assert fi["additional_files"]["addfile"]["s3"] == "s3://bucket/groupname/configs/addfile.txt"    
+
+    def test_register_file_local(self,tmp_path):    
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_file_local("addfile","groupname/configs/addfile.txt")
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            fi = json.load(fp)
+        assert fi["additional_files"]["addfile"]["localsource"] == "groupname/configs/addfile.txt"    
 
     def test_register_resultpath(self,tmp_path):    
         subdir = tmp_path / "subdir"
@@ -183,7 +210,17 @@ class Test_NeuroCAASScriptManager():
 
         with open(os.path.join(subdir,"registration.json"),"r") as fp:
             fi = json.load(fp)
-        assert fi["resultpath"] == "s3://bucket/groupname/resuts/job__test/"   
+        assert fi["resultpath"]["s3"] == "s3://bucket/groupname/resuts/job__test/"   
+
+    def test_register_resultpath(self,tmp_path):    
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+        ncsm.register_resultpath_local("groupname/resuts/job__test/")
+
+        with open(os.path.join(subdir,"registration.json"),"r") as fp:
+            fi = json.load(fp)
+        assert fi["resultpath"]["localsource"] == "groupname/resuts/job__test/"   
 
     def test_from_registration(self,tmp_path):
         subdir = tmp_path / "subdir"
@@ -192,16 +229,24 @@ class Test_NeuroCAASScriptManager():
         ncsm2 = scripting.NeuroCAASScriptManager.from_registration(subdir)
         assert ncsm.registration == ncsm2.registration
 
-    def test_get_data(self,tmp_path,setup_full_bucket):
+    @pytest.mark.parametrize("source",["s3","local"])
+    def test_get_data(self,tmp_path,setup_full_bucket,source):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
         contentkey = "inputs/file.json"
         subdir = tmp_path / "subdir"
         subdir.mkdir()    
-        s3path = f"s3://{bucketname}/{username}/{contentkey}"
         ncsm = scripting.NeuroCAASScriptManager(subdir)
         with pytest.raises(AssertionError):
             ncsm.get_data()
-        ncsm.register_data(s3path)
+        if source == "s3":
+            sourcepath = f"s3://{bucketname}/{username}/{contentkey}"
+            ncsm.register_data(sourcepath)
+        elif source == "local":
+            sourcepath = tmp_path / f"{username}/{contentkey}"
+            os.makedirs(os.path.dirname(sourcepath))
+            with open(str(sourcepath),"w") as f:
+                json.dump(contents[contentkey],f)
+            ncsm.register_data_local(sourcepath)
         assert ncsm.get_data()
         assert ncsm.registration["data"]["local"] == str(subdir / "inputs" / "file.json") 
         assert not ncsm.get_data()
@@ -211,16 +256,24 @@ class Test_NeuroCAASScriptManager():
         assert not ncsm.get_data(path = tmp_path)
 
 
-    def test_get_config(self,tmp_path,setup_full_bucket):
+    @pytest.mark.parametrize("source",["s3","local"])
+    def test_get_config(self,tmp_path,setup_full_bucket,source):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
         contentkey = "configs/config.json"
         subdir = tmp_path / "subdir"
         subdir.mkdir()    
-        s3path = f"s3://{bucketname}/{username}/{contentkey}"
         ncsm = scripting.NeuroCAASScriptManager(subdir)
         with pytest.raises(AssertionError):
             ncsm.get_config()
-        ncsm.register_config(s3path)
+        if source == "s3":    
+            sourcepath = f"s3://{bucketname}/{username}/{contentkey}"
+            ncsm.register_config(sourcepath)
+        elif source == "local":    
+            sourcepath = tmp_path / f"{username}/{contentkey}"
+            os.makedirs(os.path.dirname(sourcepath))
+            with open(str(sourcepath),"w") as f:
+                json.dump(contents[contentkey],f)
+            ncsm.register_config_local(sourcepath)
         assert ncsm.get_config()
         assert ncsm.registration["config"]["local"] == str(subdir / "configs" / "config.json") 
         assert not ncsm.get_config()
@@ -229,17 +282,25 @@ class Test_NeuroCAASScriptManager():
         assert ncsm.registration["config"]["local"] == str(tmp_path / "config.json") 
         assert not ncsm.get_config(path = tmp_path)
 
-    def test_get_file(self,tmp_path,setup_full_bucket):
+    @pytest.mark.parametrize("source",["s3","local"])
+    def test_get_file(self,tmp_path,setup_full_bucket,source):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
         contentkey = "inputs/extra.json"
         subdir = tmp_path / "subdir"
         subdir.mkdir()    
-        s3path = f"s3://{bucketname}/{username}/{contentkey}"
         ncsm = scripting.NeuroCAASScriptManager(subdir)
         filename = "extra"
         with pytest.raises(AssertionError):
             ncsm.get_file(filename)
-        ncsm.register_file(filename,s3path)
+        if source == "s3":    
+            sourcepath = f"s3://{bucketname}/{username}/{contentkey}"
+            ncsm.register_file(filename,sourcepath)
+        elif source == "local":    
+            sourcepath = tmp_path / f"{username}/{contentkey}"
+            os.makedirs(os.path.dirname(sourcepath))
+            with open(str(sourcepath),"w") as f:
+                json.dump(contents[contentkey],f)
+            ncsm.register_file_local(filename,sourcepath)
         assert ncsm.get_file(filename)
         assert ncsm.registration["additional_files"][filename]["local"] == str(subdir / "inputs" / "extra.json") 
         assert not ncsm.get_file(filename)
@@ -248,19 +309,27 @@ class Test_NeuroCAASScriptManager():
         assert ncsm.registration["additional_files"][filename]["local"] == str(tmp_path / "extra.json") 
         assert not ncsm.get_file(filename,path = tmp_path)
 
-    def test_put_result(self,tmp_path,setup_full_bucket):    
+    @pytest.mark.parametrize("source",["s3","local"])
+    def test_put_result(self,tmp_path,setup_full_bucket,source):    
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
         subdir = tmp_path / "subdir"
         subdir.mkdir()    
         fullpath = subdir / "file.txt"
         fullpath.open("w")
+        writepath = tmp_path / "outdir"
+        writepath.mkdir()
         s3path = f"s3://{bucketname}/{username}/results/job__test"
         ncsm = scripting.NeuroCAASScriptManager(subdir)
         with pytest.raises(AssertionError):
             ncsm.put_result(str(fullpath))
-        ncsm.register_resultpath(s3path)
-        ncsm.put_result(str(fullpath))
-        loc =  s3_client.download_file(bucketname,f"{username}/results/job__test/process_results/file.txt",str(subdir / "file2.txt"))
+        if source == "s3":    
+            ncsm.register_resultpath(s3path)
+            ncsm.put_result(str(fullpath))
+            loc =  s3_client.download_file(bucketname,f"{username}/results/job__test/process_results/file.txt",str(subdir / "file2.txt"))
+        elif source == "local":    
+            ncsm.register_resultpath_local(writepath)
+            ncsm.put_result(str(fullpath))
+            assert os.path.exists(os.path.join(writepath,"process_results",os.path.basename(fullpath)))
         
     def test_get_name(self,tmp_path):
         contents_empty = {"s3":None,"local":None}
