@@ -178,6 +178,7 @@ class NeuroCAASScriptManager(object):
         assert str(s3path).startswith("s3://"), "must be given in s3 form"
         self.registration["data"]["s3"] = str(s3path)
         self.registration["data"].pop("localsource","False")
+        self.registration["data"].pop("local","False")
         self.write()
 
     def register_data_local(self,localpath):
@@ -188,6 +189,7 @@ class NeuroCAASScriptManager(object):
         ## canc check existence later. 
         self.registration["data"]["localsource"] = str(localpath)
         self.registration["data"].pop("s3","False")
+        self.registration["data"].pop("local","False")
         self.write()
 
     def register_config(self,s3path):
@@ -199,6 +201,7 @@ class NeuroCAASScriptManager(object):
         assert str(s3path).startswith("s3://"), "must be given in s3 form"
         self.registration["config"]["s3"] = str(s3path)
         self.registration["config"].pop("localsource","False")
+        self.registration["config"].pop("local","False")
         self.write()
 
     def register_config_local(self,localpath):
@@ -209,6 +212,7 @@ class NeuroCAASScriptManager(object):
         ## canc check existence later. 
         self.registration["config"]["localsource"] = str(localpath)
         self.registration["config"].pop("s3","False")
+        self.registration["config"].pop("local","False")
         self.write()
 
     def register_file(self,name,s3path):
@@ -224,6 +228,7 @@ class NeuroCAASScriptManager(object):
         ## populate
         self.registration["additional_files"][name]["s3"] = str(s3path)
         self.registration["additional_files"][name].pop("localsource","False")
+        self.registration["additional_files"][name].pop("local","False")
         self.write()
 
     def register_file_local(self,name,localpath):
@@ -238,6 +243,7 @@ class NeuroCAASScriptManager(object):
         ## populate
         self.registration["additional_files"][name]["localsource"] = str(localpath)
         self.registration["additional_files"][name].pop("s3","False")
+        self.registration["additional_files"][name].pop("local","False")
         self.write()
 
     def register_resultpath(self,s3path):    
