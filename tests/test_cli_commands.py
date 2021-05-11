@@ -375,11 +375,12 @@ class Test_workflow():
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-k","groupname/inputs/zz.txt"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b","bucketname","-k","keypath/"]))
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
                 reg = json.load(f)
-            assert reg["resultpath"]["s3"] == "s3://bucketname/keypath/"    
+            assert reg["resultpath"]["s3"] == "s3://bucketname/groupname/keypath/"    
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-l","localoutpath/"]))
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
@@ -389,7 +390,7 @@ class Test_workflow():
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
                 reg = json.load(f)
-            assert reg["resultpath"]["s3"] == "s3://bucketname/keypath/"    
+            assert reg["resultpath"]["s3"] == "s3://bucketname/groupname/keypath/"    
 
     def test_get_data(self,setup_simple_bucket):
         runner = CliRunner()
@@ -532,9 +533,10 @@ class Test_workflow():
             with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k","groupname/inputs/loc"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","keypath/"]))
             result = eprint(runner.invoke(cli,["workflow","put-result","-r","file.txt","-d"]))
-            config =  s3_client.download_file(bucketname,"keypath/process_results/file.txt","./file.txt")
+            config =  s3_client.download_file(bucketname,"groupname/keypath/process_results/file.txt","./file.txt")
 
     def test_get_dataname(self,setup_simple_bucket):            
         runner = CliRunner()
@@ -629,11 +631,12 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/file.txt"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k","groupname/inputs/file.txt"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","keypath/"]))
             result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/file.txt"]))
-            assert result.output == os.path.join("s3://",bucketname,"keypath","process_results","file.txt\n")
+            assert result.output == os.path.join("s3://",bucketname,"groupname","keypath","process_results","file.txt\n")
             result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/dir/"]))
-            assert result.output == os.path.join("s3://",bucketname,"keypath","process_results","dir\n")
+            assert result.output == os.path.join("s3://",bucketname,"groupname","keypath","process_results","dir\n")
 
     def test_log_command(self,setup_simple_bucket):       
         runner = CliRunner()
@@ -662,6 +665,7 @@ class Test_workflow():
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
             result = eprint(runner.invoke(cli,["workflow","register-config","-b",bucketname,"-k",f"{username}/config.json"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k",f"{username}/input.json"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k",f"{username}/results/"]))
             result = eprint(runner.invoke(cli,["workflow","cleanup"]))
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/config.json","./key.txt")
