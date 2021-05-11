@@ -289,7 +289,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":   
-            download(data_s3path,data_localpath)    
+            download(data_s3path,data_localpath,display)    
         elif source == "local":   
             shutil.copy(data_localsource,data_localpath)
         self.registration["data"]["local"] = data_localpath
@@ -328,7 +328,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":    
-            download(config_s3path,config_localpath)    
+            download(config_s3path,config_localpath,display)    
         elif source == "local":    
             shutil.copy(config_localsource,config_localpath)
         self.registration["config"]["local"] = config_localpath
@@ -369,7 +369,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":    
-            download(file_s3path,file_localpath)    
+            download(file_s3path,file_localpath,display)    
         elif source == "local":    
             shutil.copy(file_localsource,file_localpath)
         self.registration["additional_files"][varname]["local"] = file_localpath
@@ -385,7 +385,7 @@ class NeuroCAASScriptManager(object):
         filename = os.path.basename(localfile)
         try:
             fullpath = os.path.join(self.registration["resultpath"]["s3"],"process_results",filename)
-            upload(localfile,fullpath)
+            upload(localfile,fullpath,display)
         except KeyError: 
             try:
                 fullpath = os.path.join(self.registration["resultpath"]["localsource"],"process_results",filename)
