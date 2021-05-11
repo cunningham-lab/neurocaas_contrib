@@ -488,7 +488,7 @@ class NeuroCAASScriptManager(object):
 
         """
         ## get config file to another loc: 
-        resultpath = os.path.join(self.path,self.subdirs["results"])
+        resultpath = os.path.join(self.path,self.subdirs["logs"])
         assert self.get_config(path = resultpath)
         configpath = self.get_configpath()
         loadpath = os.path.join(os.path.dirname(configpath),"update.txt")
