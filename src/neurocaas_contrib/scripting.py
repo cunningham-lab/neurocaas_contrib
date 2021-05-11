@@ -295,7 +295,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":   
-            download(data_s3path,data_localpath)    
+            download(data_s3path,data_localpath,display)    
         elif source == "local":   
             shutil.copy(data_localsource,data_localpath)
         self.registration["data"]["local"] = data_localpath
@@ -334,7 +334,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":    
-            download(config_s3path,config_localpath)    
+            download(config_s3path,config_localpath,display)    
         elif source == "local":    
             shutil.copy(config_localsource,config_localpath)
         self.registration["config"]["local"] = config_localpath
@@ -375,7 +375,7 @@ class NeuroCAASScriptManager(object):
             else:   
                 pass
         if source == "s3":    
-            download(file_s3path,file_localpath)    
+            download(file_s3path,file_localpath,display)    
         elif source == "local":    
             shutil.copy(file_localsource,file_localpath)
         self.registration["additional_files"][varname]["local"] = file_localpath
@@ -391,7 +391,7 @@ class NeuroCAASScriptManager(object):
         filename = os.path.basename(localfile)
         try:
             fullpath = os.path.join(self.registration["resultpath"]["s3"],"process_results",filename)
-            upload(localfile,fullpath)
+            upload(localfile,fullpath,display)
         except KeyError: 
             try:
                 fullpath = os.path.join(self.registration["resultpath"]["localsource"],"process_results",filename)
@@ -427,6 +427,12 @@ class NeuroCAASScriptManager(object):
 
         """
         return self.get_name(self.registration["data"]) 
+
+    def get_dataname_remote(self):
+        """Get name of data
+
+        """
+        return self.registration["data"]["s3"] 
 
     def get_configname(self):
         """Get name of config
@@ -487,8 +493,9 @@ class NeuroCAASScriptManager(object):
         """Indicates the end of registered workflow. Sends the relevant config file to the results directory, and sends a file called "update.txt" as well.
 
         """
-        ## get config file: 
-        assert self.get_config()
+        ## get config file to another loc: 
+        resultpath = os.path.join(self.path,self.subdirs["logs"])
+        assert self.get_config(path = resultpath)
         configpath = self.get_configpath()
         loadpath = os.path.join(os.path.dirname(configpath),"update.txt")
         self.put_result(configpath)

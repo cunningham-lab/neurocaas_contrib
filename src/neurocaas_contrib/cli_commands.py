@@ -808,7 +808,7 @@ def log_command(obj,command,bucket,resultfolder,suffix = None):
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
     try:
-        dataname = ncsm.get_dataname()
+        dataname = ncsm.get_dataname_remote()
     except AssertionError:    
         raise AssertionError("You must run get-data first so we know where to log this command.")
 
