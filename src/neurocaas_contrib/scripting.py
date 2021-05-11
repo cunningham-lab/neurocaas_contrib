@@ -422,6 +422,12 @@ class NeuroCAASScriptManager(object):
         """
         return self.get_name(self.registration["data"]) 
 
+    def get_dataname_remote(self):
+        """Get name of data
+
+        """
+        return self.registration["data"]["s3"] 
+
     def get_configname(self):
         """Get name of config
 
@@ -481,8 +487,9 @@ class NeuroCAASScriptManager(object):
         """Indicates the end of registered workflow. Sends the relevant config file to the results directory, and sends a file called "update.txt" as well.
 
         """
-        ## get config file: 
-        assert self.get_config()
+        ## get config file to another loc: 
+        resultpath = os.path.join(self.path,self.subdirs["results"])
+        assert self.get_config(path = resultpath)
         configpath = self.get_configpath()
         loadpath = os.path.join(os.path.dirname(configpath),"update.txt")
         self.put_result(configpath)
