@@ -580,16 +580,18 @@ def register_file(obj,name,bucket,key):
         type = click.STRING)
 @click.option("-k",
         "--key",
-        help = "key of the folder where results are stored within the indicated bucket",
+        help = "subkey of the folder where results are stored within the indicated bucket assumed to live in bucket/group/key, where group is given by the registered data",
         type = click.STRING)
 @click.pass_obj
 def register_resultpath(obj,bucket,key):        
-    """Register a config file with the scriptmanager. 
+    """Register a resultpath file with the scriptmanager. 
 
     """
     ## Get registration:
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
+    groupname = ncsm.get_group(ncsm.registration["data"])
+
     path = os.path.join("s3://",bucket,key)
     ncsm.register_resultpath(path)
 
