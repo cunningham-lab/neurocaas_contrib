@@ -566,7 +566,7 @@ def register_file(obj,name,bucket,key,localpath):
         type = click.STRING)
 @click.option("-k",
         "--key",
-        help = "key of the folder where results are stored within the indicated bucket",
+        help = "subkey of the folder where results are stored within the indicated bucket. The data will be put at s3://bucket/{groupname}/key, where groupname comes from the registered dataset.",
         type = click.STRING)
 @click.option("-l",
         "--localpath",
@@ -583,7 +583,11 @@ def register_resultpath(obj,bucket,key,localpath):
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
     if bucket is not None and key is not None:
-        path = os.path.join("s3://",bucket,key)
+        try:
+            group = ncsm.get_group(ncsm.registration["data"])
+        except KeyError:    
+            raise AssertionError("data must be registered first.")
+        path = os.path.join("s3://",bucket,group,key)
         ncsm.register_resultpath(path)
     elif localpath is not None:    
         ncsm.register_resultpath_local(localpath)
