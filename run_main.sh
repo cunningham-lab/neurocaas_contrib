@@ -21,7 +21,7 @@ source "$scriptpath/transfer.sh"
 # Results Directory $resultdir
 # Analysis Output Directory $process
 # Dataset Name (without path) $dataname
-# Dataset Full Path $datapath
+# Dataset Full Path $inputpath (fka $datapath)
 # Configuration Name # configname
 # Configuration Path # configpath
 set -a
@@ -29,11 +29,11 @@ parseargsstd "$1" "$2" "$3" "$4"
 set +a
 
 echo $bucketname >> "/home/ubuntu/check_vars.txt" 
-echo $groudir >> "/home/ubuntu/check_vars.txt" 
+echo $groupdir >> "/home/ubuntu/check_vars.txt" 
 echo $resultdir >> "/home/ubuntu/check_vars.txt" 
 echo $processdir >> "/home/ubuntu/check_vars.txt" 
 echo $dataname >> "/home/ubuntu/check_vars.txt" 
-echo $datapath >> "/home/ubuntu/check_vars.txt" 
+echo $inputpath >> "/home/ubuntu/check_vars.txt" 
 echo $configname >> "/home/ubuntu/check_vars.txt" 
 echo $configpath >> "/home/ubuntu/check_vars.txt" 
  
