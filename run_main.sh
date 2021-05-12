@@ -9,6 +9,7 @@ source "$scriptpath/paths.sh"
 ## Now declare remote directory name for here and all sourced files: 
 set -a
 neurocaasrootdir=$(dirname $(get_abs_filename "$execpath"))
+userhome="/home/ubuntu"
 set +a
 
 source "$scriptpath/workflow.sh"
