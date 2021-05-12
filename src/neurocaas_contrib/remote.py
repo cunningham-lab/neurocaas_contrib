@@ -563,7 +563,7 @@ class NeuroCAASAMI(object):
             
         try:
             subprocess.call(["git","add",self.config_fullpath])
-            subprocess.call(["git","commit","-m","automatic commit to document pipeline {} after update at {}. Purpose: {}".format(self.config_filepath,str(datetime.datetime.now()),message)])
+            subprocess.call(["git","commit","-m","automatic commit to document pipeline {} after update at {}. Purpose: {}. AMI: {}".format(self.config_filepath,str(datetime.datetime.now()),message,ami_id)])
             new_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
             print("new commit has hash: {}".format(new_hash))
         except subprocess.CalledProcessError:    
