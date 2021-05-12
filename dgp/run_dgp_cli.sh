@@ -29,7 +29,7 @@ then
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	
         exit
     fi    
-    zip "/home/ubuntu/results_$taskname_$mode.zip" "$userhome/$datastore/$taskname/"
+    zip "/home/ubuntu/results_$taskname.zip" "$userhome/$datastore/$taskname/"
 elif [ $mode == "predict" ]    
 then
     if [ $debug == "True" ]
@@ -42,9 +42,9 @@ then
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	
         exit
     fi    
-    zip "/home/ubuntu/results_$taskname_$mode.zip" "$userhome/$datastore/$taskname/videos_pred/"
+    zip "/home/ubuntu/results_$taskname.zip" "$userhome/$datastore/$taskname/videos_pred/"
 else    
     echo "Mode setting $mode not recognized. Valid options are "predict" or "train". Exiting."
 fi
 
-neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname_$mode.zip" -d 
+neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname.zip" -d 
