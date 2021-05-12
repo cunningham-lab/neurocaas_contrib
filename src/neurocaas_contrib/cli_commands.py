@@ -99,6 +99,7 @@ def cli(ctx,location,analysis_name):
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
     default=default_write_loc
+    type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True),
         )
 @click.option(
     "--analysis-name",
