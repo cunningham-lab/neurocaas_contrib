@@ -195,7 +195,6 @@ def sort_activity_by_users(dict_files,userlist):
                 userdict[user].append(a)
     return userdict
 
-
 def get_user_logs(bucket_name):
     """
     returns a list of s3 paths corresponding to logged users inside a bucket.
@@ -362,3 +361,13 @@ def calculate_parallelism_nones(bucket_name,usage_list,user):
             by_job[job]["firstend"] = job_rfs[job]["rf_end"].starttime
 
     return by_job
+
+class JobMonitor():
+    """Monitor a job as it is running. Given a submit file as input, uses it to trace details about a running job. 
+
+    """
+    def init(self,submitfile):
+        """
+        """
+        json.load()
+
