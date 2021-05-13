@@ -9,11 +9,15 @@ import boto3
 import localstack_client.session
 from botocore.exceptions import ClientError
 import json
+from datetime import timedelta
+import time
 from datetime import datetime as datetime
 import os
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
+cfn_client = boto3.client("cloudformation")
+logs_client = boto3.client("logs")
 
 class RangeFinder():
     """object class to keep track of the range of dates we are considering. 
@@ -366,8 +370,97 @@ class JobMonitor():
     """Monitor a job as it is running. Given a submit file as input, uses it to trace details about a running job. 
 
     """
-    def init(self,submitfile):
+    def __init__(self,stackname):
         """
         """
-        json.load()
+        self.stackname = stackname
+        self.lambda_pid = self.get_lambda_id()
+        self.log_group = "/aws/lambda/{}".format(self.lambda_pid)
+
+    def get_lambda_id(self):    
+        """Code to get the physical resource id of a cfn main lambda function from the stackname: 
+
+        :returns: physical resource id of the cloudformation lambda function.     
+        """
+        prid = cfn_client.describe_stack_resources(StackName=self.stackname,LogicalResourceId="MainLambda")["StackResources"][0]["PhysicalResourceId"]
+        return prid
+
+    def get_logs(self,hours = 1):
+        """Get the lambda logs indicating NeuroCAAS job processing for the last {hours} hours. 
+        The result will be returned as a list of dictionaries, with the key indicating the request id, and the value the lines of text included. 
+        Code from :https://stackoverflow.com/questions/59240107/how-to-query-cloudwatch-logs-using-boto3-in-python
+        :param hours: the number of hours to start collecting logs in.  
+        :returns: a list of dictionaries, containing logs for requests in reverse chronological order. 
+        """
+        start_query_response = logs_client.start_query(
+                logGroupName = self.log_group,
+                startTime = int((datetime.today()-timedelta(hours=hours)).timestamp()),
+                endTime = int(datetime.today().timestamp()),
+                queryString = "fields @logStream, @timestamp, @message" ## these are the fields we will want to parse. 
+                )
+        query_id = start_query_response["queryId"]
+        response = None
+        while response == None or response["status"] == "Running":
+            time.sleep(1)
+            response = logs_client.get_query_results(
+                    queryId= query_id
+                    )
+        parsed = self.parse_response(response)    
+        return parsed
+           
+    def parse_response(self,response):    
+        """Lambda logs are given as lists of requests in reverse chronological order, one per line. Let's find t 
+
+        :param response: the output of boto3.client("logs").get_query_results()
+        :returns: queries grouped by logstream 
+        """
+        all_results = response["results"]
+        ## ordered unique implementation from https://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-whilst-preserving-order
+        def f7(seq):
+            seen = set()
+            seen_add = seen.add
+            return [x for x in seq if not (x in seen or seen_add(x))]
+
+        logstreams = f7([li[0]["value"] for li in all_results])
+        streamdict = {s:[] for s in logstreams}
+        ## Now write the log messages into the streams, 
+        [streamdict[li[0]["value"]].append([li[-2]["value"]]) for li in all_results]
+        [streamdict[s].reverse() for s in streamdict.keys()]
+        ## Write into an ordered list of dictionaries. 
+        ordered = [{s:" ".join(sdi[0] for sdi in streamdict[s])} for s in logstreams]
+        return ordered
+        
+    def print_log(self,index = 0,hours = 1):    
+        """Print the contents of a log. By default, prints the most recent log (index = 0). 
+
+        :param index: the index of the log to print. By default, it's 0 (latest) 
+        :param hours: the number of hours to start collecting logs in.  
+        """
+        parsed = self.get_logs(hours = hours)
+        try:
+            selected = parsed[index]
+        except IndexError:    
+            raise IndexError("There are {} logs in this time range- log {} does not exist".format(len(parsed),index))
+        print("logstream: "+list(selected.keys())[0])
+        print("message: \n"+list(selected.values())[0])
+
+    def register_submit(submitfile):    
+        """ Use submit file info to process further. 
+
+        """
+        with open(submitfile,"r") as f:
+            data = json.load(f)
+        assert data.get("dataname",False), "name of the dataset must be provided"    
+        assert data.get("configname",False), "name of the config file must be provided"    
+        assert data.get("timestamp",False), "timestamp must be provided."    
+        
+
+        
+
+
+        
+
+
+
+
 

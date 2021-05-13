@@ -10,7 +10,7 @@ from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
 from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
 from .remote import NeuroCAASAMI
-from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict
+from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -401,9 +401,14 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+@cli.group()
+def monitor():
+    """Job monitoring functions.
+    """
+    return
 
 ### cli commands to monitor the stack. 
-@cli.command(help = "visualize the degree of parallelism of analysis usage.")
+@monitor.command(help = "visualize the degree of parallelism of analysis usage.")
 @click.option("-p",
         "--path",
         type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
@@ -419,6 +424,32 @@ def visualize_parallelism(blueprint,path):
         write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
         with open(write_path,"w") as f:
             json.dump(postprocessed,f,indent = 4)
+    
+@monitor.command(help = "print recent job manager requests.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-h",
+        "--hours",
+        type = click.INT,
+        help = "how many hours ago you want to start looking ",
+        default = 1)
+@click.option("-i",
+        "--index",
+        type = click.INT,
+        help = "the index of request you want to get (0 = most recent)",
+        default = 0)
+@click.pass_obj
+def describe_job_manager_request(blueprint,stackname,hours,index):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    jm.print_log(hours=hours,index=index)
     
     
 ## scripting tools 
