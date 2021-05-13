@@ -29,7 +29,7 @@ then
     else    
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	
         exit
-    zip "/home/ubuntu/results.zip" "$userhome/$datastore/$taskname/"
+    zip -r "/home/ubuntu/results.zip" "$userhome/$datastore/$taskname/"
     fi    
 elif [ $mode == "predict" ]    
 then
@@ -42,7 +42,7 @@ then
     else    
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	
         exit
-    zip "/home/ubuntu/results.zip" "$userhome/$datastore/$taskname/videos_pred/"
+    zip -r "/home/ubuntu/results.zip" "$userhome/$datastore/$taskname/videos_pred/"
     fi    
 else    
     echo "Mode setting $mode not recognized. Valid options are "predict" or "train". Exiting."
