@@ -292,7 +292,6 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
                 instance_index +=1
                 ## These should all be contiguous.
             ## Then get the corresponding data names: 
-            print(text,data_keyphrase_pre,data_keyphrase_post)
             if data_keyphrase_pre in text and data_keyphrase_mid in text and data_keyphrase_post in text:     
                 number = text.split(data_keyphrase_pre)[-1].split(data_keyphrase_mid)[0].strip()
                 dataname = text.split(data_keyphrase_pre+str(number)+data_keyphrase_mid)[-1].split(data_keyphrase_post)[0]
