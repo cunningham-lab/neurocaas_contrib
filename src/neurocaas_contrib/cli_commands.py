@@ -425,6 +425,15 @@ def visualize_parallelism(blueprint,path):
         with open(write_path,"w") as f:
             json.dump(postprocessed,f,indent = 4)
     
+@monitor.command(help = "see users of a given analysis.")
+@click.pass_obj
+def see_users(blueprint):
+    analysis_name = blueprint["analysis_name"] 
+    user_dict = get_user_logs(analysis_name)
+    userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
+    formatted = "\n".join(userlist)
+    click.echo(formatted)
+
 @monitor.command(help = "print recent job manager requests.")    
 @click.option("-s",
         "--stackname",
