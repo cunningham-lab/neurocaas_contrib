@@ -13,11 +13,14 @@ from datetime import timedelta
 import time
 from datetime import datetime as datetime
 import os
+from .log import NeuroCAASCertificate,NeuroCAASDataStatusLegacy
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
 cfn_client = boto3.client("cloudformation")
 logs_client = boto3.client("logs")
+
+jobprefix = "job__{s}_{t}" # parametrized by stackname, timestamp. 
 
 class RangeFinder():
     """object class to keep track of the range of dates we are considering. 
@@ -444,7 +447,7 @@ class JobMonitor():
         print("logstream: "+list(selected.keys())[0])
         print("message: \n"+list(selected.values())[0])
 
-    def register_submit(submitfile):    
+    def register_submit(self,submitfile):    
         """ Use submit file info to process further. 
 
         """
@@ -453,6 +456,43 @@ class JobMonitor():
         assert data.get("dataname",False), "name of the dataset must be provided"    
         assert data.get("configname",False), "name of the config file must be provided"    
         assert data.get("timestamp",False), "timestamp must be provided."    
+        return data
+
+    def get_certificate(self,submitfile):    
+        """Get the certificate file corresponding to a given submit file. 
+
+        :param submitfile: path to a submit file. 
+        :returns: a NeuroCAASCertificate object. 
+        """
+        submitdict = self.register_submit(submitfile)
+
+        groupname = submitdict["dataname"].split("/",1)[0]
+
+        foldername = jobprefix.format(s=self.stackname,t=submitdict["timestamp"])
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
+        cert = NeuroCAASCertificate(fullpath)
+        return cert
+
+    def get_datasets(self,submitfile):    
+        """Get the list of datasets associated with a given submit file. 
+
+        """
+        cert = self.get_certificate(submitfile)
+        instance_cert = cert.get_instances()
+        return instance_cert
+
+    def get_datastatus(self,submitfile,dataset):    
+        """Get the datastatus file associated with a given submit file and dataset. 
+
+        """
+        submitdict = self.register_submit(submitfile)
+
+        groupname = submitdict["dataname"].split("/",1)[0]
+
+        foldername = jobprefix.format(s=self.stackname,t=submitdict["timestamp"])
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","DATASET_NAME:{}_STATUS.txt".format(dataset))
+        status = NeuroCAASDataStatusLegacy(fullpath)
+        return status
         
 
         
