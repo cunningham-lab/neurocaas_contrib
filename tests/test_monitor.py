@@ -1,6 +1,7 @@
 # Test developer bucket monitoring functions. 
 from botocore.exceptions import ClientError
 import pytest
+import json
 import logging
 import os
 import localstack_client.session
@@ -156,6 +157,71 @@ def test_RangeFinder():
     rf.update("2010-12-04T12:55:12Z")
     rf.return_range()
     
+class Test_JobMonitor():
+    def test_get_lambda_id(self,tmp_path):
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "cianalysispermastack"    
+        jm = monitor.JobMonitor(stackname)
+        pr = jm.get_lambda_id()
+        assert pr.startswith("cianalysispermastack-MainLambda")
+
+    def test_get_logs(self,tmp_path):
+        """Hard to test this with fixtures. 
+
+        """
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        parsed = jm.get_logs(2)
+
+    def test_print_logs(self,tmp_path):
+        """Hard to test this with fixtures. 
+
+        """
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        jm.print_log(hours = 3)
+            
+    def test_get_certificate(self,tmp_path):
+        submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        cert = jm.get_certificate(path)
+
+    def test_get_datasets(self,tmp_path):
+        submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        datasets = jm.get_datasets(path)
+
+    def test_get_datastatus(self,tmp_path):
+        submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        status = jm.get_datastatus(path,"fish1_untrained.zip")
+        print(status.rawfile)
+        assert 0 
+            
+
 
    
 

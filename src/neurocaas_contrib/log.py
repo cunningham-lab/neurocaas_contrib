@@ -19,6 +19,11 @@ client = docker.from_env()
 
 s3_resource = boto3.resource("s3")
 divider = "================"
+instance_keyphrase_pre = "[Utils] New instance ec2.Instance(id='"
+instance_keyphrase_post = "') created!"
+data_keyphrase_pre = "Starting analysis " 
+data_keyphrase_mid = " with parameter set "
+data_keyphrase_post = "[+"
 localdata_dict = {
         "certificate_base":os.path.join(os.path.dirname(filepath),"template_mats/certificate.txt"),
         "certificate_update":os.path.join(os.path.dirname(filepath),"template_mats/certificate_update.txt"),
@@ -123,8 +128,10 @@ class NeuroCAASLogObject(object):
         try:
             uriparse = urlparse(s3_path,allow_fragments=False)
             bucket_name = uriparse.netloc
+            self.bucket_name = bucket_name
             path = uriparse.path.lstrip("/")
-            rawfile = self.load_init_s3(bucket_name,path)
+            self.path = path 
+            rawfile = self.load()
             #rawcert = load_cert(bucket_name,path)
             self.rawfile = rawfile
             #self.rawcert = rawcert
@@ -141,6 +148,14 @@ class NeuroCAASLogObject(object):
             self.rawfile = rawfile
             writeobj_dict["loc"] = "local"
             self.writeobj = WriteObj(writeobj_dict)
+
+    def load(self):        
+        """Reload the newest version of the log text from AWS. 
+        :return: rawfile, in the format specified by load_init_s3
+
+        """
+        rawfile = self.load_init_s3(self.bucket_name,self.path)
+        return rawfile     
 
     def validate_path(self,s3_path):
         """Validates that the path given is a correctly formatted S3 URI.
