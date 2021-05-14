@@ -257,6 +257,33 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         except IndexError:
             raise IndexError("The argument loc you gave is not compatible with the certificate (not in write area)")
 
+    def get_instances(self):
+        """Reads the cert file, and looks for instances to have been 1) created, and 2) started. 
+
+        :param cert: raw data containing certificate file.
+        :return: a dictionary with keys giving a numbering in the job, and values giving instance names + the corresponding datasets. 
+        """
+        instance_cert = {} 
+        instance_index = 1
+
+        rawcert = self.load() ## get newest version
+        cert_processed,_,_ = self.process_rawcert(rawcert)
+
+        ## First get the instances:
+        for nb,text in cert_processed.items():
+            if instance_keyphrase_pre in text and instance_keyphrase_post in text:
+                instance_id = text.split(instance_keyphrase_pre)[-1].split(instance_keyphrase_post)[0]
+                instance_cert[instance_index] = {"id":instance_id,"dataset":None}
+                instance_index +=1
+                ## These should all be contiguous.
+            ## Then get the corresponding data names: 
+            print(text,data_keyphrase_pre,data_keyphrase_post)
+            if data_keyphrase_pre in text and data_keyphrase_mid in text and data_keyphrase_post in text:     
+                number = text.split(data_keyphrase_pre)[-1].split(data_keyphrase_mid)[0].strip()
+                dataname = text.split(data_keyphrase_pre+str(number)+data_keyphrase_mid)[-1].split(data_keyphrase_post)[0]
+                instance_cert[int(number)]["dataset"] = dataname.strip()
+        return instance_cert
+
     def initialize_writeobj(self,mode,bucket=None,path=None,localpath=None): 
         """Method to initialize the WriteObj object passed to self.writeobj. Determines if we are writing to s3 (as in service mode) or to a local location (debugging). Note that if mode is local, bucket and path arguments are not required, and vice versa for s3 and localpath. However if they are not included for a particular mode an error will be thrown.
 
