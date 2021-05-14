@@ -457,27 +457,72 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
         type = click.STRING,
         default = None,
         help = "name of the stack that you want to get job manager requests for.")
-@click.option("-h",
-        "--hours",
-        type = click.INT,
-        help = "how many hours ago you want to start looking ",
-        default = 1)
-@click.option("-i",
-        "--index",
-        type = click.INT,
-        help = "the index of request you want to get (0 = most recent)",
-        default = 0)
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
 @click.pass_obj
-def describe_job_manager_request(blueprint,stackname,hours,index):
+def describe_certificate(blueprint,stackname,submitpath):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
     jm = JobMonitor(stackname)    
-    jm.print_log(hours=hours,index=index)
+    cert = jm.get_certificate(submitpath)
+    click.echo(cert.rawfile)
     
     
+@monitor.command(help = "print datasets being analyzed, and instances on which they are being analyzed.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
+@click.pass_obj
+def describe_datasets(blueprint,stackname,submitpath):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    datasets = jm.get_datasets(submitpath)
+    click.echo(datasets)
+
+@monitor.command(help = "prints the datastatus of any given dataseet.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
+@click.option("-d",
+        "--dataname",
+        type = click.STRING,
+        help = "basename of dataset to get status for.",
+        )
+@click.pass_obj
+def describe_datastatus(blueprint,stackname,submitpath,dataname):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    datastatus= jm.get_datastatus(submitpath)
+    click.echo(datastatus.rawfile)
+
 ## scripting tools 
 @cli.group()
 def scripting():
