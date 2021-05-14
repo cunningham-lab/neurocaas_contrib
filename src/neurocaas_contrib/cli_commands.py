@@ -450,6 +450,32 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
         stackname = blueprint["analysis_name"] 
     jm = JobMonitor(stackname)    
     jm.print_log(hours=hours,index=index)
+
+@monitor.command(help = "print certificate file for submission")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-h",
+        "--hours",
+        type = click.INT,
+        help = "how many hours ago you want to start looking ",
+        default = 1)
+@click.option("-i",
+        "--index",
+        type = click.INT,
+        help = "the index of request you want to get (0 = most recent)",
+        default = 0)
+@click.pass_obj
+def describe_job_manager_request(blueprint,stackname,hours,index):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    jm.print_log(hours=hours,index=index)
     
     
 ## scripting tools 
