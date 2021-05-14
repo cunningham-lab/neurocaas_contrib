@@ -809,14 +809,15 @@ def log_command(obj,command,bucket,resultfolder,suffix = None):
     ncsm = NeuroCAASScriptManager.from_registration(path)
     groupname = ncsm.get_group(ncsm.registration["data"])
     try:
-        dataname = ncsm.get_dataname()
+        dataname = os.path.basename(ncsm.get_dataname_remote())
     except AssertionError:    
-        raise AssertionError("You must run get-data first so we know where to log this command.")
+        raise AssertionError("You must run register-dataset first so we know where to log this command.")
 
     if suffix is not None:
         logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+suffix+"_STATUS.txt")
     else:    
         logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+"_STATUS.txt")
+    print("Attempting to log at {}".format(os.path.dirname(logpath)))    
         
     ncsm.log_command(command,logpath) 
 
