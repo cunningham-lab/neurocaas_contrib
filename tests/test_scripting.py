@@ -9,6 +9,13 @@ import os
 
 loc = os.path.abspath(os.path.dirname(__file__))
 
+localdata_dict = {
+        "certificate_base":os.path.join(os.path.dirname(loc),"test_mats/certificate.txt"),
+        "certificate_update":os.path.join(os.path.dirname(loc),"test_mats/certificate_update.txt"),
+        "datastatus_base":os.path.join(os.path.dirname(loc),"test_mats/DATASET_NAME-dataset.ext_STATUS.txt.json"),
+        "datastatus_update":os.path.join(os.path.dirname(loc),"test_mats/DATASET_NAME-dataset_update.ext_STATUS.txt.json")
+        }
+
 @pytest.mark.parametrize("field,value",[("scorer","kelly"),("task","iblright"),("jobnb","1"),("garbage",None)])
 def test_get_yaml_field(field,value):
     test_yaml = os.path.join(loc,"test_mats","config.yaml")
@@ -78,12 +85,13 @@ def setup_full_bucket(monkeypatch):
 def test_log_process():        
     badscript = os.path.join(loc,"test_mats","sendtime_br.sh")
     goodscript = os.path.join(loc,"test_mats","sendtime.sh")
-    logpath = os.path.join(loc,"test_mats","log")
+    logpath = os.path.join(loc,"test_mats","log","logfile.txt")
 
-    brcode = scripting.log_process(shlex.split(badscript),"logpath","s3://fakepath/fakefile.txt")
-    gdcode = scripting.log_process(shlex.split(goodscript),"logpath","s3://fakepath/fakefile.txt")
+    brcode = scripting.log_process(shlex.split(badscript),logpath,"s3://fakepath/fakefile.txt")
+    gdcode = scripting.log_process(shlex.split(goodscript),logpath,"s3://fakepath/fakefile.txt")
     assert brcode == 127
     assert gdcode == 0
+    assert 0
 
 @pytest.mark.skip
 def test_register_data():    
@@ -456,8 +464,8 @@ class Test_NeuroCAASScriptManager():
             assert "certificate.txt" in os.listdir(subdir / "logs")
             with open(os.path.join(subdir,"logs","certificate.txt"),"r") as f:
                 lines = f.readlines()
-            print(lines)    
             assert lines[2].startswith("DATANAME: dataset.ext | STATUS: SUCCESS")
+
         if logging == "s3":
             brcode = ncsm.log_command(shlex.split(badscript),f"s3://{bucketname}/{username}/results/job__test/logs/DATASET_NAME-file.json_STATUS.txt.json")
             status = s3_client.download_file(bucketname,f"{username}/results/job__test/logs/DATASET_NAME-file.json_STATUS.txt.json",os.path.join(subdir,"status.json"))
