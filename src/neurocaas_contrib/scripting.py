@@ -98,7 +98,7 @@ def log_process(command,logpath,s3status):
         while process.poll() is None:
             try:
                 stdtemp = reader.read().decode("utf-8")
-                if not stdtemp.isspace() : ## do not write if it's just nothing. 
+                if not stdtemp.isspace() or (stdtemp == ""): ## do not write if it's just nothing. 
                     stdlatest = stdtemp
                     try:
                         stdstub = stdlatest #.split("\n")[-2]#stdlatest.replace("\n"," ")
