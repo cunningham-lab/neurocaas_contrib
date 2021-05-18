@@ -57,4 +57,4 @@ else
 fi
 
 echo "----UPLOADING RESULTS----"
-neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname.zip" -d 
+neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname.zip"  
