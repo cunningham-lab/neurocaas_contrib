@@ -96,21 +96,34 @@ def log_process(command,logpath,s3status):
         sys.stdout.write("\n\n-------Start Process Log-------\n\n")
         stdlatest = "initializing...\n"
         while process.poll() is None:
-            stdtemp = reader.read().decode("utf-8")
-            if stdtemp is not "": ## do not write if it's just nothing. 
-                stdlatest = stdtemp
+            try:
+                stdtemp = reader.read().decode("utf-8")
+                if stdtemp is not "": ## do not write if it's just nothing. 
+                    stdlatest = stdtemp
+                    try:
+                        stdstub = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
+                    except IndexError:    
+                        stdstub = stdlatest
 
-            sys.stdout.write(stdlatest)
-            ncds.update_file(logpath,starttime)
-            ncds.write()
-            updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            updatedict["s"] = ncds.rawfile["status"]
-            updatedict["r"] = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
-            updatedict["u"] = ncds.rawfile["cpu_usage"]
-            ncc.update_instance_info(updatedict)
-            ncc.write()
-            time.sleep(0.5)
-            ## update logging. 
+                sys.stdout.write(stdlatest)
+                ncds.update_file(logpath,starttime)
+                ncds.write()
+                updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                updatedict["s"] = ncds.rawfile["status"]
+                updatedict["r"] = stdstub
+                updatedict["u"] = ncds.rawfile["cpu_usage"]
+                ncc.update_instance_info(updatedict)
+                ncc.write()
+                time.sleep(0.5)
+                ## update logging. 
+            except: ## if logging fails midway through, we don't want to cancel the job.    
+                updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                updatedict["s"] = "LOGFAIL"
+                updatedict["r"] = "Logging failed. Job will continue, but something went wrong while writing logs."
+                updatedict["u"] = "LOGFAIL" 
+                ncc.update_instance_info(updatedict)
+                ncc.write()
+                time.sleep(0.5)
             
         stdlast = reader.read().decode("utf-8")
         sys.stdout.write(stdlast)
@@ -125,6 +138,7 @@ def log_process(command,logpath,s3status):
         ncc.update_instance_info(updatedict)
         ncc.write()
         ## finish logging, get end log time + exit code. 
+
     return process.returncode    
 
 class NeuroCAASScriptManager(object):
