@@ -74,7 +74,8 @@ def log_process(command,logpath,s3status):
     :return: return code of the command. 
     """
     ## Initialize datastatus object. 
-    ncds = NeuroCAASDataStatusLegacy(s3status)
+    localstatus = os.path.join(os.path.dirname(logpath),"DATASTATUS.json")
+    ncds = NeuroCAASDataStatusLegacy(s3status,localstatus)
     ## Initialize certificate object. 
     s3certificate = os.path.join(os.path.dirname(s3status),"certificate.txt")
     localcertificate = os.path.join(os.path.dirname(logpath),"certificate.txt")
@@ -93,14 +94,18 @@ def log_process(command,logpath,s3status):
         process = subprocess.Popen(command,stdout = writer,stderr = writer)
         ## initialize a legacy logging object. starttime
         sys.stdout.write("\n\n-------Start Process Log-------\n\n")
+        stdlatest = "initializing...\n"
         while process.poll() is None:
-            stdlatest = reader.read().decode("utf-8")
+            stdtemp = reader.read().decode("utf-8")
+            if stdtemp is not "": ## do not write if it's just nothing. 
+                stdlatest = stdtemp
+
             sys.stdout.write(stdlatest)
             ncds.update_file(logpath,starttime)
             ncds.write()
             updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
             updatedict["s"] = ncds.rawfile["status"]
-            updatedict["r"] = stdlatest.replace("\n"," ")
+            updatedict["r"] = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
             updatedict["u"] = ncds.rawfile["cpu_usage"]
             ncc.update_instance_info(updatedict)
             ncc.write()
