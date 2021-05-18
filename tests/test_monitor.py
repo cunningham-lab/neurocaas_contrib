@@ -219,9 +219,42 @@ class Test_JobMonitor():
         jm = monitor.JobMonitor(stackname)
         status = jm.get_datastatus(path,"fish1_untrained.zip")
         print(status.rawfile)
-        assert 0 
             
+class Test_LogMonitor():
+    def test_get_lambda_id(self,tmp_path):
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "cianalysispermastack"    
+        jm = monitor.LogMonitor(stackname)
+        pr = jm.get_lambda_id()
+        assert pr.startswith("cianalysispermastack-FigLambda")
 
+    def test_get_logs(self,tmp_path):
+        """Hard to test this with fixtures. 
+
+        """
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.LogMonitor(stackname)
+        parsed = jm.get_logs(hours = 24)
+
+    def test_print_logs(self,tmp_path):
+        """Hard to test this with fixtures. 
+
+        """
+        submitdict = {"dataname":"fakedata","configname":"fakeconfig","timestamp":"faketime"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.LogMonitor(stackname)
+        jm.print_log(index = 1,hours = 24)
+        assert 0
 
    
 

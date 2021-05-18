@@ -369,8 +369,8 @@ def calculate_parallelism_nones(bucket_name,usage_list,user):
 
     return by_job
 
-class JobMonitor():
-    """Monitor a job as it is running. Given a submit file as input, uses it to trace details about a running job. 
+class LambdaMonitor():
+    """Base class for lambda monitoring. Has specific subtypes for main and sub lambdas
 
     """
     def __init__(self,stackname):
@@ -379,14 +379,6 @@ class JobMonitor():
         self.stackname = stackname
         self.lambda_pid = self.get_lambda_id()
         self.log_group = "/aws/lambda/{}".format(self.lambda_pid)
-
-    def get_lambda_id(self):    
-        """Code to get the physical resource id of a cfn main lambda function from the stackname: 
-
-        :returns: physical resource id of the cloudformation lambda function.     
-        """
-        prid = cfn_client.describe_stack_resources(StackName=self.stackname,LogicalResourceId="MainLambda")["StackResources"][0]["PhysicalResourceId"]
-        return prid
 
     def get_logs(self,hours = 1):
         """Get the lambda logs indicating NeuroCAAS job processing for the last {hours} hours. 
@@ -446,6 +438,32 @@ class JobMonitor():
             raise IndexError("There are {} logs in this time range- log {} does not exist".format(len(parsed),index))
         print("logstream: "+list(selected.keys())[0])
         print("message: \n"+list(selected.values())[0])
+
+class LogMonitor(LambdaMonitor):
+    """Monitor the logs coming off of a given analysis. 
+
+    """
+    def get_lambda_id(self):    
+        """Code to get the physical resource id of a cfn main lambda function from the stackname: 
+
+        :returns: physical resource id of the cloudformation lambda function.     
+        """
+        prid = cfn_client.describe_stack_resources(StackName=self.stackname,LogicalResourceId="FigLambda")["StackResources"][0]["PhysicalResourceId"]
+        return prid
+
+class JobMonitor(LambdaMonitor):
+    """Monitor a job as it is running. Given a submit file as input, uses it to trace details about a running job. 
+
+    """
+
+    def get_lambda_id(self):    
+        """Code to get the physical resource id of a cfn main lambda function from the stackname: 
+
+        :returns: physical resource id of the cloudformation lambda function.     
+        """
+        prid = cfn_client.describe_stack_resources(StackName=self.stackname,LogicalResourceId="MainLambda")["StackResources"][0]["PhysicalResourceId"]
+        return prid
+
 
     def register_submit(self,submitfile):    
         """ Use submit file info to process further. 

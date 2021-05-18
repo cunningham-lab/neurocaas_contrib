@@ -521,16 +521,29 @@ def describe_datasets(blueprint,stackname,submitpath):
         type = click.STRING,
         help = "basename of dataset to get status for.",
         )
+@click.option("-c",
+        "--cutoff",
+        type = click.INT,
+        help = "cutoff for logs (c-end)",
+        default = 0
+        )
 @click.pass_obj
-def describe_datastatus(blueprint,stackname,submitpath,dataname):
+def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
     jm = JobMonitor(stackname)    
-    datastatus= jm.get_datastatus(submitpath)
-    click.echo(datastatus.rawfile)
+    datastatus= jm.get_datastatus(submitpath,dataname)
+    text = datastatus.rawfile.pop("std")
+    list_text = [text[str(i)] for i in range(cutoff,len(text))]
+    formattext = "".join(list_text)
+
+    formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
+    formatted.append("std: "+formattext)
+    lined = "\n".join(formatted)
+    click.echo(lined)
 
 ## scripting tools 
 @cli.group()
