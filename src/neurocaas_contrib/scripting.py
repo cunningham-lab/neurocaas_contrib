@@ -101,9 +101,10 @@ def log_process(command,logpath,s3status):
                 if stdtemp and not stdtemp.isspace(): ## do not write if it's just nothing. 
                     stdlatest = stdtemp
                     try:
-                        stdstub = stdlatest #.split("\n")[-2]#stdlatest.replace("\n"," ")
+                        stdstub = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
                     except IndexError:    
-                        stdstub = stdlatest
+                        stdstub = stdlatest.replace("\n"," ")
+
 
                 sys.stdout.write(stdlatest)
                 ncds.update_file(logpath,starttime)
