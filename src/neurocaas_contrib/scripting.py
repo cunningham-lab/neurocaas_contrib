@@ -61,7 +61,7 @@ def parse_zipfile(zipname,path = None):
     assert len(folder) == 1; "Folder must contain only one top level directory." 
     if path is None:
         path = os.path.dirname(zipname)
-    archive.extractall(path = path,members = filtered_namelist)
+    archive.extractall(path = path,members = filtered_namelist) ## This should extract and replace. Maybe it does so at the file level
     return folder.pop()
 
 ## from https://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
@@ -98,12 +98,13 @@ def log_process(command,logpath,s3status):
         while process.poll() is None:
             try:
                 stdtemp = reader.read().decode("utf-8")
-                if not stdtemp.isspace() : ## do not write if it's just nothing. 
+                if stdtemp and not stdtemp.isspace(): ## do not write if it's just nothing. 
                     stdlatest = stdtemp
                     try:
                         stdstub = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
                     except IndexError:    
-                        stdstub = stdlatest
+                        stdstub = stdlatest.replace("\n"," ")
+
 
                 sys.stdout.write(stdlatest)
                 ncds.update_file(logpath,starttime)

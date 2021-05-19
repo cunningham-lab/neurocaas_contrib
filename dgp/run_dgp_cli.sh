@@ -6,8 +6,8 @@ outstore="ncapdata/localout"
 
 echo "----DOWNLOADING DATA----"
 source activate dgp
-neurocaas-contrib workflow get-data -f -d -o $userhome/$datastore/
-neurocaas-contrib workflow get-config -f -d -o $userhome/$datastore/
+neurocaas-contrib workflow get-data -f -o $userhome/$datastore/
+neurocaas-contrib workflow get-config -f -o $userhome/$datastore/
 
 datapath=$(neurocaas-contrib workflow get-datapath)
 configpath=$(neurocaas-contrib workflow get-configpath)
@@ -57,4 +57,4 @@ else
 fi
 
 echo "----UPLOADING RESULTS----"
-neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname.zip" -d 
+neurocaas-contrib workflow put-result -r "/home/ubuntu/results_$taskname.zip"  
