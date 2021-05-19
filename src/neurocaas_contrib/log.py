@@ -97,7 +97,7 @@ class WriteObj(object):
         """
         if self.init_dict["loc"] == "s3":
             writeobj = s3_resource.Object(self.init_dict["bucket"],self.init_dict["key"])
-            writeobj.put(Body=json.dumps(dictbody).encode("utf-8"))
+            writeobj.put(Body=json.dumps(dictbody,indent = 4).encode("utf-8"))
         elif self.init_dict["loc"] == "local":
             with open(self.init_dict["localpath"],"w") as f:
                 json.dump(dictbody,f,indent = 4)
