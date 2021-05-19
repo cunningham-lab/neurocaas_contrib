@@ -101,7 +101,10 @@ def log_process(command,logpath,s3status):
                 if stdtemp and not stdtemp.isspace(): ## do not write if it's just nothing. 
                     stdlatest = stdtemp
                     try:
-                        stdstub = stdlatest.split("\n")[-2]#stdlatest.replace("\n"," ")
+                        ## Try to get the last log that has meaning. 
+                        stdlatest_split = stdlatest.split("\n")
+                        stdmeaning = [s for s in stdlatest_split if s and not s.isspace()]
+                        stdstub = stdmeaning[-1]#stdlatest.replace("\n"," ")
                     except IndexError:    
                         stdstub = stdlatest.replace("\n"," ")
 
