@@ -78,7 +78,7 @@ def log_process(command,logpath,s3status):
     s3certificate = os.path.join(os.path.dirname(s3status),"certificate.txt")
     localcertificate = os.path.join(os.path.dirname(logpath),"certificate.txt")
     ncc = NeuroCAASCertificate(s3certificate,localcertificate)
-    dataname = os.path.basename(ncds.rawfile["input"])
+    dataname = ncds.rawfile["input"]
     updatedict = {
         "t" : datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
         "n" : dataname,
