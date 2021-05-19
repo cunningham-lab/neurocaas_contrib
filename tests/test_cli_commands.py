@@ -356,7 +356,7 @@ def test_cli_setup_inputs():
         assert os.path.exists(os.path.join("setupinputs","io-dir","configs","config.json"))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    assert blueprint["localenv"] == "./setupinputs"      
+    assert blueprint["localenv"] == os.path.abspath("./setupinputs")      
 
 def test_container_singleton(remove_named_container):
     runner = CliRunner()
@@ -406,7 +406,7 @@ def test_visualize_parallelism(setup_log_bucket):
     with runner.isolated_filesystem():
         os.mkdir("./logs")
         result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
-        result = eprint(runner.invoke(cli,["visualize-parallelism","-p","./logs"]))
+        result = eprint(runner.invoke(cli,["monitor","visualize-parallelism","-p","./logs"]))
         logfiles = os.listdir("./logs")
         assert len(logfiles) == 2
         labnames = ["bendeskylab","sawtelllab"]
