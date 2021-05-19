@@ -1,6 +1,7 @@
 ## module for scripting tools. 
 import os
 import io
+import shutil
 import time
 import datetime
 import subprocess
@@ -60,7 +61,7 @@ def parse_zipfile(zipname,path = None):
     assert len(folder) == 1; "Folder must contain only one top level directory." 
     if path is None:
         path = os.path.dirname(zipname)
-    archive.extractall(path = path,members = filtered_namelist)
+    archive.extractall(path = path,members = filtered_namelist) ## This should extract and replace. Maybe it does so at the file level
     return folder.pop()
 
 ## from https://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
@@ -73,7 +74,8 @@ def log_process(command,logpath,s3status):
     :return: return code of the command. 
     """
     ## Initialize datastatus object. 
-    ncds = NeuroCAASDataStatusLegacy(s3status)
+    localstatus = os.path.join(os.path.dirname(logpath),"DATASTATUS.json")
+    ncds = NeuroCAASDataStatusLegacy(s3status,localstatus)
     ## Initialize certificate object. 
     s3certificate = os.path.join(os.path.dirname(s3status),"certificate.txt")
     localcertificate = os.path.join(os.path.dirname(logpath),"certificate.txt")
@@ -92,19 +94,40 @@ def log_process(command,logpath,s3status):
         process = subprocess.Popen(command,stdout = writer,stderr = writer)
         ## initialize a legacy logging object. starttime
         sys.stdout.write("\n\n-------Start Process Log-------\n\n")
+        stdlatest = "initializing...\n"
         while process.poll() is None:
-            stdlatest = reader.read().decode("utf-8")
-            sys.stdout.write(stdlatest)
-            ncds.update_file(logpath,starttime)
-            ncds.write()
-            updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            updatedict["s"] = ncds.rawfile["status"]
-            updatedict["r"] = stdlatest.replace("\n"," ")
-            updatedict["u"] = ncds.rawfile["cpu_usage"]
-            ncc.update_instance_info(updatedict)
-            ncc.write()
-            time.sleep(0.5)
-            ## update logging. 
+            try:
+                stdtemp = reader.read().decode("utf-8")
+                if stdtemp and not stdtemp.isspace(): ## do not write if it's just nothing. 
+                    stdlatest = stdtemp
+                    try:
+                        ## Try to get the last log that has meaning. 
+                        stdlatest_split = stdlatest.split("\n")
+                        stdmeaning = [s for s in stdlatest_split if s and not s.isspace()]
+                        stdstub = stdmeaning[-1]#stdlatest.replace("\n"," ")
+                    except IndexError:    
+                        stdstub = stdlatest.replace("\n"," ")
+
+
+                sys.stdout.write(stdlatest)
+                ncds.update_file(logpath,starttime)
+                ncds.write()
+                updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                updatedict["s"] = ncds.rawfile["status"]
+                updatedict["r"] = stdstub
+                updatedict["u"] = ncds.rawfile["cpu_usage"]
+                ncc.update_instance_info(updatedict)
+                ncc.write()
+                time.sleep(0.5)
+                ## update logging. 
+            except: ## if logging fails midway through, we don't want to cancel the job.    
+                updatedict["t"] = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                updatedict["s"] = "LOGFAIL"
+                updatedict["r"] = "Logging failed. Job will continue, but something went wrong while writing logs."
+                updatedict["u"] = "LOGFAIL" 
+                ncc.update_instance_info(updatedict)
+                ncc.write()
+                time.sleep(0.5)
             
         stdlast = reader.read().decode("utf-8")
         sys.stdout.write(stdlast)
@@ -119,6 +142,7 @@ def log_process(command,logpath,s3status):
         ncc.update_instance_info(updatedict)
         ncc.write()
         ## finish logging, get end log time + exit code. 
+
     return process.returncode    
 
 class NeuroCAASScriptManager(object):
@@ -137,12 +161,12 @@ class NeuroCAASScriptManager(object):
         self.path = path
         ## The subdirectories to expect/create at the given location. 
         self.subdirs = {"data":"inputs","config":"configs","results":"results","logs":"logs"}
-        self.pathtemplate = {"s3":None,"local":None}
+        #self.pathtemplate = {"s3":None,"localsource":None,"local":None}
         self.registration = {
-                "data":{k:v for k,v in self.pathtemplate.items()},
-                "config":{k:v for k,v in self.pathtemplate.items()},
+                "data":{},
+                "config":{},
                 "additional_files":{},
-                "resultpath":None
+                "resultpath":{}
                 }
 
         if write is True:
@@ -174,7 +198,21 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["data"]["s3"] = s3path
+        assert str(s3path).startswith("s3://"), "must be given in s3 form"
+        self.registration["data"]["s3"] = str(s3path)
+        self.registration["data"].pop("localsource","False")
+        self.registration["data"].pop("local","False")
+        self.write()
+
+    def register_data_local(self,localpath):
+        """Given a local path, registers that as the location of the data we care about. 
+        :param localpath: path to a file on the machine itself. 
+
+        """
+        ## canc check existence later. 
+        self.registration["data"]["localsource"] = str(localpath)
+        self.registration["data"].pop("s3","False")
+        self.registration["data"].pop("local","False")
         self.write()
 
     def register_config(self,s3path):
@@ -183,26 +221,69 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["config"]["s3"] = s3path
+        assert str(s3path).startswith("s3://"), "must be given in s3 form"
+        self.registration["config"]["s3"] = str(s3path)
+        self.registration["config"].pop("localsource","False")
+        self.registration["config"].pop("local","False")
+        self.write()
+
+    def register_config_local(self,localpath):
+        """Given a local path, registers that as the location of the config file we care about. 
+        :param localpath: path to a file on the machine itself. 
+
+        """
+        ## canc check existence later. 
+        self.registration["config"]["localsource"] = str(localpath)
+        self.registration["config"].pop("s3","False")
+        self.registration["config"].pop("local","False")
         self.write()
 
     def register_file(self,name,s3path):
-        """Given an s3 path, registers that as the location of the data we care about. 
+        """Given an s3 path, registers that as the location of a file we care about. 
         :param name: name of the file to register this data path under.  
         :param s3path: path to a file in aws s3, given in "s3://bucket/path" format
 
         """
+        assert str(s3path).startswith("s3://"), "must be given in s3 form"
         ## initialize
-        self.registration["additional_files"][name] = {k:v for k,v in self.pathtemplate.items()} 
+        #self.registration["additional_files"][name] = {k:v for k,v in self.pathtemplate.items()} 
+        self.registration["additional_files"][name] = {} 
         ## populate
-        self.registration["additional_files"][name]["s3"] = s3path
+        self.registration["additional_files"][name]["s3"] = str(s3path)
+        self.registration["additional_files"][name].pop("localsource","False")
+        self.registration["additional_files"][name].pop("local","False")
+        self.write()
+
+    def register_file_local(self,name,localpath):
+        """Given a local path, registers that as the location of a file we care about. 
+        :param name: name of the file to register this data path under.  
+        :param localpath: path to a file on the machine itself. 
+
+        """
+        ## initialize
+        #self.registration["additional_files"][name] = {k:v for k,v in self.pathtemplate.items()} 
+        self.registration["additional_files"][name] = {} 
+        ## populate
+        self.registration["additional_files"][name]["localsource"] = str(localpath)
+        self.registration["additional_files"][name].pop("s3","False")
+        self.registration["additional_files"][name].pop("local","False")
         self.write()
 
     def register_resultpath(self,s3path):    
         """Given an s3 path, registers that as the location where we will upload job data. Give a folder, where you want to generate two subdirectories, "logs", and "process_results". Logs and analysis results will be sent to these respective locations.  
 
         """
-        self.registration["resultpath"] = s3path
+        assert s3path.startswith("s3://"), "must be given in s3 form"
+        self.registration["resultpath"]["s3"] = str(s3path)
+        self.registration["resultpath"].pop("localsource","False")
+        self.write()
+
+    def register_resultpath_local(self,localpath):    
+        """Given an local path, registers that as the location where we will upload job data. Give a folder, where you want to generate two subdirectories, "logs", and "process_results". Logs and analysis results will be sent to these respective locations.  
+
+        """
+        self.registration["resultpath"]["localsource"] = str(localpath)
+        self.registration["resultpath"].pop("s3","False")
         self.write()
 
     def get_data(self,path = None,force = False,display = False):    
@@ -215,10 +296,15 @@ class NeuroCAASScriptManager(object):
         """
         try:
             data_s3path = self.registration["data"]["s3"]
-            assert data_s3path is not None
             data_name = os.path.basename(data_s3path)
-        except AssertionError:     
-            raise AssertionError("Data not registered. Run register_data first.") 
+            source = "s3"
+        except KeyError:     
+            try:
+                data_localsource = self.registration["data"]["localsource"]
+                data_name = os.path.basename(data_localsource)
+                source = "local"
+            except:    
+                raise AssertionError("Data not registered. Run register_data first.") 
 
         if path is None: 
             path = os.path.join(self.path,self.subdirs["data"])
@@ -231,7 +317,10 @@ class NeuroCAASScriptManager(object):
                 return 0
             else:   
                 pass
-        download(data_s3path,data_localpath)    
+        if source == "s3":   
+            download(data_s3path,data_localpath,display)    
+        elif source == "local":   
+            shutil.copy(data_localsource,data_localpath)
         self.registration["data"]["local"] = data_localpath
         self.write()
         return 1
@@ -246,10 +335,15 @@ class NeuroCAASScriptManager(object):
         """
         try:
             config_s3path = self.registration["config"]["s3"]
-            assert config_s3path is not None
             config_name = os.path.basename(config_s3path)
-        except AssertionError:     
-            raise AssertionError("Config not registered. Run register_config first.") 
+            source = "s3"
+        except KeyError:     
+            try:
+                config_localsource = self.registration["config"]["localsource"]
+                config_name = os.path.basename(config_localsource)
+                source = "local"
+            except:    
+                raise AssertionError("Config not registered. Run register_config first.") 
 
         if path is None: 
             path = os.path.join(self.path,self.subdirs["config"])
@@ -262,7 +356,10 @@ class NeuroCAASScriptManager(object):
                 return 0 
             else:   
                 pass
-        download(config_s3path,config_localpath)    
+        if source == "s3":    
+            download(config_s3path,config_localpath,display)    
+        elif source == "local":    
+            shutil.copy(config_localsource,config_localpath)
         self.registration["config"]["local"] = config_localpath
         self.write()
         return 1
@@ -279,13 +376,15 @@ class NeuroCAASScriptManager(object):
         """
         try:
             file_s3path = self.registration["additional_files"][varname]["s3"]
-        except KeyError:    
-            raise AssertionError("File not registered. Run register_file first.") 
-        try:
-            assert file_s3path is not None
             file_name = os.path.basename(file_s3path)
-        except AssertionError:     
-            raise AssertionError("Config not registered. Run register_file first.") 
+            source = "s3"
+        except KeyError:    
+            try:
+                file_localsource = self.registration["additional_files"][varname]["localsource"]
+                file_name = os.path.basename(file_localsource)
+                source = "local"
+            except:    
+                raise AssertionError("File not registered. Run register_file first.") 
 
         if path is None: 
             path = os.path.join(self.path,self.subdirs["data"])
@@ -298,7 +397,10 @@ class NeuroCAASScriptManager(object):
                 return 0
             else:   
                 pass
-        download(file_s3path,file_localpath)    
+        if source == "s3":    
+            download(file_s3path,file_localpath,display)    
+        elif source == "local":    
+            shutil.copy(file_localsource,file_localpath)
         self.registration["additional_files"][varname]["local"] = file_localpath
         self.write()
         return 1
@@ -310,16 +412,23 @@ class NeuroCAASScriptManager(object):
         :return: bool (True if uploaded, False if not)
         """
         filename = os.path.basename(localfile)
-        assert self.registration["resultpath"] is not None; "result path must be registered. "
-        fullpath = os.path.join(self.registration["resultpath"],"process_results",filename)
-        upload(localfile,fullpath)
+        try:
+            fullpath = os.path.join(self.registration["resultpath"]["s3"],"process_results",filename)
+            upload(localfile,fullpath,display)
+        except KeyError: 
+            try:
+                fullpath = os.path.join(self.registration["resultpath"]["localsource"],"process_results",filename)
+                os.makedirs(os.path.dirname(fullpath),exist_ok = True)
+                shutil.copy(localfile,fullpath)
+            except:    
+                raise AssertionError("Result location not registered. Run register_resultpath first.")
 
     def get_name(self,contents):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the filename if available. 
         :param contents: a dictionary of structure {"s3":location,"local":location}
         """
         assert contents["local"] is not None, "local path does not exist."
-        return os.path.basename(contents["s3"])
+        return os.path.basename(contents["local"])
 
     def get_group(self,contents):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the filename if available. 
@@ -341,6 +450,12 @@ class NeuroCAASScriptManager(object):
 
         """
         return self.get_name(self.registration["data"]) 
+
+    def get_dataname_remote(self):
+        """Get name of data
+
+        """
+        return self.registration["data"]["s3"] 
 
     def get_configname(self):
         """Get name of config
@@ -378,7 +493,14 @@ class NeuroCAASScriptManager(object):
         """
         assert self.registration["resultpath"] is not None, "result path must be registered"
         basename = os.path.basename(os.path.normpath(filepath))
-        return os.path.join(self.registration["resultpath"],"process_results",basename)
+        try:
+            resultpath =  os.path.join(self.registration["resultpath"]["s3"],"process_results",basename)
+        except KeyError:    
+            try:
+                resultpath =  os.path.join(self.registration["resultpath"]["localsource"],"process_results",basename)
+            except KeyError:    
+                raise KeyError("Not registered.")
+        return resultpath    
 
     def log_command(self,command,s3log,path=None):
         """Wrapper around bare log_process function to provide the local logpath. 
@@ -394,8 +516,10 @@ class NeuroCAASScriptManager(object):
         """Indicates the end of registered workflow. Sends the relevant config file to the results directory, and sends a file called "update.txt" as well.
 
         """
-        ## get config file: 
-        assert self.get_config()
+        ## get config file to another loc: 
+        resultpath = os.path.join(self.path,self.subdirs["logs"])
+        mkdir_notexists(resultpath)
+        assert self.get_config(path = resultpath)
         configpath = self.get_configpath()
         loadpath = os.path.join(os.path.dirname(configpath),"update.txt")
         self.put_result(configpath)

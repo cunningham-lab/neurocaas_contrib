@@ -14,6 +14,7 @@ s3_client = boto3.client("s3")
 ## from https://stackoverflow.com/questions/41827963/track-download-progress-of-s3-file-using-boto3-and-callbacks
 class ProgressPercentage_d(object):
     """Helper class to get and display percentage of data downloaded. 
+    If display is set to false, assume that we're writing to a remote log file, and include newlines. 
 
     """
     def __init__(self,client,BUCKET,KEY,display = False):
@@ -33,9 +34,16 @@ class ProgressPercentage_d(object):
                             self._filename, self._seen_so_far, self._size,
                             percentage))
                 sys.stdout.flush()
+            else:    
+                sys.stdout.write(
+                            "\r%s  %s / %s  (%.2f%%)\n" % (
+                            self._filename, self._seen_so_far, self._size,
+                            percentage))
+                sys.stdout.flush()
 
 class ProgressPercentage_u(object):
     """Helper class to get and display percentage of data uploaded. 
+    If display is set to false, assume that we're writing to a remote log file, and include newlines. 
 
     """
     def __init__(self,FILEPATH,display = False):
@@ -52,6 +60,12 @@ class ProgressPercentage_u(object):
             if self.display:
                 sys.stdout.write(
                             "\r%s  %s / %s  (%.2f%%)" % (
+                            self._filename, self._seen_so_far, self._size,
+                            percentage))
+                sys.stdout.flush()
+            else:    
+                sys.stdout.write(
+                            "\r%s  %s / %s  (%.2f%%)\n" % (
                             self._filename, self._seen_so_far, self._size,
                             percentage))
                 sys.stdout.flush()

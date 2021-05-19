@@ -101,6 +101,24 @@ class Test_NeuroCAASCertificate(object):
         assert ncc_def.writeobj.init_dict["loc"] == "local"
         assert ncc_1.writeobj.init_dict["loc"] == "s3"
 
+    def test_NeuroCAASCertificate_load(self,tmp_path):
+        writeloc_local = tmp_path / "localcert.txt" 
+        writeloc_s3 = tmp_path / "s3cert.txt" 
+        create_mock_data(certbucket,certkey,localcertpath)
+        ncc_def = log.NeuroCAASCertificate("s3://fake/path.txt",writeloc_local)
+        ncc_1 = log.NeuroCAASCertificate(certpath,writeloc_s3)
+        ncc_def.write()
+        ncc_1.write()
+        ncc_def.update_instance_info({"s":"UPDATED"},loc = 0)
+        ncc_1.update_instance_info({"s":"UPDATED"},loc = 0)
+        assert "UPDATED" not in ncc_def.writedict["groupname/inputs/dataname.ext"]["line"]
+        assert "UPDATED" not in ncc_1.writedict["groupname/inputs/dataname.ext"]["line"]
+        ncc_def.load() 
+        ncc_1.load()
+        print(ncc_def.writedict)
+        assert "UPDATED" not in ncc_def.writedict["groupname/inputs/dataname.ext"]["line"]
+        assert "UPDATED" not in ncc_1.writedict["groupname/inputs/dataname.ext"]["line"]
+
     def test_NeuroCAASCertificate_process_rawcert(self):
         create_mock_data(certbucket,certkey,localcertpath)
         ncc = log.NeuroCAASCertificate(certpath)
@@ -149,6 +167,27 @@ class Test_NeuroCAASCertificate(object):
         ncc = log.NeuroCAASCertificate("s3://fake/path.txt")
         ncc.write()
         assert os.path.exists(os.path.join(source,"template_mats","certificate_update.txt"))
+
+    def test_NeuroCAASCertificate_write_default_multi(self,tmp_path):
+        temp_cert = tmp_path / "certificate.txt"
+        updatedict = {"n":"groupname/inputs/dataname.ext","r":"random command"}
+        updatedict2 = {"n":"groupname/inputs/dataname2.ext","r":"random command 2"}
+        base  = "DATANAME: groupname/inputs/dataname.ext | STATUS: N/A | TIME: N/A | LAST COMMAND: random command | CPU_USAGE: N/A\n"
+        base2  = "DATANAME: groupname/inputs/dataname2.ext | STATUS: N/A | TIME: N/A | LAST COMMAND: random command 2 | CPU_USAGE: N/A\n"
+        ncc = log.NeuroCAASCertificate("s3://fake/path.txt",temp_cert)
+        ncc2 = log.NeuroCAASCertificate("s3://fake/path.txt",temp_cert)
+        #ncc.write()
+        ncc.update_instance_info(updatedict)
+        ncc.write()
+        ncc2.update_instance_info(updatedict2)
+        ncc2.write() ## simultaneous writes are still an issue. 
+        assert os.path.exists(temp_cert) ## we should s
+        with open(temp_cert,"r") as f:
+            out = f.readlines()
+        print(out)    
+        datalines = out[2:4]
+        assert datalines[0] == base
+        assert datalines[1] == base2
 
 class Test_NeuroCAASDataStatus():
     client = docker.from_env()
@@ -281,10 +320,12 @@ class Test_NeuroCAASDataStatusLegacy():
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
         assert type(ncds.rawfile) == dict
 
-    def test_NeuroCAASDataStatusLegacy_get_stdout(self):    
+    def test_NeuroCAASDataStatusLegacy_get_stdout(self,tmp_path):    
         create_mock_data(statusbucket,statuskey,localstatuspath)
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
-        logfile = os.path.join(testdir,"test_mats","log")
+        logfile = os.path.join(tmp_path,"loglegacy.txt")
+        with open(logfile,"w") as f:
+            f.write("[status]")
         output = ncds.get_stdout(logfile)
         assert type(output) == list
         assert type(output[0]) == str 
@@ -332,30 +373,36 @@ class Test_NeuroCAASDataStatusLegacy():
             assert type(value) in [int,float,str]
         assert usagedict["cpu_total"] >= 0 
         
-    def test_NeuroCAASDataStatusLegacy_update_file(self): 
+    def test_NeuroCAASDataStatusLegacy_update_file(self,tmp_path): 
         ## WARNING: NO ASSERTS
         create_mock_data(statusbucket,statuskey,localstatuspath)
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
         starttime = "0001-01-01T00:00:00Z"
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        logfile = os.path.join(testdir,"test_mats","log")
+        logfile = os.path.join(tmp_path,"loglegacy.txt")
+        with open(logfile,"w") as f:
+            f.write("[status]")
         ncds.update_file(logfile,starttime,finishtime)
         print(ncds.rawfile)
 
-    def test_NeuroCAASDataStatusLegacy_write_local(self):
+    def test_NeuroCAASDataStatusLegacy_write_local(self,tmp_path):
         create_mock_data(statusbucket,statuskey,localstatuspath)
         ncds = log.NeuroCAASDataStatusLegacy("s3://fake.ext")
         starttime = "0001-01-01T00:00:00Z"
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        logfile = os.path.join(testdir,"test_mats","log")
+        logfile = os.path.join(tmp_path,"loglegacy.txt")
+        with open(logfile,"w") as f:
+            f.write("[status]")
         ncds.update_file(logfile,starttime,finishtime)
         ncds.write()
 
-    def test_NeuroCAASDataStatusLegacy_write_s3(self,monkeypatch):
+    def test_NeuroCAASDataStatusLegacy_write_s3(self,monkeypatch,tmp_path):
+        logfile = os.path.join(tmp_path,"loglegacy.txt")
+        with open(logfile,"w") as f:
+            f.write("[status]")
         create_mock_data(statusbucket,statuskey,localstatuspath)
         starttime = "0001-01-01T00:00:00Z"
         finishtime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        logfile = os.path.join(testdir,"test_mats","log")
         ncds = log.NeuroCAASDataStatusLegacy(statuspath)
         ncds.update_file(logfile,starttime,finishtime)
         ncds.write()

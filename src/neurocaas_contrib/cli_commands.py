@@ -577,7 +577,7 @@ def read_yaml(path,field,default = None):
             print(default)
     #click.echo(output)
 
-@scripting.command(help ="extract zipped folder into the same directory, and get name of the folder that is created.")
+@scripting.command(help ="extract zipped folder into the same directory, and echo basename of the folder that is extracted.")
 @click.option("-z",
         "--zippath",
         help = "path to zip file",
@@ -585,8 +585,8 @@ def read_yaml(path,field,default = None):
         )
 @click.option("-o",
         "--outpath",
-        help = "outpath",
-        type = click.Path(exists = True,file_okay = True,readable = True,resolve_path = True),
+        help = "directory in which to place the extracted directory- default to same directory.",
+        type = click.Path(exists = True,dir_okay = True,readable = True,resolve_path = True),
         default = None
         )
 def parse_zip(zippath,outpath):
@@ -634,27 +634,38 @@ def initialize_job(obj,path):
     with open(storagepath,"w") as f:
         json.dump(storage,f)
         
-@workflow.command(help="register a dataset for processing")
+@workflow.command(help="register a dataset for processing. Can be located locally (use -l) or in s3 (use -b, -k)")
 @click.option("-b",
         "--bucket",
         help = "bucket where data is located",
+        default = None,
         type = click.STRING)
 @click.option("-k",
         "--key",
         help = "key of the file within the indicated bucket",
+        default = None,
+        type = click.STRING)
+@click.option("-l",
+        "--localpath",
+        help = "local path where data is located.",
+        default = None,
         type = click.STRING)
 @click.pass_obj
-def register_dataset(obj,bucket,key):        
+def register_dataset(obj,bucket,key,localpath):        
     """Register a dataset with the scriptmanager. 
 
     """
+    assert (bucket is not None and key is not None) ^ (localpath is not None), "you can pass either -b and -k (s3 file) or -l (local file)" 
     ## Get registration:
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
-    path = os.path.join("s3://",bucket,key)
-    ncsm.register_data(path)
+    if bucket is not None and key is not None:
+        path = os.path.join("s3://",bucket,key)
+        ncsm.register_data(path)
+    elif localpath is not None:    
+        ncsm.register_data_local(localpath)
 
-@workflow.command(help="register a config file for processing")
+@workflow.command(help="register a config file for processing. Can be located locally (use -l) or in s3 (use -b, -k)")
 @click.option("-b",
         "--bucket",
         help = "bucket where config file is located",
@@ -663,18 +674,27 @@ def register_dataset(obj,bucket,key):
         "--key",
         help = "key of the file within the indicated bucket",
         type = click.STRING)
+@click.option("-l",
+        "--localpath",
+        help = "local path where config is located.",
+        default = None,
+        type = click.STRING)
 @click.pass_obj
-def register_config(obj,bucket,key):        
+def register_config(obj,bucket,key,localpath):        
     """Register a config file with the scriptmanager. 
 
     """
+    assert (bucket is not None and key is not None) ^ (localpath is not None), "you can pass either -b and -k (s3 file) or -l (local file)" 
     ## Get registration:
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
-    path = os.path.join("s3://",bucket,key)
-    ncsm.register_config(path)
+    if bucket is not None and key is not None:
+        path = os.path.join("s3://",bucket,key)
+        ncsm.register_config(path)
+    elif localpath is not None:    
+        ncsm.register_config_local(localpath)
 
-@workflow.command(help="register an arbitrary file for processing")
+@workflow.command(help="register an arbitrary file for processing. can be located locally (use -l) or in s3 (use -b, -k)")
 @click.option("-n",
         "--name",
         help = "name of file to reference later",
@@ -687,38 +707,58 @@ def register_config(obj,bucket,key):
         "--key",
         help = "key of the file within the indicated bucket",
         type = click.STRING)
+@click.option("-l",
+        "--localpath",
+        help = "local path where file is located.",
+        default = None,
+        type = click.STRING)
 @click.pass_obj
-def register_file(obj,name,bucket,key):        
+def register_file(obj,name,bucket,key,localpath):        
     """Register an arbitrary file with the scriptmanager. 
 
     """
+    assert (bucket is not None and key is not None) ^ (localpath is not None), "you can pass either -b and -k (s3 file) or -l (local file)" 
     ## Get registration:
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
-    path = os.path.join("s3://",bucket,key)
-    ncsm.register_file(name,path)
+    if bucket is not None and key is not None:
+        path = os.path.join("s3://",bucket,key)
+        ncsm.register_file(name,path)
+    elif localpath is not None:    
+        ncsm.register_file_local(name,localpath)
 
-@workflow.command(help="register a result path to store results.")
+@workflow.command(help="register a result path to store results. can be located locally (use -l) or in s3 (use -b, -k)")
 @click.option("-b",
         "--bucket",
         help = "bucket where results should be located",
         type = click.STRING)
 @click.option("-k",
         "--key",
-        help = "subkey of the folder where results are stored within the indicated bucket assumed to live in bucket/group/key, where group is given by the registered data",
+        help = "subkey of the folder where results are stored within the indicated bucket. The data will be put at s3://bucket/{groupname}/key, where groupname comes from the registered dataset.",
+        type = click.STRING)
+@click.option("-l",
+        "--localpath",
+        help = "local path where config is located.",
+        default = None,
         type = click.STRING)
 @click.pass_obj
-def register_resultpath(obj,bucket,key):        
-    """Register a resultpath file with the scriptmanager. 
+def register_resultpath(obj,bucket,key,localpath):        
+    """Register a result path  with the scriptmanager. 
 
     """
+    assert (bucket is not None and key is not None) ^ (localpath is not None), "you can pass either -b and -k (s3 file) or -l (local file)" 
     ## Get registration:
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
-    groupname = ncsm.get_group(ncsm.registration["data"])
-
-    path = os.path.join("s3://",bucket,key)
-    ncsm.register_resultpath(path)
+    if bucket is not None and key is not None:
+        try:
+            group = ncsm.get_group(ncsm.registration["data"])
+        except KeyError:    
+            raise AssertionError("data must be registered first.")
+        path = os.path.join("s3://",bucket,group,key)
+        ncsm.register_resultpath(path)
+    elif localpath is not None:    
+        ncsm.register_resultpath_local(localpath)
 
 
 @workflow.command(help = "get a registered dataset from S3")
@@ -937,14 +977,15 @@ def log_command(obj,command,bucket,resultfolder,suffix = None):
     ncsm = NeuroCAASScriptManager.from_registration(path)
     groupname = ncsm.get_group(ncsm.registration["data"])
     try:
-        dataname = ncsm.get_dataname()
+        dataname = os.path.basename(ncsm.get_dataname_remote())
     except AssertionError:    
-        raise AssertionError("You must run get-data first so we know where to log this command.")
+        raise AssertionError("You must run register-dataset first so we know where to log this command.")
 
     if suffix is not None:
         logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+suffix+"_STATUS.txt")
     else:    
         logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+"_STATUS.txt")
+    print("Attempting to log at {}".format(os.path.dirname(logpath)))    
         
     ncsm.log_command(command,logpath) 
 
