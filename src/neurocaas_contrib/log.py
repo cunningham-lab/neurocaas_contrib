@@ -86,7 +86,7 @@ class WriteObj(object):
                 f.write(stringbody.encode("utf-8"))
 
     def put_json(self,dictbody): 
-        """String to put at the object represented by this instance. 
+        """Dictionary to put at the object represented by this instance.  
 
         :param dictbody: a dictionary representing the body of this object.
         """
@@ -123,15 +123,17 @@ class NeuroCAASLogObject(object):
         try:
             uriparse = urlparse(s3_path,allow_fragments=False)
             bucket_name = uriparse.netloc
+            self.bucket_name = bucket_name
             path = uriparse.path.lstrip("/")
-            rawfile = self.load_init_s3(bucket_name,path)
-            #rawcert = load_cert(bucket_name,path)
-            self.rawfile = rawfile
-            #self.rawcert = rawcert
+            self.path = path
+
             writeobj_dict["loc"] = "s3"
             writeobj_dict["bucket"] = bucket_name
             writeobj_dict["key"] = path
+
             self.writeobj = WriteObj(writeobj_dict)
+            rawfile = self.load() ## Have to keep this inside the block because it throws the exception.   
+            self.rawfile = rawfile
         except:
             e = traceback.format_exc()
             #print("Error getting certificate, not formatted for per-job logging. Message: {}\nLoading default certificate from local instead. Updates will be logged to file {}".format(e,write_localpath))
@@ -141,6 +143,30 @@ class NeuroCAASLogObject(object):
             self.rawfile = rawfile
             writeobj_dict["loc"] = "local"
             self.writeobj = WriteObj(writeobj_dict)
+            rawfile = self.load()    
+            self.rawfile = rawfile
+
+    def load(self):
+        """Load in the correct initialization of files 
+
+        """
+        if self.writeobj.init_dict["loc"] == "s3":
+            rawfile = self.load_init_s3(self.bucket_name,self.path)
+        elif self.writeobj.init_dict["loc"] == "local":    
+            rawfile = self.get_default_rawfile()
+            
+        return rawfile    
+
+    def reload(self):
+        """Reload from either s3, or the local writepath. 
+
+        """
+        if self.writeobj.init_dict["loc"] == "s3":
+            rawfile = self.load_init_s3(self.bucket_name,self.path)
+        elif self.writeobj.init_dict["loc"] == "local":    
+            rawfile = self.load_reinit_local()
+            
+        return rawfile    
 
     def validate_path(self,s3_path):
         """Validates that the path given is a correctly formatted S3 URI.
@@ -184,6 +210,26 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         """
         content = load_file_s3(bucketname,path)
         return content
+
+    def load_reinit_local(self):
+        """Load in an arbitrary file to use as reinitialization for this logging object. Should be a dictionary. 
+
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawcert = f.read()
+        return rawcert    
+
+    def reload(self):
+        """Reload certificate from designated location, and reprocess. 
+        returns rawfile as expected. 
+        """
+        rawfile = self.rawfile
+        try:
+            self.rawfile = super().reload()
+            self.certdict,self.writedict,self.writearea = self.process_rawcert(self.rawfile)
+        except FileNotFoundError:    
+            print("No file to reload from, returning current.")
+        return self.rawfile
 
     def assign_template(self):
         """Assigns template strings to allow for easy fill in of certificate updates..  
@@ -238,6 +284,7 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         :param loc: (optional) The relative line number that this update should be written to. Default is 0.
         """
         ## First filter the given keys, and determine if any are missing:
+        self.reload()
         given_keys = updatedict.keys()
         all_keys = ["n","s","t","r","u"]
         for key in given_keys:
@@ -296,7 +343,6 @@ class NeuroCAASDataStats(NeuroCAASLogObject):
     """Base class for original and docker based DataStatus log objects. 
 
     """
-        
     def load_init_s3(self,bucketname,path):
         """Load in file to use as initialization for this logging object. Should be a dictionary.   
         :param bucketname: The name of the s3 bucket we are reading from.
@@ -305,6 +351,14 @@ class NeuroCAASDataStats(NeuroCAASLogObject):
         """
         content = json.loads(load_file_s3(bucketname,path))
         return content
+        
+    def load_reinit_local(self):
+        """Load in local file to use as reinitialization for logging object. Should be a dictionary.  
+        :return: dictionary of status file. 
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawfile = json.load(f)
+        return rawfile
 
     def get_default_rawfile(self):
         """Get the default dataset status file from a local location. This ensures we can continue with processing even when the job is not launched from remote. For this analysis, this file is a dictionary. 
