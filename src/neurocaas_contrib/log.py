@@ -91,7 +91,7 @@ class WriteObj(object):
                 f.write(stringbody.encode("utf-8"))
 
     def put_json(self,dictbody): 
-        """String to put at the object represented by this instance. 
+        """Dictionary to put at the object represented by this instance. 
 
         :param dictbody: a dictionary representing the body of this object.
         """
@@ -150,11 +150,15 @@ class NeuroCAASLogObject(object):
             self.writeobj = WriteObj(writeobj_dict)
 
     def load(self):        
-        """Reload the newest version of the log text from AWS. 
-        :return: rawfile, in the format specified by load_init_s3
+        """Reload the newest version of the log text. Discriminates between loading from AWS and from local internally. 
+        :return: rawfile, in the format specified by load_init_s3 or at the local path.
 
         """
-        rawfile = self.load_init_s3(self.bucket_name,self.path)
+        if self.writeobj.init_dict["loc"] == "s3":
+            rawfile = self.load_init_s3(self.bucket_name,self.path)
+        elif self.writeobj.init_dict["loc"] == "local":    
+            rawfile = self.load_reinit_local()
+
         return rawfile     
 
     def validate_path(self,s3_path):
@@ -200,6 +204,22 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         content = load_file_s3(bucketname,path)
         return content
 
+    def load_reinit_local(self):
+        """Load in an arbitrary file to use as reinitialization for this logging object. Should be a dictionary.  
+
+        :return: raw certificate file .
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawcert = f.read()
+        return rawcert 
+
+    def load(self):
+        """Reload certificate from designated location, and reprocess. 
+
+        """
+        self.rawfile = super().load()
+        self.certdict,self.writedict,self.writearea = self.process_rawcert(self.rawfile)
+
     def assign_template(self):
         """Assigns template strings to allow for easy fill in of certificate updates..  
         """
@@ -218,7 +238,7 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         """Takes the raw certificate and preprocesses it for easier handling. In particular, separates it into line breaks, identifies the parts of the file that we should write to, and identifies individual lines by their corresponding data. Will assign values to the self.certlines and self.writedict attributes. 
 
         :param cert: raw data containing certificate file.
-        :return: tuple (certdict, writedict, writearea) of dictionaries and a range object. First entry has line numbers as keys and content of those lines as values.Second entry has line numbers as keys, and a dictionary of format {"dataname":dataname,"line":text} as value. Third entry indicates the range of lines where we can write. 
+        :return: tuple (certdict, writedict, writearea) of dictionaries and a range object. First entry has line numbers as keys and content of those lines as values.Second entry has dataset names as keys, and a dictionary of format {"linenb":int,"dataname":dataname,"line":text} as value. Third entry indicates the range of lines where we can write. 
         """
         certlines = self.rawfile.split("\n")
         certdict = {ci:cl for ci,cl in enumerate(certlines)}
@@ -268,6 +288,7 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
                 write_index = self.writearea[loc]
             else: 
                 write_index = self.writedict[datainfo_given["dataname"]]["linenb"]
+                self.writedict[updatedict["n"]]["line"] = formatted
             self.certdict[write_index] = formatted  
         except IndexError:
             raise IndexError("The argument loc you gave is not compatible with the certificate (not in write area)")
@@ -339,7 +360,7 @@ class NeuroCAASDataStats(NeuroCAASLogObject):
     """
         
     def load_init_s3(self,bucketname,path):
-        """Load in file to use as initialization for this logging object. Should be a dictionary.   
+        """Load in file to use as (re)initialization for this logging object. Should be a dictionary.   
         :param bucketname: The name of the s3 bucket we are reading from.
         :param path: The name of the key within the s3 bucket corresponding to the initialization object. 
         :return: Return the content of the s3 file without further processing (will be a dictionary). 
@@ -347,14 +368,25 @@ class NeuroCAASDataStats(NeuroCAASLogObject):
         content = json.loads(load_file_s3(bucketname,path))
         return content
 
+    def load_reinit_local(self):
+        """UNTESTED, UNUSED Load in an arbitrary file to use as reinitialization for this logging object. Should be a dictionary.  
+        :param path: local path to load data from. 
+
+        :return: raw status file .
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawfile = json.load(f)
+        return rawfile 
+
     def get_default_rawfile(self):
         """Get the default dataset status file from a local location. This ensures we can continue with processing even when the job is not launched from remote. For this analysis, this file is a dictionary. 
 
-        :return: raw certificate file .
+        :return: raw status file .
         """
         with open(localdata_dict["datastatus_base"],"r") as f:
             rawfile = json.load(f)
         return rawfile 
+
 
         
     def write(self):    
