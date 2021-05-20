@@ -3,6 +3,7 @@ import datetime
 import pdb
 import json
 import neurocaas_contrib
+from testpaths import get_dict_file 
 from neurocaas_contrib.remote import NeuroCAASAMI
 import localstack_client.session
 import os
@@ -124,6 +125,7 @@ class Test_NeuroCAASAMI():
                 else:
                     assert ami2.__dict__[k] == v
     
+    @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
     def test_update_blueprint(self,mock_boto3_for_remote,tmp_path):
         ami = NeuroCAASAMI(os.path.join(test_mats))
         ami.config["Addfield"] = "zz"

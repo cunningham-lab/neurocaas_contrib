@@ -997,6 +997,8 @@ class Test_remote():
             eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
 
+    ### Test monitoring functions. 
+    @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
     def test_update_blueprint(self,setup_log_bucket,mock_boto3_for_remote,monkeypatch):
         monkeypatch.setattr(neurocaas_contrib.remote,"home_repo","")
         instance,ami = mock_boto3_for_remote
