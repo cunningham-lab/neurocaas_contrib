@@ -483,7 +483,7 @@ class Test_NeuroCAASScriptManager():
             with open(os.path.join(subdir,"certificate.txt"),"r") as f:
                 lines = f.readlines()
             assert lines[2].startswith("DATANAME: groupname/inputs/dataset.ext | STATUS: SUCCESS")
-            assert lines[9].startswith("WARNING: this is a template certificate")
+            assert lines[10].startswith("WARNING: this is a template certificate")
             with open(os.path.join(subdir,"status.json"),"r") as f:
                 status = json.load(f) 
 
