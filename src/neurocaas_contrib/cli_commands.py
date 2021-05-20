@@ -1,5 +1,6 @@
 ## Mimicking cli structure given in remote-docker-aws repository. 
 import subprocess
+import datetime
 import sys
 import shutil
 import click 
@@ -8,6 +9,8 @@ import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
 from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
+from .remote import NeuroCAASAMI
+from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -33,6 +36,21 @@ else:
     storagename = ".neurocaas_contrib_storageloc.json" 
     storagepath = os.path.join(os.path.expanduser("~"),storagename)
 
+def save_ami_to_cli(ami):
+    """Save a dictionary representing the development history to the cli's config file.
+
+    """
+    amiinfo = ami.to_dict()
+
+    try:
+        with open(configpath,"r") as f:
+            config = json.load(f)
+        config["develop_dict"] = amiinfo
+    except FileNotFoundError:
+        click.echo("NeuroCAAS Contrib config file not found. Exiting.")
+        raise
+    with open(configpath,"w") as f:
+        json.dump(config,f,indent = 4)
 
 @click.group()
 @click.option(
@@ -65,10 +83,12 @@ def cli(ctx,location,analysis_name):
                 location = defaultconfig["location"]
             if analysis_name is None:    
                 analysis_name = defaultconfig["analysis_name"]
+            develop_dict = defaultconfig.get("develop_dict",None)
 
         ctx.obj = {}
         ctx.obj["location"] = location
         ctx.obj["analysis_name"] = analysis_name
+        ctx.obj["develop_dict"] = develop_dict
         try:
             ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
         except FileNotFoundError as e:
@@ -78,7 +98,8 @@ def cli(ctx,location,analysis_name):
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc
+    default=default_write_loc,
+    type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True),
         )
 @click.option(
     "--analysis-name",
@@ -121,8 +142,10 @@ def init(blueprint,location,analysis_name):
     ## Only if you created or initialized an analysis folder should the config file be written to.
     if create or initialize:
         ## First set the analysis name in the config file:
+        ## Reset the develop dict whenever we reinitialize. 
         analysis_settings = {"analysis_name":analysis_name,
-                             "location":location
+                             "location":location,
+                             "develop_dict":None
                             }
         ## Get dictionary:
         try:
@@ -155,6 +178,7 @@ def describe_analyses(location):
         with open(configpath,"r") as f:
             config = json.load(f)
         currentanalysis = config["analysis_name"]    
+        ## Todo 
     except FileNotFoundError:        
         currentanalysis = None
     dirs_searched = [d if currentanalysis != d else d+"*" for d in dirs]
@@ -376,6 +400,150 @@ def run_analysis(blueprint,image,data,config):
 @cli.command(help = "go home")
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
+
+@cli.group()
+def monitor():
+    """Job monitoring functions.
+    """
+    return
+
+### cli commands to monitor the stack. 
+@monitor.command(help = "visualize the degree of parallelism of analysis usage.")
+@click.option("-p",
+        "--path",
+        type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
+        help = "path to which we should write the resulting graphic.")
+@click.pass_obj
+def visualize_parallelism(blueprint,path):
+    analysis_name = blueprint["analysis_name"] 
+    user_dict = get_user_logs(analysis_name)
+    for user,userinfo in user_dict.items():
+        parallelised = calculate_parallelism(analysis_name,userinfo,user)
+        postprocessed = postprocess_jobdict(parallelised)
+        now = str(datetime.datetime.now())
+        write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
+        with open(write_path,"w") as f:
+            json.dump(postprocessed,f,indent = 4)
+    
+@monitor.command(help = "see users of a given analysis.")
+@click.pass_obj
+def see_users(blueprint):
+    analysis_name = blueprint["analysis_name"] 
+    user_dict = get_user_logs(analysis_name)
+    userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
+    formatted = "\n".join(userlist)
+    click.echo(formatted)
+
+@monitor.command(help = "print recent job manager requests.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-h",
+        "--hours",
+        type = click.INT,
+        help = "how many hours ago you want to start looking ",
+        default = 1)
+@click.option("-i",
+        "--index",
+        type = click.INT,
+        help = "the index of request you want to get (0 = most recent)",
+        default = 0)
+@click.pass_obj
+def describe_job_manager_request(blueprint,stackname,hours,index):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    jm.print_log(hours=hours,index=index)
+
+@monitor.command(help = "print certificate file for submission")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
+@click.pass_obj
+def describe_certificate(blueprint,stackname,submitpath):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    cert = jm.get_certificate(submitpath)
+    click.echo(cert.rawfile)
+    
+    
+@monitor.command(help = "print datasets being analyzed, and instances on which they are being analyzed.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
+@click.pass_obj
+def describe_datasets(blueprint,stackname,submitpath):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    datasets = jm.get_datasets(submitpath)
+    click.echo(datasets)
+
+@monitor.command(help = "prints the datastatus of any given dataseet.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
+@click.option("-p",
+        "--submitpath",
+        type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
+        help = "path to submit file",
+        )
+@click.option("-d",
+        "--dataname",
+        type = click.STRING,
+        help = "basename of dataset to get status for.",
+        )
+@click.option("-c",
+        "--cutoff",
+        type = click.INT,
+        help = "cutoff for logs (c-end)",
+        default = 0
+        )
+@click.pass_obj
+def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
+    """UNTESTED
+
+    """
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    jm = JobMonitor(stackname)    
+    datastatus= jm.get_datastatus(submitpath,dataname)
+    text = datastatus.rawfile.pop("std")
+    list_text = [text[str(i)] for i in range(cutoff,len(text))]
+    formattext = "".join(list_text)
+
+    formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
+    formatted.append("std: "+formattext)
+    lined = "\n".join(formatted)
+    click.echo(lined)
 
 ## scripting tools 
 @cli.group()
@@ -827,3 +995,300 @@ def cleanup(obj):
     path = obj["storage"]["path"]
     ncsm = NeuroCAASScriptManager.from_registration(path)
     ncsm.cleanup()
+    
+@cli.group(help = "develop remotely on an AWS instance.")
+@click.pass_context
+def remote(ctx):
+    """remote functions.
+    """
+    return 
+    
+### cli commands to manage a remote aws resources. 
+## Initialize a new NeuroCAASAMI object, or get . 
+@remote.command(help = "Initialize a NeuroCAASAMI object")
+@click.option("-i",
+        "--index",
+        help = "if there are multiple development histories saved, index into them",
+        default = -1
+        )
+@click.pass_obj
+def develop_remote(blueprint,index):
+    """Set up a NeuroCAASAMI object from the given analysis name and location. Checks to see if a NeuroCAASAMI object for this analysis already exists- if so, reloads from that object after asking user. Running this command saves the ami object to the NeuroCAAS config file, where it will be read by other methods.  
+
+    """
+    devhist = blueprint["blueprint"].blueprint_dict.get("develop_history",None)
+    if devhist is not None:
+        latest = devhist[index]
+        instance = latest.get("instance_id",None)
+        amis = latest.get("ami_hist",[])
+        ami = []
+        if len(amis) > 0:
+            ami.append(ami[-1])
+        # Ask the user if they want to work with an existing object or not. 
+        initialize = click.confirm("This analysis has been developed before. Initialize with instance {} and ami {}?".format(instance,ami),default = False)
+        if initialize:
+            click.echo("Initializing from existing development history")
+            ami = NeuroCAASAMI.from_dict(latest)
+        else:    
+            click.echo("Initializing from scratch")
+            path = os.path.dirname(blueprint["blueprint"].config_filepath)
+            ami = NeuroCAASAMI(path) 
+    else:  
+        click.echo("Initializing from scratch")
+        path = os.path.dirname(blueprint["blueprint"].config_filepath)
+        ami = NeuroCAASAMI(path) 
+        blueprint["blueprint"].blueprint_dict["remote_hist"] = []
+    ## write out to the remote_hist: 
+    save_ami_to_cli(ami)
+    
+
+@remote.command(help = "Assign a new instance to a NeuroCAASAMI object")
+@click.option("-i",
+        "--instance",
+        type = click.STRING,
+        help = "instance id to assign to this instance. ")
+@click.pass_obj
+def assign_instance(blueprint,instance):    
+    """Assign an existing instance from its instance ID to a NeuroCAASAMI object so you can start developing on it. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.assign_instance(instance)
+    save_ami_to_cli(ami)
+        
+@remote.command(help = "Launch a new instance from an ami")
+@click.option("-a",
+        "--amiid",
+        type = click.STRING,
+        help = "AMI id. ",
+        default = None)
+@click.option("-v",
+        "--volumesize",
+        type = click.STRING,
+        help = "size of the volume you want to attach to this instance.",
+        default = None)
+@click.option("-t",
+        "--timeout",
+        type = click.INT,
+        help = "length of timeout to associate with this instance",
+        default = 60)
+@click.pass_obj
+def launch_devinstance(blueprint,amiid,volumesize,timeout):
+    """Launch a new instance. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.launch_devinstance(ami = amiid,volume_size = volumesize,timeout = timeout)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Start the current instance")
+@click.option("-t",
+        "--timeout",
+        type = click.STRING,
+        help = "length of timeout to associate with this instance",
+        default = 60)
+@click.pass_obj
+def start_devinstance(blueprint,timeout):
+    """Start an existing instance. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.start_devinstance(timeout = timeout)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Stop the current instance")
+@click.pass_obj
+def stop_devinstance(blueprint):
+    """Stop an existing instance. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.stop_devinstance()
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Terminate the current development instance")
+@click.option("-f",
+        "--force",
+        type = click.BOOL,
+        help = "whether or not to force deletion.",
+        default = False)
+@click.pass_obj
+def terminate_devinstance(blueprint,force):
+    """Terminate an existing instance. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.terminate_devinstance(force = force)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Get the ip address of the instance.")
+@click.pass_obj
+def get_ip(blueprint):
+    """Get ip address of an instance.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    click.echo(ami.ip)
+
+@remote.command(help = "Get the lifetime of the instance")
+@click.pass_obj
+def get_lifetime(blueprint):
+    """Get the lifetime remaining on an active instance.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    click.echo(ami.get_lifetime())
+
+@remote.command(help = "Get the lifetime of the instance")
+@click.option("-m",
+        "--minutes",
+        help = "number of minutes to extend lifetime by.",
+        type = click.INT,
+        )
+@click.pass_obj
+def extend_lifetime(blueprint,minutes):
+    """Extend the lifetime off an active instance. 
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.extend_lifetime(minutes)
+
+@remote.command(help = "submit a job to your instance. Optionally, you can upload datasets and config files to s3 if you will be referencing them in your submitpath for a faster turnaround.")
+@click.option("-s",
+        "--submitpath",
+        help = "path to submitfile",
+        type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
+        )
+@click.option("-d",
+        "--data",
+        help = "path to test dataset.",
+        type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
+        multiple = True,
+        default = None)
+@click.option("-c",
+        "--config",
+        help = "path to test config file.",
+        type = click.Path(exists = True,file_okay = True,dir_okay = True,readable = True,resolve_path = True),
+        multiple = True,
+        default = None)
+@click.pass_obj
+def submit_job(blueprint,submitpath,data,config):
+    """Submit a job to the instance you're developing on. 
+
+    """
+    #for dat in data:
+    #    
+    #    datname = os.path.basename(dat)
+    #    shutil.copyfile(dat,os.path.join(analysis_location,"io-dir","inputs",datname))
+
+    ### Deposit all configs into the config directory:
+    #for conf in config:
+    #    confname = os.path.basename(conf)
+    #    shutil.copyfile(conf,os.path.join(analysis_location,"io-dir","configs",confname))
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.submit_job(submitpath)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "get the status from the most recently run job.")
+@click.option("-j",
+        "--jobind",
+        help = "index of job to get the output for",
+        type = click.INT,
+        default = -1)
+@click.pass_obj
+def job_status(blueprint,jobind):    
+    """Read stdout and stderr from the instance you're developing on.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.job_status(jobind)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "get the output from the most recently run job.")
+@click.option("-j",
+        "--jobind",
+        help = "index of job to get the output for",
+        type = click.INT,
+        default = -1)
+@click.pass_obj
+def job_output(blueprint,jobind):    
+    """Read stdout and stderr from the instance you're developing on.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.job_output(jobind)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "save the current development instance into an ami.")
+@click.option("-n",
+        "--name",
+        help = "name to give to the new ami",
+        type = click.STRING,
+        )
+@click.pass_obj
+def create_devami(blueprint,name):    
+    """Save the image of the instance you're developing on.   
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.create_devami(name)
+    save_ami_to_cli(ami)
+
+@remote.command(help = "update the blueprint with most recently developed amis.")
+@click.option("-a",
+        "--amiid",
+        help = "id of new ami (will default to newest in list if not given)",
+        type = click.STRING,
+        default = None
+        )
+@click.option("-m",
+        "--message",
+        help = "message associated with the commit carried out with this command.",
+        type = click.STRING,
+        default = None
+        )
+@click.pass_obj
+def update_blueprint(blueprint,amiid,message):    
+    """Update the blueprint of the instance you're developing on.   
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.update_blueprint(amiid,message)
+    save_ami_to_cli(ami)
+
+#@remote.command(help = "save to development history")
+#@click.pass_obj
+#def update_history(blueprint):
+#    """Add this ami's current state to development history. 
+#
+#    """
+#    devdict = blueprint["develop_dict"]
+#    assert devdict is not None, "Development dict must exist. Run develop-remote"
+#    ami = NeuroCAASAMI.from_dict(devdict)
+#    blueprint["blueprint"].blueprint_dict["develop_history"].append(ami.to_dict())

@@ -1,0 +1,12 @@
+coordinates:
+    box0:
+      x0: 0
+      x1: 960 
+      y0: 100 
+      y1: 960 
+nests:
+    box0:
+      xn0: 0 
+      xn1: 320 
+      yn0: 640
+      yn1: 960
