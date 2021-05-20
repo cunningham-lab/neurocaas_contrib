@@ -1207,6 +1207,23 @@ def submit_job(blueprint,submitpath,data,config):
     ami.submit_job(submitpath)
     save_ami_to_cli(ami)
 
+@remote.command(help = "get the status from the most recently run job.")
+@click.option("-j",
+        "--jobind",
+        help = "index of job to get the output for",
+        type = click.INT,
+        default = -1)
+@click.pass_obj
+def job_status(blueprint,jobind):    
+    """Read stdout and stderr from the instance you're developing on.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = NeuroCAASAMI.from_dict(devdict)
+    ami.job_status(jobind)
+    save_ami_to_cli(ami)
+
 @remote.command(help = "get the output from the most recently run job.")
 @click.option("-j",
         "--jobind",
@@ -1265,13 +1282,13 @@ def update_blueprint(blueprint,amiid,message):
     ami.update_blueprint(amiid,message)
     save_ami_to_cli(ami)
 
-@remote.command(help = "save to development history")
-@click.pass_obj
-def update_history(blueprint):
-    """Add this ami's current state to development history. 
-
-    """
-    devdict = blueprint["develop_dict"]
-    assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
-    blueprint["blueprint"].blueprint_dict["develop_history"].append(ami.to_dict())
+#@remote.command(help = "save to development history")
+#@click.pass_obj
+#def update_history(blueprint):
+#    """Add this ami's current state to development history. 
+#
+#    """
+#    devdict = blueprint["develop_dict"]
+#    assert devdict is not None, "Development dict must exist. Run develop-remote"
+#    ami = NeuroCAASAMI.from_dict(devdict)
+#    blueprint["blueprint"].blueprint_dict["develop_history"].append(ami.to_dict())
