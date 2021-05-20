@@ -1071,7 +1071,7 @@ def assign_instance(blueprint,instance):
         default = None)
 @click.option("-t",
         "--timeout",
-        type = click.STRING,
+        type = click.INT,
         help = "length of timeout to associate with this instance",
         default = 60)
 @click.pass_obj
