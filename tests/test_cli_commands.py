@@ -818,7 +818,7 @@ class Test_workflow():
             print(os.path.abspath("./"))
             result = eprint(runner.invoke(cli,["workflow","register-config","-b",bucketname,"-k",f"{username}/config.json"]))
             result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k",f"{username}/input.json"]))
-            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k",f"{username}/results/"]))
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","results/"]))
             result = eprint(runner.invoke(cli,["workflow","cleanup"]))
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/config.json","./key.txt")
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/update.txt","./update.txt")
