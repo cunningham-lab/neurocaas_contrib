@@ -17,6 +17,8 @@ ssm_client = boto3.client('ssm')
 #ssm_client = boto3.client('ssm',region_name = self.config['Lambda']['LambdaConfig']['REGION'])
 sts = boto3.client("sts")        
 
+home_repo = "neurocaas"
+
 ## Get global parameters:
 srcdir = pathlib.Path(__file__).parent.absolute()
 with open(os.path.join(srcdir,"template_mats","global_params_initialized.json")) as gp:
@@ -532,6 +534,12 @@ class NeuroCAASAMI(object):
         else:
             pass
 
+        ## Assert that we are in a branch or fork of a neurocaas repo. 
+        p = subprocess.Popen(["git", "config", "--get", "remote.origin.url"],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = p.communicate(b"input data that is passed to subprocess' stdin")
+        repo = os.path.basename(os.path.splitext(output.decode("utf-8").split("\n")[0])[0])
+        assert repo == home_repo, "You must navigate to a fork/branch of neurocaas where your blueprint is located before running this command."
+
         ## Now parse the message:
         if message is None:
             message = "Not given"
@@ -544,8 +552,7 @@ class NeuroCAASAMI(object):
             old_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
             print("old commit has hash: {}".format(old_hash))
         except subprocess.CalledProcessError:    
-            print("This function must be called inside a git repository to properly document blueprint updates. Exiting.")
-            raise
+            raise subprocess.CalledProcessError("This function must be called inside a git repository to properly document blueprint updates. Exiting.")
 
         ## now change the config to reflect your most recent ami edits:
         if self.config["Lambda"]["LambdaConfig"]["AMI"] == ami_id:
@@ -567,7 +574,7 @@ class NeuroCAASAMI(object):
             new_hash = subprocess.check_output(["git","rev-parse","HEAD"]).decode("utf-8")
             print("new commit has hash: {}".format(new_hash))
         except subprocess.CalledProcessError:    
-            print("not run in a git repo. not committing")
+            raise subprocess.CalledProcessError("This function must be called inside a git repository to properly document blueprint updates. Exiting.")
 
 
 

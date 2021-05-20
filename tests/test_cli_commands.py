@@ -356,7 +356,7 @@ def test_cli_setup_inputs():
         assert os.path.exists(os.path.join("setupinputs","io-dir","configs","config.json"))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    assert blueprint["localenv"] == os.path.abspath("./setupinputs")      
+        assert blueprint["localenv"] == os.path.abspath("./setupinputs")      
 
 def test_container_singleton(remove_named_container):
     runner = CliRunner()
@@ -857,6 +857,10 @@ class Test_remote():
             assert type(configdict_full["develop_dict"]["config"]) == dict
 
     def test_develop_remote_existing(self,setup_log_bucket):
+        """Develop from a blueprint that already exists. 
+        Assert that the develop dictionary you have looks like the stack config you started with, not a bare one. 
+
+        """
         bucket_name = setup_log_bucket
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -876,9 +880,7 @@ class Test_remote():
             ## assert that the development history saved into the cli tool config file is the same that was recorded in the blueprint. 
             assert type(configdict_full["develop_dict"]) == dict
 
-        assert stackconfig.get("develop_history",[None])[0] == configdict_full["develop_dict"]
-        ## This assumes that develop history exists already - replace with the above. We should separately test the case where the config file contains a blueprint in the develop history. 
-        #assert stackconfig["develop_history"][0] == configdict_full["develop_dict"]
+        assert configdict_full["develop_dict"]["config"] == stackconfig
 
     def test_assign_instance(self,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
@@ -995,7 +997,8 @@ class Test_remote():
             eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
 
-    def test_update_blueprint(self,setup_log_bucket,mock_boto3_for_remote):
+    def test_update_blueprint(self,setup_log_bucket,mock_boto3_for_remote,monkeypatch):
+        monkeypatch.setattr(neurocaas_contrib.remote,"home_repo","")
         instance,ami = mock_boto3_for_remote
         bucket_name = setup_log_bucket
         runner = CliRunner()
@@ -1005,29 +1008,30 @@ class Test_remote():
             s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
             os.mkdir("./logs")
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             stackconfig = os.path.join(here,"test_mats","stack_config_template.json")
-            shutil.copy(stackconfig,os.path.join("./",bucket_name,"stack_config_template.json"))
-            subprocess.call(["git","init","./{}".format(bucket_name)])
-            os.chdir("./".format(bucket_name))
-            subprocess.call(["git","add","stack_config_template.json"])
-            subprocess.call(["git","commit","-m","initial commit"])
             with open(stackconfig) as f:
                 sc_old = json.load(f)
                 ami_old = sc_old["Lambda"]["LambdaConfig"]["AMI"]
-            result = eprint(runner.invoke(cli,["develop-remote"],input = "{}".format("y")))
-            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
-            eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
-            print(os.getcwd())
-            os.chdir("./".format(bucket_name))
-            print(os.getcwd())
+            repoconfig = os.path.join("./",bucket_name,"stack_config_template.json")
+            shutil.copy(stackconfig,repoconfig)
+            subprocess.call(["git","init","."])
+            os.chdir("./{}".format(bucket_name))
+            subprocess.call(["git","add","stack_config_template.json"])
+            print("added")
+            subprocess.call(["git","commit","-m","initial commit"])
+            os.chdir("../")
             eprint(runner.invoke(cli,["remote","update-blueprint"]))
-            with open(stackconfig) as f:
+            with open(repoconfig) as f:
                 sc_new = json.load(f)
                 ami_new = sc_new["Lambda"]["LambdaConfig"]["AMI"]
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
             assert ami_new != ami_old
             ## todo check that the blueprint is correctly updated.
 
+    @pytest.mark.xfail() # This function is deprecated. 
     def test_update_history(self,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
         bucket_name = setup_log_bucket
