@@ -91,7 +91,6 @@ def test_log_process():
     gdcode = scripting.log_process(shlex.split(goodscript),logpath,"s3://fakepath/fakefile.txt")
     assert brcode == 127
     assert gdcode == 0
-    assert 0
 
 @pytest.mark.skip
 def test_register_data():    
@@ -464,7 +463,7 @@ class Test_NeuroCAASScriptManager():
             assert "certificate.txt" in os.listdir(subdir / "logs")
             with open(os.path.join(subdir,"logs","certificate.txt"),"r") as f:
                 lines = f.readlines()
-            assert lines[2].startswith("DATANAME: dataset.ext | STATUS: SUCCESS")
+            assert lines[2].startswith("DATANAME: groupname/inputs/dataset.ext | STATUS: SUCCESS")
 
         if logging == "s3":
             brcode = ncsm.log_command(shlex.split(badscript),f"s3://{bucketname}/{username}/results/job__test/logs/DATASET_NAME-file.json_STATUS.txt.json")
@@ -473,8 +472,8 @@ class Test_NeuroCAASScriptManager():
 
             with open(os.path.join(subdir,"certificate.txt"),"r") as f:
                 lines = f.readlines()
-            assert lines[2].startswith("DATANAME: dataset.ext | STATUS: FAILED")
-            assert lines[9].startswith("WARNING: this is a test certificate")
+            assert lines[2].startswith("DATANAME: groupname/inputs/dataset.ext | STATUS: FAILED")
+            assert lines[10].startswith("WARNING: this is a test certificate")
             with open(os.path.join(subdir,"status.json"),"r") as f:
                 status = json.load(f) 
             gdcode = ncsm.log_command(shlex.split(goodscript),f"s3://{bucketname}/{username}/results/job__test/logs/DATASET_NAME-file.json_STATUS.txt.json")
