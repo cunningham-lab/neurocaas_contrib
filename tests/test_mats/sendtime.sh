@@ -11,5 +11,4 @@ do
 done     
 echo "Setting up network. This could take a while. "
 
-cd "/Users/taigaabe/deepgraphpose/demo"
 
