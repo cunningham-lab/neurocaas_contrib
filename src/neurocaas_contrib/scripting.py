@@ -10,7 +10,6 @@ def get_yaml_field(yamlfile,fieldname):
     """
     with open(yamlfile,"r") as f:
         ydict = yaml.full_load(f)
-        print(ydict,"ydict")
     try:    
         output = ydict[fieldname]
     except KeyError:    

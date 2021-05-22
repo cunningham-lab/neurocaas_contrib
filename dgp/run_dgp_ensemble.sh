@@ -37,12 +37,22 @@ task=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "t
 scorer=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
 jobnb=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
 videotype=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
+testing=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "testing")
 
 ## create project from raw data: 
 python neurocaas_ensembles/project_init.py "$task" "$scorer" "2030-01-0$jobnb" "$userhome/$datastore/" 
 
 ## Run dgp: 
 cd "$userhome/deepgraphpose"
-python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/"
+if [ $testing == "True" ]
+then
+    python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" --test
+elif [ $testing == "False" ]    
+then 	
+    python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" 
+else    
+    echo "Mode $testing not recognized. Valid options are "True" or "False". Exiting."	
+    exit
+fi    
 
 aws s3 sync "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" "s3://$bucketname/$groupdir/$processdir/$jobnb/"

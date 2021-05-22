@@ -21,7 +21,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
-    python_requires='>=3.6.9',
+    python_requires='>=3.6.8',
     include_package_data=True,
     package_data={"":["*Dockerfile","*.json","*.txt"]}
 )
