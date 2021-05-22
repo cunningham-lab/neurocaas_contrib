@@ -1,0 +1,22 @@
+{
+    "instance": "i-00000000000000000",
+    "command": "aaaaaaaa-1111-4444-0000-999999999999",
+    "input": "groupname/inputs/dataset.ext",
+    "status": "success",
+    "reason": "",
+    "memory_usage": "N/A MB",
+    "cpu_usage": "0 %",
+    "job_start": "2021-01-14T20:26:54.0110942Z",
+    "job_finish": "2021-01-14T20:26:56.6982083Z",
+    "std": {
+        "0": "============================= test session starts ==============================",
+        "1": "platform linux -- Python 3.9.1, pytest-6.2.1, py-1.10.0, pluggy-0.13.1",
+        "2": "rootdir: /home/neurocaasdev",
+        "3": "collected 4 items",
+        "4": "",
+        "5": "carcealab_videoconfig/tests/test_configeditor.py ....                    [100%]",
+        "6": "",
+        "7": "============================== 4 passed in 1.92s ===============================",
+        "8": ""
+    }
+}

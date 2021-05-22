@@ -33,14 +33,16 @@ aws s3 cp "s3://$bucketname/$configpath" "$userhome/$configstore/"
 unzip -o "$userhome/$datastore/$dataname" -d "$userhome/$datastore/"
 
 ## read in important metadata from config: 
-task=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "task")
-scorer=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
-jobnb=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
-videotype=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
-testing=$(neurocaas_contrib read-yaml -p "$userhome/$configstore/$configname" -f "testing")
+task=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "task")
+scorer=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "scorer")
+jobnb=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "jobnb")
+videotype=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "videotype")
+testing=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "testing")
+nb_frames=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "nb_frames" -d "")
+seed=$(neurocaas-contrib scripting read-yaml -p "$userhome/$configstore/$configname" -f "seed" -d "")
 
 ## create project from raw data: 
-python neurocaas_ensembles/project_init.py "$task" "$scorer" "2030-01-0$jobnb" "$userhome/$datastore/" 
+python neurocaas_ensembles/project_init.py "$task" "$scorer" "2030-01-0$jobnb" "$userhome/$datastore/" "$nb_frames" "$seed"
 
 ## Run dgp: 
 cd "$userhome/deepgraphpose"

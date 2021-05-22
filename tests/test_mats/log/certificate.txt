@@ -1,0 +1,10 @@
+PER ENVIRONMENT MONITORING:
+================
+DATANAME: groupname/inputs/dataset.ext | STATUS: SUCCESS | TIME: 2021_05_20_13_09_16 (finished) | LAST COMMAND: Thu May 20 13:09:14 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Setting up network. This could take a while.   | CPU_USAGE: 12.3 %
+================
+Once jobs start, these logs will be updated regularly. Allow some time [~1 minute] after all jobs finish for results to appear.
+For more information, see DATASET_NAME: files for stdout and stderr output.
+ 
+++++++++++++++++++
+JOB MANAGER SETUP LOG:
+WARNING: this is a template certificate: could not find a certificate corresponding to this analysis request in AWS S3. 

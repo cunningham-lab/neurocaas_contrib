@@ -1,4 +1,7 @@
 import datetime
+import subprocess
+import shlex
+import psutil
 from collections import OrderedDict
 import pdb
 import re
@@ -83,13 +86,13 @@ class WriteObj(object):
                 f.write(stringbody.encode("utf-8"))
 
     def put_json(self,dictbody): 
-        """String to put at the object represented by this instance. 
+        """Dictionary to put at the object represented by this instance.  
 
         :param dictbody: a dictionary representing the body of this object.
         """
         if self.init_dict["loc"] == "s3":
             writeobj = s3_resource.Object(self.init_dict["bucket"],self.init_dict["key"])
-            writeobj.put(Body=json.dumps(dictbody).encode("utf-8"))
+            writeobj.put(Body=json.dumps(dictbody,indent = 4).encode("utf-8"))
         elif self.init_dict["loc"] == "local":
             with open(self.init_dict["localpath"],"w") as f:
                 json.dump(dictbody,f,indent = 4)
@@ -120,15 +123,17 @@ class NeuroCAASLogObject(object):
         try:
             uriparse = urlparse(s3_path,allow_fragments=False)
             bucket_name = uriparse.netloc
+            self.bucket_name = bucket_name
             path = uriparse.path.lstrip("/")
-            rawfile = self.load_init_s3(bucket_name,path)
-            #rawcert = load_cert(bucket_name,path)
-            self.rawfile = rawfile
-            #self.rawcert = rawcert
+            self.path = path
+
             writeobj_dict["loc"] = "s3"
             writeobj_dict["bucket"] = bucket_name
             writeobj_dict["key"] = path
+
             self.writeobj = WriteObj(writeobj_dict)
+            rawfile = self.load() ## Have to keep this inside the block because it throws the exception.   
+            self.rawfile = rawfile
         except:
             e = traceback.format_exc()
             #print("Error getting certificate, not formatted for per-job logging. Message: {}\nLoading default certificate from local instead. Updates will be logged to file {}".format(e,write_localpath))
@@ -138,6 +143,30 @@ class NeuroCAASLogObject(object):
             self.rawfile = rawfile
             writeobj_dict["loc"] = "local"
             self.writeobj = WriteObj(writeobj_dict)
+            rawfile = self.load()    
+            self.rawfile = rawfile
+
+    def load(self):
+        """Load in the correct initialization of files 
+
+        """
+        if self.writeobj.init_dict["loc"] == "s3":
+            rawfile = self.load_init_s3(self.bucket_name,self.path)
+        elif self.writeobj.init_dict["loc"] == "local":    
+            rawfile = self.get_default_rawfile()
+            
+        return rawfile    
+
+    def reload(self):
+        """Reload from either s3, or the local writepath. 
+
+        """
+        if self.writeobj.init_dict["loc"] == "s3":
+            rawfile = self.load_init_s3(self.bucket_name,self.path)
+        elif self.writeobj.init_dict["loc"] == "local":    
+            rawfile = self.load_reinit_local()
+            
+        return rawfile    
 
     def validate_path(self,s3_path):
         """Validates that the path given is a correctly formatted S3 URI.
@@ -181,6 +210,26 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         """
         content = load_file_s3(bucketname,path)
         return content
+
+    def load_reinit_local(self):
+        """Load in an arbitrary file to use as reinitialization for this logging object. Should be a dictionary. 
+
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawcert = f.read()
+        return rawcert    
+
+    def reload(self):
+        """Reload certificate from designated location, and reprocess. 
+        returns rawfile as expected. 
+        """
+        rawfile = self.rawfile
+        try:
+            self.rawfile = super().reload()
+            self.certdict,self.writedict,self.writearea = self.process_rawcert(self.rawfile)
+        except FileNotFoundError:    
+            print("No file to reload from, returning current.")
+        return self.rawfile
 
     def assign_template(self):
         """Assigns template strings to allow for easy fill in of certificate updates..  
@@ -235,6 +284,7 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         :param loc: (optional) The relative line number that this update should be written to. Default is 0.
         """
         ## First filter the given keys, and determine if any are missing:
+        self.reload()
         given_keys = updatedict.keys()
         all_keys = ["n","s","t","r","u"]
         for key in given_keys:
@@ -289,7 +339,152 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
         with open(path, "wb") as f:
             f.write(body.encode("utf-8"))
 
-class NeuroCAASDataStatus(NeuroCAASLogObject):
+class NeuroCAASDataStats(NeuroCAASLogObject):
+    """Base class for original and docker based DataStatus log objects. 
+
+    """
+    def load_init_s3(self,bucketname,path):
+        """Load in file to use as initialization for this logging object. Should be a dictionary.   
+        :param bucketname: The name of the s3 bucket we are reading from.
+        :param path: The name of the key within the s3 bucket corresponding to the initialization object. 
+        :return: Return the content of the s3 file without further processing (will be a dictionary). 
+        """
+        content = json.loads(load_file_s3(bucketname,path))
+        return content
+        
+    def load_reinit_local(self):
+        """Load in local file to use as reinitialization for logging object. Should be a dictionary.  
+        :return: dictionary of status file. 
+        """
+        with open(self.writeobj.init_dict["localpath"],"r") as f:
+            rawfile = json.load(f)
+        return rawfile
+
+    def get_default_rawfile(self):
+        """Get the default dataset status file from a local location. This ensures we can continue with processing even when the job is not launched from remote. For this analysis, this file is a dictionary. 
+
+        :return: raw certificate file .
+        """
+        with open(localdata_dict["datastatus_base"],"r") as f:
+            rawfile = json.load(f)
+        return rawfile 
+
+        
+    def write(self):    
+        """Writes the contents of rawfile as dictated by the self.writeobj attribute. Will sort entries with an ordereddict according to the attribute self.writeorder. If writeobj is s3 (default), the updated certificate will be written to the path at self.s3_path. If not (s3 not reachable for any reason) will be written to the file ./template_mats/certificate_update.txt for inspection. If you intend to write to a different file location, use the method write_local instead. 
+
+        """
+        ## First sort entries:
+        od = OrderedDict([
+               (key,self.rawfile[key]) for key in self.writeorder])
+        self.writeobj.put_json(od)
+
+    def write_local(self,path):    
+        """Writes the contents of the file as dictated by the self.writeobj attribute to a local file. First, will sort keys with the "self.writeorder" flag. 
+
+        :param path: Local path where we should write the contents of this file. 
+        """
+        ## First sort entries:
+        od = OrderedDict([
+               (key,self.rawfile[key]) for key in self.writeorder])
+        with open(path, "w") as f:
+            json.dump(od,f,indent = 4)
+
+class NeuroCAASDataStatusLegacy(NeuroCAASDataStats):
+    """Per-instance log file that captures details about data analyses. Captures stdout/err, exit code, error info, and available information, but does not assume docker based deployment. 
+    :param dataset_name: name of the dataset this status object is tracking. 
+    :param suffix: any changes to the name of the dataset you want to make. 
+    """
+    def __init__(self,s3_path,write_localpath=localdata_dict["datastatus_update"]):
+        ## This is the order in which the json file's elements should be listed.
+        self.writeorder = [
+                   "instance",
+                   "command",
+                   "input",
+                   "status",
+                   "reason",
+                   "memory_usage",
+                   "cpu_usage",
+                   "job_start",
+                   "job_finish",
+                   "std"]
+        ## Initialize the cpu usage stats with 0 
+        self.prev_cpu = 0
+        self.prev_system = 0
+
+        super().__init__(s3_path,write_localpath)
+
+    def get_stdout(self,filename):
+        """Assumes stdout/err are already routed to an existing file. Reads in from that file, line by line
+
+        """
+        with open(filename,"r") as f:
+            lines = f.readlines()
+        return lines    
+
+    def get_usage(self):    
+        """Outputs usage statistics for the machine as a whole .
+        :returns: Output dictionary with the following form:
+            outdict = {
+            "cpu_total":cpu_percent,
+            "memory_total_mb":memory_total_mb
+            }
+        """        
+        cpu = psutil.cpu_percent(0.5)
+        memory = psutil.virtual_memory().total >> 20  ## check this in linux. 
+        outdict = {"cpu_total":cpu,
+                "memory_total_mb":str(memory)}
+        return outdict
+
+    def get_status(self,starttime,finishtime=None,exit_code=None):
+        """Formats given status information as a dictionary.  
+        :returns: dictionary of form: 
+             { 
+                 status:{"IN PROGRESS","SUCCESS","FAILED"},
+                 starttime:{datetime}
+                 endtime:{datetime,N/A}
+                 error:{INT}
+             }
+        """
+        custom_status = {}
+        if exit_code is None:
+            custom_status["status"] = "IN PROGRESS"
+        elif exit_code == 0:     
+            custom_status["status"] = "SUCCESS"
+        else:    
+            custom_status["status"] = "FAILED"
+
+        custom_status["error"] = exit_code
+        custom_status["starttime"] = starttime 
+        if finishtime is None:
+            custom_status["finishtime"] = "N/A"
+        else:    
+            custom_status["finishtime"] = finishtime 
+        return custom_status    
+
+    def update_file(self,stdfile,starttime,finishtime=None,exit_code=None):
+        """Gets updates to status, usage, and stdout/err and aggregates them to be output together.   
+
+        """
+        writelines = self.get_stdout(stdfile)
+        writedict = {str(i):line for i,line in enumerate(writelines)}
+        statusdict = self.get_status(starttime,finishtime,exit_code)
+        usage = self.get_usage()
+        self.rawfile["status"] = statusdict["status"]
+        self.rawfile["reason"] = statusdict["error"]
+        self.rawfile["cpu_usage"] = "{} %".format(usage["cpu_total"])
+        self.rawfile["memory_usage"] = "{} MB".format(usage["memory_total_mb"])
+        self.rawfile["job_start"] = statusdict["starttime"]
+        self.rawfile["job_finish"] = statusdict["finishtime"]
+        self.rawfile["std"] = writedict
+        ## Remove keys from legacy usage to avoid confusion
+        for key in ["stderr","stdout"]:
+            try:
+                del self.rawfile[key]
+            except KeyError:
+                pass
+
+class NeuroCAASDataStatus(NeuroCAASDataStats):
     """Per-instance log file that captures details about each individual dataset analysis run: entire history of messages printed to stdout/stderr, the exit code, any error information, etc. Written as a json file for convenience. Takes a running docker container and does everything needed to parse out relevant arguments from it. This includes the output to stdout and stderr, the current cpu usage and memory usage, the  docker container object that we will be querying for relevant status information. Note that this file is also assumed to be initialized by a lambda generated file, so we should treat it like the certificate file with similar failsafes to fall back on local processing. We inherit an init method from NeuroCAASLogObject to enable this. 
 
     :param dataset_name: name of the dataset this status object is tracking. 
@@ -315,24 +510,6 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
 
         super().__init__(s3_path,write_localpath)
         self.container = container
-        
-    def load_init_s3(self,bucketname,path):
-        """Load in file to use as initialization for this logging object. Should be a dictionary.   
-        :param bucketname: The name of the s3 bucket we are reading from.
-        :param path: The name of the key within the s3 bucket corresponding to the initialization object. 
-        :return: Return the content of the s3 file without further processing (will be a dictionary). 
-        """
-        content = json.loads(load_file_s3(bucketname,path))
-        return content
-
-    def get_default_rawfile(self):
-        """Get the default dataset status file from a local location. This ensures we can continue with processing even when the job is not launched from remote. For this analysis, this file is a dictionary. 
-
-        :return: raw certificate file .
-        """
-        with open(localdata_dict["datastatus_base"],"r") as f:
-            rawfile = json.load(f)
-        return rawfile 
 
     def get_stdout(self):
         """Get the current output to container.logs() and format without escape characters.
@@ -436,26 +613,6 @@ class NeuroCAASDataStatus(NeuroCAASLogObject):
                 del self.rawfile[key]
             except KeyError:
                 pass
-        
-    def write(self):    
-        """Writes the contents of rawfile as dictated by the self.writeobj attribute. Will sort entries with an ordereddict according to the attribute self.writeorder. If writeobj is s3 (default), the updated certificate will be written to the path at self.s3_path. If not (s3 not reachable for any reason) will be written to the file ./template_mats/certificate_update.txt for inspection. If you intend to write to a different file location, use the method write_local instead. 
-
-        """
-        ## First sort entries:
-        od = OrderedDict([
-               (key,self.rawfile[key]) for key in self.writeorder])
-        self.writeobj.put_json(od)
-
-    def write_local(self,path):    
-        """Writes the contents of the file as dictated by the self.writeobj attribute to a local file. First, will sort keys with the "self.writeorder" flag. 
-
-        :param path: Local path where we should write the contents of this file. 
-        """
-        ## First sort entries:
-        od = OrderedDict([
-               (key,self.rawfile[key]) for key in self.writeorder])
-        with open(path, "w") as f:
-            json.dump(od,f,indent = 4)
 
         
 class NeuroCAASActivityLog(object):

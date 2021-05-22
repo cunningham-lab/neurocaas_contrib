@@ -43,3 +43,6 @@ class Test_Blueprint():
        assert blueprint.active_image == images[-1]    
        print(json.dumps(blueprint.blueprint_dict,indent = 4))
 
+    def test_Blueprint_update_develop_history(self):    
+        blueprint = Blueprint(fixtureblueprint)
+
