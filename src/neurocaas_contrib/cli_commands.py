@@ -1066,7 +1066,7 @@ def assign_instance(blueprint,instance):
         default = None)
 @click.option("-v",
         "--volumesize",
-        type = click.STRING,
+        type = click.INT,
         help = "size of the volume you want to attach to this instance.",
         default = None)
 @click.option("-t",
