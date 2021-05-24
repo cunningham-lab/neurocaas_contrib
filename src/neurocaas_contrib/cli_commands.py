@@ -9,7 +9,6 @@ import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
 from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
-from .remote import NeuroCAASAMI
 from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
 
 ## template location settings:
@@ -602,6 +601,7 @@ def workflow(ctx):
     """
     ## If initializing job, we don't have to check for a storage file. Otherwise, complain that we need one. 
     if ctx.invoked_subcommand == "initialize-job":
+        from .remote import NeuroCAASAMI
         return
     else:
         try:
