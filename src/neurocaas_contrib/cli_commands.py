@@ -569,13 +569,7 @@ def scripting():
 def read_yaml(path,field,default = None):
     try:
         output = get_yaml_field(path,field)
-        if type(output) == list:
-            arrayoutput = ""
-            for item in output:
-                arrayoutput += str(item)+" "
-            print(arrayoutput)    
-        else:    
-            print(output)
+        print(output)
     except KeyError:    
         if default is None: 
             raise
