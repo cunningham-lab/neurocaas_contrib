@@ -9,7 +9,6 @@ import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
 from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
-from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -404,6 +403,7 @@ def home():
 def monitor():
     """Job monitoring functions.
     """
+    from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
     return
 
 ### cli commands to monitor the stack. 
