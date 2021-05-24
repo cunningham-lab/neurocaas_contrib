@@ -601,7 +601,6 @@ def workflow(ctx):
     """
     ## If initializing job, we don't have to check for a storage file. Otherwise, complain that we need one. 
     if ctx.invoked_subcommand == "initialize-job":
-        from .remote import NeuroCAASAMI
         return
     else:
         try:
@@ -1012,6 +1011,7 @@ def cleanup(obj):
 def remote(ctx):
     """remote functions.
     """
+    from .remote import NeuroCAASAMI
     return 
     
 ### cli commands to manage a remote aws resources. 
