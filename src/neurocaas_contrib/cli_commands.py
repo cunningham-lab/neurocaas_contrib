@@ -890,6 +890,17 @@ def get_configname(obj):
     configname = ncsm.get_configname()
     print(configname)
 
+@workflow.command(help = "get the name of the group whose data you are reading in. ")    
+@click.pass_obj
+def get_group(obj):
+    """Gets the name of the group to whom the data belongs.. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    groupname = ncsm.get_group(ncsm.registration["data"])
+    print(groupname)
+
 @workflow.command(help = "get the name of the file you registered")    
 @click.option("-n",
         "--name",
