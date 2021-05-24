@@ -32,7 +32,7 @@ def mkdir_notexists(dirname):
         os.makedirs(dirname)
 
 def get_yaml_field(yamlfile,fieldname):
-    """returns the value of a field in a yaml file. 
+    """returns the value of a field in a yaml file. If dict, returns json string. If list, returns bash array parsable string. else, returns standard string conversion. 
 
     :param yamlfile: path to the yaml file you want to parse. 
     :param fieldname: the name of the field you want to extract. 
@@ -44,10 +44,15 @@ def get_yaml_field(yamlfile,fieldname):
     except KeyError:    
         raise KeyError("No field {} exists in this yaml file.".format(fieldname))
     ftype = type(output)
-    if ftype is not dict:
-        return str(output)
-    else:
+    if ftype is dict:
         return json.dumps(output)
+    elif ftype is list:
+        array = ""
+        for item in output:
+            array += str(item) + " "
+        return array    
+    else:
+        return str(output)
 
 def parse_zipfile(zipname,path = None): 
     """Given a zipfile, confirms that it is a zipfile, and that it contains one top level directory. Unzips the zip file, and returns the name of the top level directory. Will throw an error if 1) the file path is not a zip file, or 2) if it contains more than one top level directory. 

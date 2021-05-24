@@ -2,6 +2,7 @@
 task: iblright
 scorer: kelly
 jobnb: 1
+videotype: avi
 ensemble_size: 5  
 videotype: avi
 testing: True  

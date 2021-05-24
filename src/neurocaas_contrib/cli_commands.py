@@ -565,7 +565,7 @@ def scripting():
 @click.option("-d",
         "--default",
         help = "default output to give if not found")
-@scripting.command(help = "extract field from a yaml file as a string.")
+@scripting.command(help = "extract field from a yaml file as a string. If field is a list, will output into a bash array. ")
 def read_yaml(path,field,default = None):
     try:
         output = get_yaml_field(path,field)

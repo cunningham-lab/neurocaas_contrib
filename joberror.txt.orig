@@ -1,0 +1,6 @@
+<<<<<<< HEAD
+/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/statsmodels/tools/_testing.py:19: FutureWarning: pandas.util.testing is deprecated. Use the functions in the public API at pandas.testing instead.
+  import pandas.util.testing as tm
+neurocaas_contrib/dgp/run_dgp_ensemble.sh: line 56:  9171 Terminated              python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datastore/model_data/$task-$scorer-2030-01-0$jobnb/"
+=======
+>>>>>>> 1ff29ae2391cf4d1c6c2b98550a826c328e4ea34
