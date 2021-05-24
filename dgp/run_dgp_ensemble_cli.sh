@@ -77,8 +77,8 @@ then
         echo "Mode $testing not recognized. Valid options are "True" or "False". Exiting."	
         exit
     fi    
-    resultpath=$(neurocaas-contrib workflow get-resultpath "$datastore/model_data/$task-$scorer-2030-01-0$jobnb/") 
-    aws s3 sync "$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" "resultpath"
+    resultpath=$(neurocaas-contrib workflow get-resultpath -l "$datastore/model_data/$task-$scorer-2030-01-0$jobnb/") 
+    aws s3 sync "$datastore/model_data/$task-$scorer-2030-01-0$jobnb/" "$resultpath"
 
     zip -r "$userhome/contribdata/results$jobnb.zip" "$datastore/model_data/$task-$scorer-2030-01-0$jobnb/"
     neurocaas-contrib workflow put-result -r "$userhome/contribdata/results$jobnb.zip"  
