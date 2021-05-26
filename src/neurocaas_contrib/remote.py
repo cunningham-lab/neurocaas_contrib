@@ -207,9 +207,9 @@ class NeuroCAASAMI(object):
                  "MinCount":1,
                  "MaxCount":1,
                  "DryRun":DryRun,
-                 "KeyName": "testkeystack-custom-dev-key-pair",
+                 "KeyName":self.config["Lambda"]["LambdaConfig"]["KEY_NAME"],
                  "SecurityGroups":[gpdict["securitygroupdevname"]],
-                 "IamInstanceProfile":{'Name':'SSMRole'},
+                 "IamInstanceProfile":{'Name':self.config["Lambda"]["LambdaConfig"]["IAM_ROLE"]},
                  "TagSpecifications" : return_tags(timeout)
                  }
         if volume_size is None:
