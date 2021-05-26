@@ -118,8 +118,8 @@ then
     fi    
     echo "-- PREPARING RESULTS --"
 
-    zip -r "$userhome/contribdata/results.zip" "$userhome/contribdata/results/"
-    neurocaas-contrib workflow put-result -r "$userhome/contribdata/results.zip"  
+    zip -r "$userhome/contribdata/consensus_results_$dataname.zip" "$userhome/contribdata/results/"
+    neurocaas-contrib workflow put-result -r "$userhome/contribdata/consensus_results_$dataname.zip"  
 else    
     echo "Mode setting $mode not recognized. Valid options are "predict" or "train". Exiting."
 fi    
