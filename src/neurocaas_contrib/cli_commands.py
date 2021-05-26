@@ -400,10 +400,14 @@ def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
 @cli.group()
-def monitor():
+@click.pass_context
+def monitor(ctx):
     """Job monitoring functions.
     """
+
     from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
+    moddict = {"calculate_parallelism":calculate_parallelism,"get_user_logs":get_user_logs,"postprocess_jobdict":postprocess_jobdict,"JobMonitor":JobMonitor}
+    ctx.obj["monitormod"] = moddict 
     return
 
 ### cli commands to monitor the stack. 
@@ -415,10 +419,10 @@ def monitor():
 @click.pass_obj
 def visualize_parallelism(blueprint,path):
     analysis_name = blueprint["analysis_name"] 
-    user_dict = get_user_logs(analysis_name)
+    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     for user,userinfo in user_dict.items():
-        parallelised = calculate_parallelism(analysis_name,userinfo,user)
-        postprocessed = postprocess_jobdict(parallelised)
+        parallelised = blueprint["monitormod"]["calculate_parallelism"](analysis_name,userinfo,user)
+        postprocessed = blueprint["monitormod"]["postprocess_jobdict"](parallelised)
         now = str(datetime.datetime.now())
         write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
         with open(write_path,"w") as f:
@@ -428,7 +432,7 @@ def visualize_parallelism(blueprint,path):
 @click.pass_obj
 def see_users(blueprint):
     analysis_name = blueprint["analysis_name"] 
-    user_dict = get_user_logs(analysis_name)
+    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
     click.echo(formatted)
@@ -456,7 +460,7 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
+    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     jm.print_log(hours=hours,index=index)
 
 @monitor.command(help = "print certificate file for submission")    
@@ -477,7 +481,7 @@ def describe_certificate(blueprint,stackname,submitpath):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
+    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     cert = jm.get_certificate(submitpath)
     click.echo(cert.rawfile)
     
@@ -500,7 +504,7 @@ def describe_datasets(blueprint,stackname,submitpath):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
+    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     datasets = jm.get_datasets(submitpath)
     click.echo(datasets)
 
@@ -533,7 +537,7 @@ def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
+    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     datastatus= jm.get_datastatus(submitpath,dataname)
     text = datastatus.rawfile.pop("std")
     list_text = [text[str(i)] for i in range(cutoff,len(text))]
@@ -1012,6 +1016,7 @@ def remote(ctx):
     """remote functions.
     """
     from .remote import NeuroCAASAMI
+    ctx.obj["remotemod"] = NeuroCAASAMI
     return 
     
 ### cli commands to manage a remote aws resources. 
@@ -1039,15 +1044,15 @@ def develop_remote(blueprint,index):
         initialize = click.confirm("This analysis has been developed before. Initialize with instance {} and ami {}?".format(instance,ami),default = False)
         if initialize:
             click.echo("Initializing from existing development history")
-            ami = NeuroCAASAMI.from_dict(latest)
+            ami = blueprint["remotemod"].from_dict(latest)
         else:    
             click.echo("Initializing from scratch")
             path = os.path.dirname(blueprint["blueprint"].config_filepath)
-            ami = NeuroCAASAMI(path) 
+            ami = blueprint["remotemod"](path) 
     else:  
         click.echo("Initializing from scratch")
         path = os.path.dirname(blueprint["blueprint"].config_filepath)
-        ami = NeuroCAASAMI(path) 
+        ami = blueprint["remotemod"](path) 
         blueprint["blueprint"].blueprint_dict["remote_hist"] = []
     ## write out to the remote_hist: 
     save_ami_to_cli(ami)
@@ -1060,12 +1065,12 @@ def develop_remote(blueprint,index):
         help = "instance id to assign to this instance. ")
 @click.pass_obj
 def assign_instance(blueprint,instance):    
-    """Assign an existing instance from its instance ID to a NeuroCAASAMI object so you can start developing on it. 
+    """Assign an existing instance from its instance ID to a blueprint["remotemod"] object so you can start developing on it. 
 
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.assign_instance(instance)
     save_ami_to_cli(ami)
         
@@ -1092,7 +1097,7 @@ def launch_devinstance(blueprint,amiid,volumesize,timeout):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.launch_devinstance(ami = amiid,volume_size = volumesize,timeout = timeout)
     save_ami_to_cli(ami)
 
@@ -1109,7 +1114,7 @@ def start_devinstance(blueprint,timeout):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.start_devinstance(timeout = timeout)
     save_ami_to_cli(ami)
 
@@ -1121,7 +1126,7 @@ def stop_devinstance(blueprint):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.stop_devinstance()
     save_ami_to_cli(ami)
 
@@ -1138,7 +1143,7 @@ def terminate_devinstance(blueprint,force):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.terminate_devinstance(force = force)
     save_ami_to_cli(ami)
 
@@ -1150,7 +1155,7 @@ def get_ip(blueprint):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     click.echo(ami.ip)
 
 @remote.command(help = "Get the lifetime of the instance")
@@ -1161,7 +1166,7 @@ def get_lifetime(blueprint):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     click.echo(ami.get_lifetime())
 
 @remote.command(help = "Get the lifetime of the instance")
@@ -1177,7 +1182,7 @@ def extend_lifetime(blueprint,minutes):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.extend_lifetime(minutes)
 
 @remote.command(help = "submit a job to your instance. Optionally, you can upload datasets and config files to s3 if you will be referencing them in your submitpath for a faster turnaround.")
@@ -1214,7 +1219,7 @@ def submit_job(blueprint,submitpath,data,config):
     #    shutil.copyfile(conf,os.path.join(analysis_location,"io-dir","configs",confname))
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.submit_job(submitpath)
     save_ami_to_cli(ami)
 
@@ -1231,7 +1236,7 @@ def job_status(blueprint,jobind):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.job_status(jobind)
     save_ami_to_cli(ami)
 
@@ -1248,7 +1253,7 @@ def job_output(blueprint,jobind):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.job_output(jobind)
     save_ami_to_cli(ami)
 
@@ -1265,7 +1270,7 @@ def create_devami(blueprint,name):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.create_devami(name)
     save_ami_to_cli(ami)
 
@@ -1289,7 +1294,7 @@ def update_blueprint(blueprint,amiid,message):
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
-    ami = NeuroCAASAMI.from_dict(devdict)
+    ami = blueprint["remotemod"].from_dict(devdict)
     ami.update_blueprint(amiid,message)
     save_ami_to_cli(ami)
 
