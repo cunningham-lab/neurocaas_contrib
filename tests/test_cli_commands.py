@@ -402,8 +402,8 @@ def test_read_yaml():
     runner = CliRunner()
     name = "getyaml"
     result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-    result = eprint(runner.invoke(cli,["read-yaml","--path","./test_mats/config.yaml","--field","scorer"]))
-    assert result.output == "kelly"
+    result = eprint(runner.invoke(cli,["scripting","read-yaml","--path","./test_mats/config.yaml","--field","scorer"]))
+    assert result.output == "kelly\n"
 
 ### Test monitoring functions. 
 @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on logs.")
