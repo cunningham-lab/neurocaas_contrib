@@ -22,7 +22,10 @@ Now create and configure a conda environment as follows:
 Remember to deactivate your conda environment when you are done (`conda deactivate neurocaas`). 
 You can check if the install has gone smoothly by running the command `neurocaas_contrib --help` from the command line. You should see documentation for options and commands that you can append to this base command. If you experience any problems, please submit a new issue [here](https://github.com/cunningham-lab/neurocaas_contrib/issues).
 
-## Developing an analysis for NeuroCAAS.  
+## Developing an analysis for NeuroCAAS (beta).  
+
+NOTE 5.28.21: The following is an actively developed extension to NeuroCAAS that involves the use of docker containers to make analyses more portable. For a stable workflow, check out the source repo (https://github.com/cunningham-lab/neurocaas) for a full developer guide. 
+
 Once you've successfully installed NeuroCAAS Contrib, it's time to start developing. This is the process of taking some analysis code that you have written to process certain kinds of datasets, and making it usable through the NeuroCAAS platform.
 
 In this guide, we will describe a process to _incrementally 
