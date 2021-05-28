@@ -491,6 +491,15 @@ class NeuroCAASScriptManager(object):
 
         """
         return self.get_path(self.registration["additional_files"][varname]) 
+
+    def get_resultpath_tmp(self):
+        """Get the local path to a directory where you can write easily erasable data. 
+
+        """
+        datapath = self.get_datapath()
+        resultpath = os.path.abspath(os.path.join(os.path.dirname(datapath),"../results/"))
+        mkdir_notexists(resultpath)
+        return resultpath
     
     def get_resultpath(self,filepath):
         """Given the path to a file or directory locally, give the path we would upload it to in S3 (useful for using aws s3 sync)

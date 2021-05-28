@@ -8,7 +8,7 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
-from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
+from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager,mkdir_notexists
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
@@ -956,6 +956,18 @@ def get_filepath(obj,name):
     filepath = ncsm.get_filepath(name)
     print(filepath)
 
+@workflow.command(help = "get the path to a temporary result location")
+@click.pass_obj
+def get_resultpath_tmp(obj):
+    """Creates and returns name of temporary resultpath. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    print(ncsm.get_resultpath_tmp())
+
+
+
 @workflow.command(help = "get the s3 path a local file or directory would be uploaded to")    
 @click.option("-l",
         "--locpath",
@@ -968,6 +980,24 @@ def get_resultpath(obj,locpath):
     resultpath = ncsm.get_resultpath(locpath)
     print(resultpath)
 
+
+@workflow.command(help = "runs a script with commands, but only locally.")
+@click.option("-c",
+        "--command",
+        help = "the script (with arguments) you want to run.",
+        type = click.STRING)
+@click.pass_obj
+def log_command_local(obj,command,suffix = None):    
+    """Local version of log-command, shown below. Assumes that local resultpath is logged and taht it generates a process results folder., and will write a relevant logs directory within it.  
+
+    UNTESTED, refactor into scripting module.
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    resultpath = os.path.join(os.path.dirname(os.path.dirname(ncsm.get_resultpath("/any_file/txt.txt"))),"logs")
+    mkdir_notexists(resultpath)
+    ncsm.log_command(command,"s3://nonexistent/file",resultpath) 
 
 @workflow.command(help = "runs a script with commands, all specified as a string")
 @click.option("-c",
