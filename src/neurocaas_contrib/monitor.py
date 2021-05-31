@@ -20,10 +20,11 @@ s3_resource = boto3.resource("s3")
 
 try:
     cfn_client = boto3.client("cloudformation")
+    logs_client = boto3.client("logs")
 except NoRegionError: ## Handle ReadTheDocs Build.    
     cfn_client = boto3.client("cloudformation",region_name = os.environ["REGION"])
+    logs_client = boto3.client("logs",region_name = os.environ["REGION"])
 
-logs_client = boto3.client("logs")
 
 jobprefix = "job__{s}_{t}" # parametrized by stackname, timestamp. 
 
