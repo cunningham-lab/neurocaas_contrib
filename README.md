@@ -1,5 +1,5 @@
 ![rtd](https://readthedocs.org/projects/pip/badge/?version=latest&style=plastic) 
-![example workflow](https://github.com/github/docs/actions/workflows/test_ci.yml/badge.svg)
+![example workflow](https://github.com/cunningham-lab/neurocaas_contrib/actions/workflows/test_ci.yml/badge.svg)
 
 # NeuroCAAS Contrib
 # 
