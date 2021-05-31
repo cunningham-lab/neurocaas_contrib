@@ -7,7 +7,7 @@ import numpy as np
 import logging
 import boto3
 import localstack_client.session
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError,NoRegionError
 import json
 from datetime import timedelta
 import time
@@ -17,7 +17,11 @@ from .log import NeuroCAASCertificate,NeuroCAASDataStatusLegacy
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
-cfn_client = boto3.client("cloudformation")
+try:
+    cfn_client = boto3.client("cloudformation")
+except NoRegionError: ## Handle ReadTheDocs Build.    
+    cfn_client = boto3.client("cloudformation",region = os.environ["REGION"])
+
 logs_client = boto3.client("logs")
 
 jobprefix = "job__{s}_{t}" # parametrized by stackname, timestamp. 
@@ -484,10 +488,14 @@ class JobMonitor(LambdaMonitor):
         """
         submitdict = self.register_submit(submitfile)
 
-        groupname = submitdict["dataname"].split("/",1)[0]
+        if type(submitdict["dataname"]) == str:
+            groupname = submitdict["dataname"].split("/",1)[0]
+        elif type(submitdict["dataname"]) == list:
+            groupname = submitdict["dataname"][0].split("/",1)[0]
 
         foldername = jobprefix.format(s=self.stackname,t=submitdict["timestamp"])
         fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
+        ### TODO: wont load if the certificate did not reach processing stage yet. Throws assertion error 
         cert = NeuroCAASCertificate(fullpath)
         return cert
 
