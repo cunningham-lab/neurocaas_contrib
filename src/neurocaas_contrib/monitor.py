@@ -17,10 +17,11 @@ from .log import NeuroCAASCertificate,NeuroCAASDataStatusLegacy
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
+
 try:
     cfn_client = boto3.client("cloudformation")
 except NoRegionError: ## Handle ReadTheDocs Build.    
-    cfn_client = boto3.client("cloudformation",region = os.environ["REGION"])
+    cfn_client = boto3.client("cloudformation",region_name = os.environ["REGION"])
 
 logs_client = boto3.client("logs")
 
