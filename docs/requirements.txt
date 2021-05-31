@@ -4,5 +4,6 @@ docker==4.2.2
 localstack==0.12.3
 localstack-client==1.10
 paramiko==2.7.2
+numpy>=1.16.4
 PyYAML==5.4
 psutil==5.8.0
