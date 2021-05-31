@@ -1,6 +1,6 @@
 # Local Development with Docker Containers (beta).  
 
-NOTE 5.28.21: The following is an actively developed extension to NeuroCAAS that involves the use of docker containers to make analyses more portable. It describes the process of building an Immutable Analysis Environment locally with Docker containers before moving to AWS. For a stable workflow, check out the source repo (https://github.com/cunningham-lab/neurocaas) for a full developer guide. 
+NOTE 5.28.21: The following is an actively developed extension to NeuroCAAS that involves the use of docker containers to make analyses more portable. It describes the process of building an Immutable Analysis Environment locally with Docker containers before moving to AWS. For a stable workflow, check out the source repo [here](https://github.com/cunningham-lab/neurocaas) for a full developer guide. 
 
 Once you've successfully installed NeuroCAAS Contrib, it's time to start developing. This is the process of taking some analysis code that you have written to process certain kinds of datasets, and making it usable through the NeuroCAAS platform.
 
