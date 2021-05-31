@@ -13,6 +13,8 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../src'))
+## set environment variable for boto3. 
+os.environ["REGION"] = "us-east-1"
 
 
 # -- Project information -----------------------------------------------------
