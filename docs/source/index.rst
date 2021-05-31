@@ -10,6 +10,9 @@ Welcome to NeuroCAAS-contrib's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Introduction
+   Installation
+   Local
    reference/cli_reference
    reference/source_code_reference
 
