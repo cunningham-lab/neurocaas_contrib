@@ -12,9 +12,10 @@ import pathlib
 
 try:
     ec2_resource = boto3.resource('ec2')
+    ec2_client = boto3.client("ec2")
 except NoRegionError: ## if building on readthedocs, read the region in from environment variables:    
     ec2_resource = boto3.resource('ec2',region_name = os.environ["REGION"])
-ec2_client = boto3.client("ec2")
+    ec2_client = boto3.client("ec2",region_name = os.environ["REGION"])
 s3 = boto3.resource("s3")
 ssm_client = boto3.client('ssm')
 #ssm_client = boto3.client('ssm',region_name = self.config['Lambda']['LambdaConfig']['REGION'])
