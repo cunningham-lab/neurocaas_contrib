@@ -536,14 +536,18 @@ def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
         stackname = blueprint["analysis_name"] 
     jm = JobMonitor(stackname)    
     datastatus= jm.get_datastatus(submitpath,dataname)
-    text = datastatus.rawfile.pop("std")
-    list_text = [text[str(i)] for i in range(cutoff,len(text))]
-    formattext = "".join(list_text)
+    try:
+        text = datastatus.rawfile.pop("std")
+        list_text = [text[str(i)] for i in range(cutoff,len(text))]
+        formattext = "".join(list_text)
 
-    formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
-    formatted.append("std: "+formattext)
-    lined = "\n".join(formatted)
-    click.echo(lined)
+        formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
+        formatted.append("std: "+formattext)
+        lined = "\n".join(formatted)
+        click.echo(lined)
+    except KeyError: ## file isn't formatted as expected     
+        click.echo(json.dumps(datastatus.rawfile,indent = 4))
+
 
 ## scripting tools 
 @cli.group()
