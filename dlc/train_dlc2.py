@@ -21,7 +21,7 @@ def train(config_file,test):
         print("DLC config.yaml file not found in model folder. Exiting.")
         raise
     # F
-    deeplabcut.create_training_dataset(config_file)
+    deeplabcut.create_training_dataset(config_file,windows2linux=True)
     # G 
     if test:
         deeplabcut.train_network(config_file,maxiters=2)
