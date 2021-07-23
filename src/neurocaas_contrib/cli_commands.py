@@ -426,9 +426,17 @@ def visualize_parallelism(blueprint,path):
             json.dump(postprocessed,f,indent = 4)
     
 @monitor.command(help = "see users of a given analysis.")
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack that you want to get job manager requests for.")
 @click.pass_obj
-def see_users(blueprint):
-    analysis_name = blueprint["analysis_name"] 
+def see_users(blueprint,stackname):
+    if stackname is None:
+        analysis_name = blueprint["analysis_name"] 
+    else:
+        analysis_name = stackname    
     user_dict = get_user_logs(analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
@@ -460,7 +468,7 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
     jm = JobMonitor(stackname)    
     jm.print_log(hours=hours,index=index)
 
-@monitor.command(help = "print certificate file for submission")    
+@monitor.command(help = "print certificate file for submission. can give submitpath or groupname and timestamp.")    
 @click.option("-s",
         "--stackname",
         type = click.STRING,
@@ -470,17 +478,36 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
         help = "path to submit file",
+        default = None
+        )
+@click.option("-g",
+        "--groupname",
+        type = click.STRING,
+        help = "name of the group we are getting certificate for",
+        default = None
+        )
+@click.option("-t",
+        "--timestamp",
+        type = click.STRING,
+        help = "timestamp of job.",
+        default = None
         )
 @click.pass_obj
-def describe_certificate(blueprint,stackname,submitpath):
+def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
-    cert = jm.get_certificate(submitpath)
-    click.echo(cert.rawfile)
+    assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
+    if submitpath is not None:
+        jm = JobMonitor(stackname)    
+        cert = jm.get_certificate(submitpath)
+        click.echo(cert.rawfile)
+    elif (groupname is not None) and (timestamp is not None):     
+        jm = JobMonitor(stackname)    
+        cert = jm.get_certificate_values(timestamp,groupname)
+        click.echo(cert.rawfile)
     
     
 @monitor.command(help = "print datasets being analyzed, and instances on which they are being analyzed.")    
@@ -515,6 +542,19 @@ def describe_datasets(blueprint,stackname,submitpath):
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
         help = "path to submit file",
+        default = None
+        )
+@click.option("-g",
+        "--groupname",
+        type = click.STRING,
+        help = "name of the group we are getting certificate for",
+        default = None
+        )
+@click.option("-t",
+        "--timestamp",
+        type = click.STRING,
+        help = "timestamp of job.",
+        default = None
         )
 @click.option("-d",
         "--dataname",
@@ -528,14 +568,19 @@ def describe_datasets(blueprint,stackname,submitpath):
         default = 0
         )
 @click.pass_obj
-def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
+def describe_datastatus(blueprint,stackname,submitpath,groupname,timestamp,dataname,cutoff):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = JobMonitor(stackname)    
-    datastatus= jm.get_datastatus(submitpath,dataname)
+    assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
+    if submitpath is not None:
+        jm = JobMonitor(stackname)    
+        datastatus= jm.get_datastatus(submitpath,dataname)
+    elif (groupname is not None and timestamp is not None):   
+        jm = JobMonitor(stackname)    
+        datastatus= jm.get_datastatus_values(groupname,timestamp,dataname)
     try:
         text = datastatus.rawfile.pop("std")
         list_text = [text[str(i)] for i in range(cutoff,len(text))]

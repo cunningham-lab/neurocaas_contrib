@@ -501,6 +501,7 @@ class JobMonitor(LambdaMonitor):
 
         foldername = jobprefix.format(s=self.stackname,t=timestamp)
         fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
+        print(fullpath)
         cert = NeuroCAASCertificate(fullpath,parse = False)
         return cert
         
