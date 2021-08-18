@@ -223,18 +223,29 @@ def test_cli_init_noname(create,created):
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,create)))
         assert os.path.exists("./"+name+"/stack_config_template.json") == created
 
-def test_cli_init_location_memory():
+@pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on local storage loc..")
+def test_cli_init_location_memory_default():
     """If you provide a location once, this should be the default and you should not have to provide it ever again.  
 
     """
     runner = CliRunner()
     name0 = "bare_default"
-    name1 = "configure_memory"
-    name2 = "remember"
 
     with runner.isolated_filesystem():
         ## bare init run will write to local envs with warning
         result = eprint(runner.invoke(cli,["init","--analysis-name",name0],input = "Y"))
+
+        assert os.path.exists(os.path.join(default_write_loc,name0,"stack_config_template.json")), "original analysis should exist"
+
+def test_cli_init_location_memory():
+    """If you provide a location once, this should be the default and you should not have to provide it ever again.  
+
+    """
+    runner = CliRunner()
+    name1 = "configure_memory"
+    name2 = "remember"
+
+    with runner.isolated_filesystem():
         ## initialized location 
         result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name1],input = "Y"))
         ## subequent inits will write to this location. 
