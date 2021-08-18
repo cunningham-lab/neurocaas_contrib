@@ -431,8 +431,6 @@ def test_visualize_parallelism(setup_log_bucket):
             elif any([k.startswith("sawtell") for k in jobdict.keys()]):    
                 assert count == 132
 
-def test_
-
 
 class Test_workflow():    
     def test_workflow(self):
