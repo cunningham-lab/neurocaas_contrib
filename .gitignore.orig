@@ -10,7 +10,10 @@ __pycache__/
 */__pycache__/
 */*/__pycache__/
 */*/*/__pycache__/
+<<<<<<< HEAD
+=======
 */*/*/*/__pycache__/
+>>>>>>> 1ff29ae2391cf4d1c6c2b98550a826c328e4ea34
 *.py[cod]
 *$py.class
 
@@ -144,5 +147,4 @@ dmypy.json
 
 # Log files
 src/neurocaas_contrib/template_mats/DATASET_NAME-dataset_update.ext_STATUS.txt.json
-logs/*
 

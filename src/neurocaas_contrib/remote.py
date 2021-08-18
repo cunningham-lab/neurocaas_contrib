@@ -1,6 +1,6 @@
 ## A module to work with AMIs for the purpose of debugging and updating.
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError,NoRegionError
 import sys
 import time
 import os
@@ -10,10 +10,15 @@ import subprocess
 import json
 import pathlib
 
-ec2_resource = boto3.resource('ec2')
-ec2_client = boto3.client("ec2")
+try:
+    ec2_resource = boto3.resource('ec2')
+    ec2_client = boto3.client("ec2")
+    ssm_client = boto3.client('ssm')
+except NoRegionError: ## if building on readthedocs, read the region in from environment variables:    
+    ec2_resource = boto3.resource('ec2',region_name = os.environ["REGION"])
+    ec2_client = boto3.client("ec2",region_name = os.environ["REGION"])
+    ssm_client = boto3.client('ssm',region_name = os.environ["REGION"])
 s3 = boto3.resource("s3")
-ssm_client = boto3.client('ssm')
 #ssm_client = boto3.client('ssm',region_name = self.config['Lambda']['LambdaConfig']['REGION'])
 sts = boto3.client("sts")        
 
@@ -207,9 +212,9 @@ class NeuroCAASAMI(object):
                  "MinCount":1,
                  "MaxCount":1,
                  "DryRun":DryRun,
-                 "KeyName": "testkeystack-custom-dev-key-pair",
+                 "KeyName":self.config["Lambda"]["LambdaConfig"]["KEY_NAME"],
                  "SecurityGroups":[gpdict["securitygroupdevname"]],
-                 "IamInstanceProfile":{'Name':'SSMRole'},
+                 "IamInstanceProfile":{'Name':self.config["Lambda"]["LambdaConfig"]["IAM_ROLE"]},
                  "TagSpecifications" : return_tags(timeout)
                  }
         if volume_size is None:
