@@ -435,18 +435,12 @@ def visualize_parallelism(blueprint,path):
         default = None,
         help = "name of the stack that you want to get job manager requests for.")
 @click.pass_obj
-<<<<<<< HEAD
 def see_users(blueprint,stackname):
     if stackname is None:
         analysis_name = blueprint["analysis_name"] 
     else:
         analysis_name = stackname    
     user_dict = get_user_logs(analysis_name)
-=======
-def see_users(blueprint):
-    analysis_name = blueprint["analysis_name"] 
-    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
->>>>>>> reorganize
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
     click.echo(formatted)
