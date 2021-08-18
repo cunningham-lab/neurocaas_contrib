@@ -223,6 +223,49 @@ def test_cli_init_noname(create,created):
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,create)))
         assert os.path.exists("./"+name+"/stack_config_template.json") == created
 
+def test_cli_init_location_memory():
+    """If you provide a location once, this should be the default and you should not have to provide it ever again.  
+
+    """
+    runner = CliRunner()
+    name0 = "bare_default"
+    name1 = "configure_memory"
+    name2 = "remember"
+
+    with runner.isolated_filesystem():
+        ## bare init run will write to local envs with warning
+        result = eprint(runner.invoke(cli,["init","--analysis-name",name0],input = "Y"))
+        ## initialized location 
+        result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name1],input = "Y"))
+        ## subequent inits will write to this location. 
+        result = eprint(runner.invoke(cli,["init","--analysis-name",name2],input = "Y"))
+
+        assert os.path.exists(os.path.join(default_write_loc,name0,"stack_config_template.json")), "original analysis should exist"
+        assert os.path.exists(os.path.join(".",name1,"stack_config_template.json")), "original analysis should exist"
+        assert os.path.exists(os.path.join(".",name2,"stack_config_template.json")), "second analysis should be written to same loc. "
+
+
+def test_cli_init_test_mats():    
+    """Check that test materials are copied into a new directory too. 
+
+    """
+    runner = CliRunner()
+    name = "test_mats"
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name],input = "Y"))
+        assert os.path.exists(os.path.join(".",name,"test_resources"))
+        for f in ["exampledevsubmit.json","s3_putevent.json","main_func_env_vars.json","cloudwatch_startevent.json","cloudwatch_termevent.json","computereport_1234567.json","computereport_2345678.json"]:
+            with open(os.path.join(".",name,"test_resources",f)) as fobj:
+                fileelem = json.load(fobj)
+                if f == "putevent":
+                    assert fileelem["Records"][0]["s3"]["bucket"]["analysis_name"] == analysis_name
+                    assert fileelem["Records"][0]["s3"]["bucket"]["arn"] == "arn:aws:s3:::{}".format(analysis_name)
+                elif f == "main_env_vars":    
+                    assert fileelem["FigLambda"]["BUCKET_NAME"] == analysis_name
+                #if f in {"exampledevsubmit.json":,"main_func_env_vars.json":{"FigLambda":{"BUCKET_NAME":name}},"s3_putevent.json":{"Records":[{"s3":{"bucket":j}}]}}:
+
+
+
 def test_cli_get_blueprint():
     runner = CliRunner()
     name = "getblueprint"

@@ -14,6 +14,7 @@ from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager,mkdir
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 template_dir= os.path.join(dir_loc,"template_mats") 
 default_write_loc = os.path.join(dir_loc,"local_envs")
+testmatdir = os.path.join(dir_loc,"stack_test_mats")
 
 if "pytest" in sys.modules:
     mode = "test"
@@ -50,6 +51,55 @@ def save_ami_to_cli(ami):
     with open(configpath,"w") as f:
         json.dump(config,f,indent = 4)
 
+def create_ctx(ctx,location,analysis_name,develop_dict):
+    """helper function to attempt to create as much of the context object as is available. 
+
+    :param ctx: click context object, used to pass state to subcommands
+    :param location: path to the base blueprint directory. (or None)
+    :param analysis_name: name of the analysis we want to find in `location`. (or None)
+    :param developdict: dictionary holding details of development (or None)
+    """
+    ctx.obj = {}
+    ctx.obj["location"] = location
+    ctx.obj["analysis_name"] = analysis_name
+    ctx.obj["develop_dict"] = develop_dict
+    try:
+        ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
+    except FileNotFoundError as e:
+        raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
+    return ctx
+
+def create_test_dir(path):
+    """Given an analysis location, creates a directory within it with testing resources that are configured correctly. 
+    :param path: path to the analysis folder (location where `stack_config_template.json` files are stored).  
+    """
+    analysis_name = os.path.basename(path) 
+    local_testfolder = os.path.join(path,"test_resources")
+    os.mkdir(local_testfolder)
+    test_filepaths = {"submitfile":os.path.join(testmatdir,"exampledevsubmit.json"),
+                      "putevent":os.path.join(testmatdir,"s3_putevent.json"),
+                      "main_env_vars":os.path.join(testmatdir,"main_func_env_vars.json"),
+                      "cloudwatch_start":os.path.join(testmatdir,"cloudwatch_startevent.json"),
+                      "cloudwatch_end":os.path.join(testmatdir,"cloudwatch_termevent.json"),
+                      "computereport1":os.path.join(testmatdir,"computereport_1234567.json"),
+                      "compuretreport2":os.path.join(testmatdir,"computereport_2345678.json")} 
+    for filetype,filepath in test_filepaths.items():
+        filename = os.path.basename(filepath)
+        destination = os.path.join(local_testfolder,filename)
+        with open(filepath,"r") as f:
+            contents = json.load(f)
+        if filetype == "putevent":
+            contents["Records"][0]["s3"]["bucket"]["name"] = analysis_name
+            contents["Records"][0]["s3"]["bucket"]["arn"] = "arn:aws:s3:::{}".format(analysis_name)
+        elif filetype == "main_env_vars":    
+            contents["FigLambda"]["BUCKET_NAME"] = analysis_name 
+        with open(destination,"w") as f:    
+            json.dump(contents,f)
+                
+
+
+
+
 @click.group()
 @click.option(
     "--location",
@@ -68,35 +118,29 @@ def cli(ctx,location,analysis_name):
     """
     ## Determine those commands for which you don't require a specific blueprint.
     no_blueprint = ['init','describe-analyses',"scripting","workflow"]
-    if ctx.invoked_subcommand in no_blueprint:
-        return ## move on and run configure. 
-    else:
+    try:
+        with open(configpath,"r") as f:
+            defaultconfig = json.load(f)
+
         if location is None or analysis_name is None:
-            try:
-                with open(configpath,"r") as f:
-                    defaultconfig = json.load(f)
-            except FileNotFoundError:    
-                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
             if location is None:
                 location = defaultconfig["location"]
             if analysis_name is None:    
                 analysis_name = defaultconfig["analysis_name"]
             develop_dict = defaultconfig.get("develop_dict",None)
 
-        ctx.obj = {}
-        ctx.obj["location"] = location
-        ctx.obj["analysis_name"] = analysis_name
-        ctx.obj["develop_dict"] = develop_dict
-        try:
-            ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
-        except FileNotFoundError as e:
-            raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
+        ctx = create_ctx(ctx,location,analysis_name,develop_dict)
+    except (FileNotFoundError,KeyError):    
+        if ctx.invoked_subcommand in no_blueprint:
+            return ## move on and run configure. 
+        else:
+            raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
 
 @cli.command(help ="configure CLI to work with certain analysis.")
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc,
+    default=None,
     type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True),
         )
 @click.option(
@@ -110,6 +154,13 @@ def init(blueprint,location,analysis_name):
 
     Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
+    ## New Feature 1 (08/18/21): Use defaults for location:  
+    if location is None:
+        try:
+            location = blueprint["location"] ## we expect this to be none if not given. 
+        except (KeyError,TypeError):    
+            click.echo("No location given and no previous location found. Defaulting to {} ".format(default_write_loc))
+            location = default_write_loc
 
     analysis_location = os.path.join(location,analysis_name)
     ## Initialize state variables to determine whether or not we should write to the config file. 
@@ -123,6 +174,8 @@ def init(blueprint,location,analysis_name):
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
             shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
+            ## New Feature 2 (08/18/21): add testing materials. 
+            create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
     elif not os.path.exists(os.path.join(analysis_location,"stack_config_template.json")):    
@@ -131,6 +184,7 @@ def init(blueprint,location,analysis_name):
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
             shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
+            create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
     else:        
