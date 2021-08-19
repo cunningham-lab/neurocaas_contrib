@@ -23,10 +23,10 @@ else:
 
 if mode == "test":
     configname = ".neurocaas_contrib_config_test.json"
-    configpath = os.path.join(".",configname)
+    configpath = os.path.join(template_dir,configname)
     ## "separate for data storage during actual runs"
     storagename = ".neurocaas_contrib_storageloc_test.json" 
-    storagepath = os.path.join(".",storagename)
+    storagepath = os.path.join(template_dir,storagename)
 
 else:    
     ## configuration file settings:
@@ -38,6 +38,7 @@ else:
 def save_ami_to_cli(ami):
     """Save a dictionary representing the development history to the cli's config file.
 
+    :param ami: NeuroCAAS Ami object
     """
     amiinfo = ami.to_dict()
 
@@ -50,6 +51,33 @@ def save_ami_to_cli(ami):
         raise
     with open(configpath,"w") as f:
         json.dump(config,f,indent = 4)
+        
+
+def delete_ami_from_cli(develop_dict,force = False):
+    """Clears instance and blueprint from cli's config file. 
+    :param develop_dict: the development dictionary that holds details about development you have already done.  
+    :returns: bool- whether or not deletion happened
+    """
+    from .remote import NeuroCAASAMI
+    analysis = develop_dict["config"]["PipelineName"]
+    instance = develop_dict["instance_id"]
+    click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(analysis,instance),abort = True)
+    ## delete instance.
+    ami = NeuroCAASAMI.from_dict(develop_dict)
+    message = ami.terminate_devinstance(force)
+    if message == "No state change.":
+        return False
+    else:
+        try:
+            with open(configpath,"r") as f:
+                config = json.load(f)
+            config["develop_dict"] = None    
+        except FileNotFoundError:    
+            click.echo("NeuroCAAS Contrib config file not found. Exiting.")
+            raise
+        with open(configpath,"w") as f:
+            json.dump(config,f,indent=4)
+        return True    
 
 def create_ctx(ctx,location,analysis_name,develop_dict):
     """helper function to attempt to create as much of the context object as is available. 
@@ -63,9 +91,10 @@ def create_ctx(ctx,location,analysis_name,develop_dict):
     ctx.obj["location"] = location
     ctx.obj["analysis_name"] = analysis_name
     ctx.obj["develop_dict"] = develop_dict
+
     try:
         ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
-    except FileNotFoundError as e:
+    except FileNotFoundError as e: ## A note here. Create_CTX is triggered with analysis and location parameters passed directly to the cli command.  
         raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
     return ctx
 
@@ -96,10 +125,6 @@ def create_test_dir(path):
         with open(destination,"w") as f:    
             json.dump(contents,f)
                 
-
-
-
-
 @click.group()
 @click.option(
     "--location",
@@ -154,6 +179,9 @@ def init(blueprint,location,analysis_name):
 
     Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
+    print(location,"location")
+    if analysis_name == "remember":
+        pass
     ## New Feature 1 (08/18/21): Use defaults for location:  
     if location is None:
         try:
@@ -1151,6 +1179,7 @@ def remote(ctx):
     ctx.obj["remotemod"] = NeuroCAASAMI
     return 
     
+
 ### cli commands to manage a remote aws resources. 
 ## Initialize a new NeuroCAASAMI object, or get . 
 @remote.command(help = "Initialize a NeuroCAASAMI object")
@@ -1165,7 +1194,7 @@ def develop_remote(blueprint,index):
 
     """
     devhist = blueprint["blueprint"].blueprint_dict.get("develop_history",None)
-    if devhist is not None:
+    if devhist is not None: ## this whole condition is basically useless right now. 
         latest = devhist[index]
         instance = latest.get("instance_id",None)
         amis = latest.get("ami_hist",[])
@@ -1189,6 +1218,54 @@ def develop_remote(blueprint,index):
     ## write out to the remote_hist: 
     save_ami_to_cli(ami)
     
+
+
+@remote.command(help = "Start developing remotely.")
+@click.option("-f",
+        "--force",
+        help = "if true, will delete new instances even if they haven't been saved to amis",
+        is_flag = True)
+@click.pass_obj
+def start_session(blueprint,force):
+    """Essentially a new version of develop_remote above. Does away with the whole develop_history abstraction, and assumes that if you're starting a session the old session should be annihilated. 
+
+    """
+    ### Clear the details found in develop_dict
+    try:
+        dev_dict = blueprint["develop_dict"]
+        assert dev_dict is not None
+        deleted = delete_ami_from_cli(dev_dict,force)
+        if deleted is False:
+            click.echo("Did not delete previous session because instance has not been saved to ami (progress would be LOST). To force pass -f flag.")
+            return 
+    except (KeyError,AssertionError):    
+        click.echo("Initializing from scratch")
+    path = os.path.dirname(blueprint["blueprint"].config_filepath)
+    ami = blueprint["remotemod"](path) 
+    blueprint["blueprint"].blueprint_dict["remote_hist"] = []
+    ## write out to the remote_hist: 
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Finish development session.")
+@click.option("-f",
+        "--force",
+        help = "if true, will delete new instances even if they haven't been saved to amis",
+        is_flag = True)
+@click.pass_obj
+def end_session(blueprint,force):
+    """Turns off development instances once you're done and clears development dictionary. 
+
+    """
+    try:
+        dev_dict = blueprint["develop_dict"]
+        assert dev_dict is not None
+        deleted = delete_ami_from_cli(dev_dict,force)
+        if deleted is False:
+            click.echo("Did not delete previous session due to undeleted instances. To force pass -f flag.")
+            return 
+    except (KeyError,AssertionError):    
+        click.echo("Nothing to delete.")
+
 
 @remote.command(help = "Assign a new instance to a NeuroCAASAMI object")
 @click.option("-i",
