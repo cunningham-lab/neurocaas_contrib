@@ -179,9 +179,6 @@ def init(blueprint,location,analysis_name):
 
     Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
-    print(location,"location")
-    if analysis_name == "remember":
-        pass
     ## New Feature 1 (08/18/21): Use defaults for location:  
     if location is None:
         try:
@@ -244,13 +241,20 @@ def init(blueprint,location,analysis_name):
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc,
+    default=None,
     type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True)
         )
-def describe_analyses(location):
+@click.pass_obj
+def describe_analyses(context,location):
     """List all of the analyses available to develop on. Takes a location parameter: by default will be the packaged local_envs location. 
 
     """
+    if location is None:
+        try:
+            location = context["location"] ## we expect this to be none if not given. 
+        except (KeyError,TypeError):    
+            click.echo("No location given and no previous location found. Defaulting to {} ".format(default_write_loc))
+            location = default_write_loc
     all_contents = os.listdir(location) 
     dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
     ## Add a star for the current one. 
