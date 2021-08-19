@@ -481,6 +481,16 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+def convert_folder_to_stackname(location,foldername):
+    """Sometimes, especially for legacy functions there is a foldername as well as a stack name. Get the stack name from the location and foldername. 
+
+    """
+    stackconfig = os.path.join(location,foldername,"stack_config_template.json")
+    ## get contents: 
+    with open(stackconfig,"r") as f:
+        stackdict = json.load(f) 
+    return stackdict["PipelineName"]    
+
 @cli.group()
 @click.pass_context
 def monitor(ctx):
@@ -515,13 +525,13 @@ def visualize_parallelism(blueprint,path):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.pass_obj
 def see_users(blueprint,stackname):
     if stackname is None:
         analysis_name = blueprint["analysis_name"] 
     else:
-        analysis_name = stackname    
+        analysis_name = convert_folder_to_stackname(blueprint["location"],stackname)    
     user_dict = get_user_logs(analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
@@ -532,7 +542,7 @@ def see_users(blueprint,stackname):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-h",
         "--hours",
         type = click.INT,
@@ -550,6 +560,8 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     jm.print_log(hours=hours,index=index)
 
@@ -558,7 +570,7 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
@@ -584,6 +596,8 @@ def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"], stackname)    
     assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
     if submitpath is not None:
         jm = JobMonitor(stackname)    
@@ -600,7 +614,7 @@ def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
@@ -613,6 +627,8 @@ def describe_datasets(blueprint,stackname,submitpath):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:     
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     datasets = jm.get_datasets(submitpath)
     click.echo(datasets)
@@ -622,7 +638,7 @@ def describe_datasets(blueprint,stackname,submitpath):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
@@ -659,6 +675,8 @@ def describe_datastatus(blueprint,stackname,submitpath,groupname,timestamp,datan
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
     if submitpath is not None:
         jm = JobMonitor(stackname)    
