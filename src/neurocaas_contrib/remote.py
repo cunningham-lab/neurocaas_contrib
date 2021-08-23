@@ -163,6 +163,9 @@ class NeuroCAASAMI(object):
         except ClientError:
             print("Instance with id {} can't be loaded".format(instance_id))
             raise
+        except AttributeError: ## instance.instance_id attribute will not exist.   
+            print("Instance with id {} does not exist.".format(instance_id))
+
         self.instance = instance
     
 
