@@ -607,11 +607,11 @@ def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
         stackname = convert_folder_to_stackname(blueprint["location"], stackname)    
     assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
     if submitpath is not None:
-        jm = JobMonitor(stackname)    
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
         cert = jm.get_certificate(submitpath)
         click.echo(cert.rawfile)
     elif (groupname is not None) and (timestamp is not None):     
-        jm = JobMonitor(stackname)    
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
         cert = jm.get_certificate_values(timestamp,groupname)
         click.echo(cert.rawfile)
     
