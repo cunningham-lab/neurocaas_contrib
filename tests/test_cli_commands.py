@@ -264,8 +264,6 @@ def test_cli_init_location_memory():
         ## initialized location 
         result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name1],input = "Y"))
         ## subequent inits will write to this location. 
-        result = runner.invoke(cli,["--analysis-name",name2,"init"],input = "Y")
-        assert result.stdout_bytes.decode("utf8").startswith("Error: Blueprint for analysis remember not found in location")
         result = eprint(runner.invoke(cli,["init","--analysis-name",name2],input = "Y"))
 
         assert os.path.exists(os.path.join(".",name1,"stack_config_template.json")), "original analysis should exist"
