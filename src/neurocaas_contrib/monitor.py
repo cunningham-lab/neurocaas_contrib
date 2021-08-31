@@ -497,13 +497,28 @@ class JobMonitor(LambdaMonitor):
 
         foldername = jobprefix.format(s=self.stackname,t=submitdict["timestamp"])
         fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
-        ### TODO: wont load if the certificate did not reach processing stage yet. Throws assertion error 
-        cert = NeuroCAASCertificate(fullpath)
+        cert = NeuroCAASCertificate(fullpath,parse = False)
         return cert
 
+    def get_certificate_values(self,timestamp,groupname):
+        """Get the certificate file given only the timestamp and groupname of a job (useful if running as dev). 
+
+        :param groupname: name of the group where we're going look for jobs. 
+        :param timestamp: timestamp field of a submit file. 
+        :returns: a NeuroCAASCertificate object
+        """
+
+        foldername = jobprefix.format(s=self.stackname,t=timestamp)
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
+        print(fullpath)
+        cert = NeuroCAASCertificate(fullpath,parse = False)
+        return cert
+        
     def get_datasets(self,submitfile):    
         """Get the list of datasets associated with a given submit file. 
 
+        :param submitfile: path to a submit file. 
+        :returns: dictionary of instances.  
         """
         cert = self.get_certificate(submitfile)
         instance_cert = cert.get_instances()
@@ -512,6 +527,9 @@ class JobMonitor(LambdaMonitor):
     def get_datastatus(self,submitfile,dataset):    
         """Get the datastatus file associated with a given submit file and dataset. 
 
+        :param submitfile: path to a submit file. 
+        :param dataset: basename of the dataset to use.  
+        :returns: dictionary of instances.  
         """
         submitdict = self.register_submit(submitfile)
 
@@ -522,6 +540,19 @@ class JobMonitor(LambdaMonitor):
         status = NeuroCAASDataStatusLegacy(fullpath)
         return status
         
+    def get_datastatus_values(self,groupname,timestamp,dataset):    
+        """Get the datastatus file associated with a given group name, timestamp, and dataset. 
+
+        :param groupname: name of the group where we're going look for jobs. 
+        :param timestamp: timestamp field of a submit file. 
+        :param dataset: basename of the dataset to use.  
+        :returns: a NeuroCAASDataStatusLegacy object
+        """
+
+        foldername = jobprefix.format(s=self.stackname,t=timestamp)
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","DATASET_NAME:{}_STATUS.txt".format(dataset))
+        status = NeuroCAASDataStatusLegacy(fullpath)
+        return status
 
         
 

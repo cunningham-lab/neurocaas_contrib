@@ -1,7 +1,0 @@
-setup.py
-neurocaas_contrib/__init__.py
-neurocaas_contrib/local.py
-neurocaas_contrib.egg-info/PKG-INFO
-neurocaas_contrib.egg-info/SOURCES.txt
-neurocaas_contrib.egg-info/dependency_links.txt
-neurocaas_contrib.egg-info/top_level.txt

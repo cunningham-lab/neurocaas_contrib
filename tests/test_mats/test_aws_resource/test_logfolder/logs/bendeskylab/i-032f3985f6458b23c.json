@@ -1,0 +1,14 @@
+{
+  "instance-id": "i-032f3985f6458b23c",
+  "instance-type": "p3.2xlarge",
+  "spot": false,
+  "price": 3.06,
+  "databucket": "dlc-ncap-web",
+  "datapath": [
+    "bendeskylab/inputs/reachingvideo1.avi"
+  ],
+  "configpath": "bendeskylab/configs/NeuroCAAS_DLC_test.yaml",
+  "jobpath": "bendeskylab/results/job__dlc-ncap-web_1591217068",
+  "start": "2020-06-03T20:44:58Z",
+  "end": "2020-06-03T20:50:36Z"
+}
