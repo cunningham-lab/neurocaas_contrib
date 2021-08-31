@@ -128,6 +128,28 @@ def create_test_dir(path):
         with open(destination,"w") as f:    
             json.dump(contents,f)
                 
+def set_important_options(analysis_blueprint):
+    """Given an path to an analysis blueprint, asks the user for values to update that blueprint and updates. . 
+
+    :param analysis_blueprint: path to analysis blueprint. 
+    """
+    with open(analysis_blueprint,"r") as f:
+        blueprint_full = json.load(f)
+    blueprint_defaults = {"Analysis Name":blueprint_full["PipelineName"],
+            "Stage":blueprint_full["STAGE"],
+            "Ami":blueprint_full["Lambda"]["LambdaConfig"]["AMI"],
+            "Instance Type": blueprint_full["Lambda"]["LambdaConfig"]["INSTANCE_TYPE"]}
+    for k,default in blueprint_defaults.items():
+        value = click.prompt("Enter value for parameter {}".format(k),default = default)
+        blueprint_defaults[k] = value
+    blueprint_full["PipelineName"] = blueprint_defaults["Analysis Name"]
+    blueprint_full["STAGE"] = blueprint_defaults["Stage"]
+    blueprint_full["Lambda"]["LambdaConfig"]["AMI"] = blueprint_defaults["Ami"]
+    blueprint_full["Lambda"]["LambdaConfig"]["INSTANCE_TYPE"] = blueprint_defaults["Instance Type"]
+    with open(analysis_blueprint,"r") as f:
+        json.dump(blueprint_full,f,indent = 4)
+
+
 @click.group()
 @click.option(
     "--location",
@@ -201,8 +223,11 @@ def init(blueprint,location,analysis_name):
             os.mkdir(analysis_location) 
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
-            shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
-            ## New Feature 2 (08/18/21): add testing materials. 
+            analysis_blueprint = os.path.join(analysis_location,"stack_config_template.json")
+            shutil.copyfile(template_blueprint,analysis_blueprint)
+            ### add good options: 
+            set_important_options(analysis_blueprint)
+
             create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
@@ -211,7 +236,10 @@ def init(blueprint,location,analysis_name):
         if initialize:
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
-            shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
+            analysis_blueprint = os.path.join(analysis_location,"stack_config_template.json")
+            shutil.copyfile(template_blueprint,analysis_blueprint)
+            ### add good options: 
+            set_important_options(analysis_blueprint)
             create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
