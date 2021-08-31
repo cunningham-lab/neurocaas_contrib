@@ -62,7 +62,7 @@ def delete_ami_from_cli(develop_dict,force = False):
     analysis = develop_dict["config"]["PipelineName"]
     instance = develop_dict["instance_id"]
     if instance is not None: 
-        click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(analysis,instance),abort = True)
+        click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(instance, analysis),abort = True)
         ## delete instance.
         ami = NeuroCAASAMI.from_dict(develop_dict)
         message = ami.terminate_devinstance(force)
@@ -146,7 +146,7 @@ def set_important_options(analysis_blueprint):
     blueprint_full["STAGE"] = blueprint_defaults["Stage"]
     blueprint_full["Lambda"]["LambdaConfig"]["AMI"] = blueprint_defaults["Ami"]
     blueprint_full["Lambda"]["LambdaConfig"]["INSTANCE_TYPE"] = blueprint_defaults["Instance Type"]
-    with open(analysis_blueprint,"r") as f:
+    with open(analysis_blueprint,"w") as f:
         json.dump(blueprint_full,f,indent = 4)
 
 
@@ -180,7 +180,7 @@ def cli(ctx,location,analysis_name):
             develop_dict = defaultconfig.get("develop_dict",None)
 
         ctx = create_ctx(ctx,location,analysis_name,develop_dict)
-    except (FileNotFoundError,KeyError):    
+    except (FileNotFoundError,click.ClickException,KeyError):    
         if ctx.invoked_subcommand in no_blueprint:
             return ## move on and run configure. 
         else:
