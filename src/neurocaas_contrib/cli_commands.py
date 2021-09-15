@@ -64,21 +64,25 @@ def delete_ami_from_cli(develop_dict,force = False):
     if instance is not None: 
         click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(instance, analysis),abort = True)
         ## delete instance.
-        ami = NeuroCAASAMI.from_dict(develop_dict)
-        message = ami.terminate_devinstance(force)
-        if message == "No state change.":
-            return False
-        else:
-            try:
-                with open(configpath,"r") as f:
-                    config = json.load(f)
-                config["develop_dict"] = None    
-            except FileNotFoundError:    
-                click.echo("NeuroCAAS Contrib config file not found. Exiting.")
-                raise
-            with open(configpath,"w") as f:
-                json.dump(config,f,indent=4)
-            return True    
+        try:
+            ami = NeuroCAASAMI.from_dict(develop_dict)
+            message = ami.terminate_devinstance(force)
+            if message == "No state change.":
+                return False
+            else:
+                try:
+                    with open(configpath,"r") as f:
+                        config = json.load(f)
+                    config["develop_dict"] = None    
+                except FileNotFoundError:    
+                    click.echo("NeuroCAAS Contrib config file not found. Exiting.")
+                    raise
+                with open(configpath,"w") as f:
+                    json.dump(config,f,indent=4)
+                return True    
+        except FileNotFoundError:
+            # the stackconfig is in a different branch; if no config exists, we can forget about it. 
+            return True
     else:     
         click.echo("No development instance detected. Resetting session.")
 
