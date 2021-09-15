@@ -216,7 +216,7 @@ class NeuroCAASAMI(object):
                  "MaxCount":1,
                  "DryRun":DryRun,
                  "KeyName":self.config["Lambda"]["LambdaConfig"]["KEY_NAME"],
-                 "SecurityGroups":self.config["Lambda"]["LambdaConfig"]["SECURITY_GROUPS"],#[gpdict["securitygroupdevname"]],
+                 "SecurityGroups":[self.config["Lambda"]["LambdaConfig"]["SECURITY_GROUPS"]],#[gpdict["securitygroupdevname"]],
                  "IamInstanceProfile":{'Name':self.config["Lambda"]["LambdaConfig"]["IAM_ROLE"]},
                  "TagSpecifications" : return_tags(timeout)
                  }
