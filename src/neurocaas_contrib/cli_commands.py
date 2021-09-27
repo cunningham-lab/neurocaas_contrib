@@ -1422,6 +1422,8 @@ def get_ip(blueprint):
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
+    ami.instance.reload()
+    ami.ip = ami.instance.public_ip_address
     click.echo(ami.ip)
 
 @remote.command(help = "Get the lifetime of the instance")
