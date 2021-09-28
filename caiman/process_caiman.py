@@ -154,10 +154,16 @@ if fitting_mode == "fit":
 
     data_moviepath = os.path.join(output_loc,data_noext)
 
-    cnm.save(data_moviepath+'_cnmf_obj.hdf5')
-    np.savez(data_moviepath+"A.npz",cnm.estimates.A)
+    ## saving this first bc model save fails. 
     np.savez(data_moviepath+"C.npz",cnm.estimates.C)
     np.savez(data_moviepath+"R.npz",cnm.estimates.R)
+    np.savez(data_moviepath+"A.npz",cnm.estimates.A)
+
+    try:
+        cnm.save(data_moviepath+'_cnmf_obj.hdf5')
+    except ValueError as e:    
+        print("Ran into error while saving:")
+        print(e)
 
 elif fitting_mode == "refit":
     print("refitting, initialized from initial fit.")
@@ -189,7 +195,12 @@ elif fitting_mode == "refit":
 
     data_moviepath = os.path.join(output_loc,data_noext)
 
-    cnm2.save(data_moviepath+'_cnmf_obj.hdf5')
+    try:
+        cnm2.save(data_moviepath+'_cnmf_obj.hdf5')
+    except ValueError as e:    
+        print("Ran into error while saving:")
+        print(e)
+
     np.savez(data_moviepath+"A.npz",cnm2.estimates.A)
     np.savez(data_moviepath+"C.npz",cnm2.estimates.C)
     np.savez(data_moviepath+"R.npz",cnm2.estimates.R)
@@ -208,7 +219,12 @@ else:
 
     data_moviepath = os.path.join(output_loc,data_noext)
 
-    cnm.save(data_moviepath+'_cnmf_obj.hdf5')
+    try:
+        cnm.save(data_moviepath+'_cnmf_obj.hdf5')
+    except ValueError as e:    
+        print("Ran into error while saving:")
+        print(e)
+
     np.savez(data_moviepath+"A.npz",cnm.estimates.A)
     np.savez(data_moviepath+"C.npz",cnm.estimates.C)
     np.savez(data_moviepath+"R.npz",cnm.estimates.R)
