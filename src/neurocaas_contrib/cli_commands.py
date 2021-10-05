@@ -549,7 +549,7 @@ def monitor(ctx):
         help = "path to which we should write the resulting graphic.")
 @click.pass_obj
 def visualize_parallelism(blueprint,path):
-    analysis_name = blueprint["analysis_name"] 
+    analysis_name = convert_folder_to_stackname(blueprint["location"],blueprint["analysis_name"]) 
     user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     for user,userinfo in user_dict.items():
         parallelised = blueprint["monitormod"]["calculate_parallelism"](analysis_name,userinfo,user)
