@@ -7,7 +7,6 @@ project="DeepLabCut-live-GUI"
 
 datastore="$datafolder/model"
 configstore="$datafolder/config"
-echo $datastore,$configstore
 
 echo "----DOWNLOADING DATA----"
 neurocaas-contrib workflow get-data -f -o $userhome/$datastore/

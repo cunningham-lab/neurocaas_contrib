@@ -11,7 +11,6 @@ neurocaas-contrib workflow get-config -f -o $userhome/$configstore/
 
 datapath=$(neurocaas-contrib workflow get-datapath)
 configpath=$(neurocaas-contrib workflow get-configpath)
-echo $datapath,$configpath,"$userhome/$datastore"
 taskname=$(tar -xvf "$datapath" -C "$userhome/$datastore")
 echo "----DATA DOWNLOADED: $datapath. PARSING PARAMETERS.----"
 
