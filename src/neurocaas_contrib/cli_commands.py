@@ -547,8 +547,8 @@ def monitor(ctx):
         "--path",
         type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
         help = "path to which we should write the resulting graphic.")
-@click.option("-a",
-        "--analysis_name",
+@click.option("-b",
+        "--bucket_name",
         type = click.STRING,
         help = "name of the s3 bucket you want to list if not local.",
         default = None)
@@ -579,7 +579,7 @@ def see_users(blueprint,stackname):
         analysis_name = blueprint["analysis_name"] 
     else:
         analysis_name = convert_folder_to_stackname(blueprint["location"],stackname)    
-    user_dict = get_user_logs(analysis_name)
+    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
     click.echo(formatted)
