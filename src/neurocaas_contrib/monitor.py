@@ -121,6 +121,8 @@ def get_analysis_cost(path,bucket_name):
     """
     group_name = path
     assert len(group_name) > 0; "[JOB TERMINATE REASON] Can't locate the group that triggered analysis, making it impossible to determine incurred cost."
+    assert not group_name.endswith("/"), "don't include final slash for group name."
+    assert not group_name.startswith("/"), "don't include first slash for group name."
     logfolder_path = "logs/{}/".format(group_name)
     full_reportpath = os.path.join(logfolder_path,"i-")
     ## now get all of the computereport filenames:

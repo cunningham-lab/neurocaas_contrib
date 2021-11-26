@@ -536,10 +536,25 @@ def monitor(ctx):
     """Job monitoring functions.
     """
 
-    from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
-    moddict = {"calculate_parallelism":calculate_parallelism,"get_user_logs":get_user_logs,"postprocess_jobdict":postprocess_jobdict,"JobMonitor":JobMonitor}
+    from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor, get_analysis_cost
+    moddict = {"calculate_parallelism":calculate_parallelism,"get_user_logs":get_user_logs,"postprocess_jobdict":postprocess_jobdict,"JobMonitor":JobMonitor,"get_analysis_cost":get_analysis_cost}
     ctx.obj["monitormod"] = moddict 
     return
+
+@monitor.command(help = "get cost per user group.")
+@click.option("-g",
+        "--groupname",
+        type =click.STRING,
+        help = "name of group in s3 bucket")
+@click.option("-b",
+        "--bucketname",
+        type = click.STRING,
+        help = "name of s3 bucket")
+@click.pass_obj
+def calculate_groupcost(blueprint,groupname,bucketname):
+    cost = blueprint["monitormod"]["get_analysis_cost"](groupname,bucketname)
+    click.echo("Current Cost for group {}, analysis {}: {}".format(groupname,bucketname,cost))
+    
 
 ### cli commands to monitor the stack. 
 @monitor.command(help = "visualize the degree of parallelism of analysis usage.")
