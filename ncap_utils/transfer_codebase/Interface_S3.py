@@ -7,6 +7,8 @@ import boto3
 from boto3.s3.transfer import S3Transfer 
 import botocore 
 import threading
+
+
 ## from https://stackoverflow.com/questions/41827963/track-download-progress-of-s3-file-using-boto3-and-callbacks
 class ProgressPercentage_d(object):
     def __init__(self,client,BUCKET,KEY):
@@ -42,7 +44,11 @@ class ProgressPercentage_u(object):
             #            percentage))
             #sys.stdout.flush()
 
-def download(BUCKET_NAME,KEY,tempdir = '../vmnt/tmp_videos/'):
+def download(BUCKET_NAME,KEY,LOCALDIR):
+    """Takes an object at bucket_name,key, and writes it to directory localdir
+    :param: 
+
+    """
 
     s3 = boto3.resource('s3')
     # for the purposes of temporary storage, we only use the last bit of the name as an indentifier: 

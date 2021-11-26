@@ -23,6 +23,14 @@ logging.basicConfig(level = logging.WARNING)
     - dlc-ncap-demo
     - carceamonitored
 
+UPDATE 10/5/21    
+Rerunning in the directory logs_10_05_21 with the following additional analyses: 
+    - ensemble-dgp 
+    - label-job-create-web 
+    - bardnsr 
+    - carceamonitored (added new runs from the parallel runs you had before.)
+    - wfield-preprocess
+
 :param path: the path to the directory.
 
 """
