@@ -96,6 +96,9 @@ def log_process(command,logpath,s3status):
     ncc.update_instance_info(updatedict)
     with io.open(logpath,"wb") as writer, io.open(logpath,"rb",1) as reader:
         starttime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        if sys = "win":
+            raise not implementederror
+        else:    
         process = subprocess.Popen(command,stdout = writer,stderr = writer)
         ## initialize a legacy logging object. starttime
         sys.stdout.write("\n\n-------Start Process Log-------\n\n")
