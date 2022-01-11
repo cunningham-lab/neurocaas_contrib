@@ -34,9 +34,10 @@ class Test_NeuroCAASAMI():
     def test_init(self,mock_boto3_for_remote):
         ami = NeuroCAASAMI(os.path.join(test_mats))
 
-    def test_launch_devinstance(self,mock_boto3_for_remote):
+    @pytest.mark.parametrize("test_folder",[test_mats,os.path.join(test_mats,"no_sg")])
+    def test_launch_devinstance(self,mock_boto3_for_remote,test_folder):
         amiid = mock_boto3_for_remote
-        ami = NeuroCAASAMI(os.path.join(test_mats))
+        ami = NeuroCAASAMI(os.path.join(test_folder))
         ami.config["Lambda"]["LambdaConfig"]["AMI"] = amiid
         ami.launch_devinstance()
         ec2_client.terminate_instances(InstanceIds=[ami.instance.instance_id])
