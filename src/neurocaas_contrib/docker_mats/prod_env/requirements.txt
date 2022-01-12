@@ -21,7 +21,7 @@ coverage==5.2
 cryptography==3.3.2
 cycler==0.10.0
 decorator==4.4.0
-dnslib==0.9.14
+dnslib==0.9.17
 dnspython==1.16.0
 docker==4.2.2
 docopt==0.6.2
