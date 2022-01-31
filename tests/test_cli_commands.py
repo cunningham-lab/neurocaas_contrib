@@ -18,6 +18,7 @@ import neurocaas_contrib.Interface_S3 as Interface_S3
 
 testdir = os.path.dirname(os.path.abspath(__file__))
 test_log_mats = os.path.join(testdir,"test_mats","test_aws_resource","test_logfolder")
+groupname = "testsgstack-SecurityGroupDeploy-C2Q3PGSF77Y3" ## have the group name here that we're creating. 
 
 session = localstack_client.session.Session()
 ec2_resource = session.resource("ec2")
@@ -197,7 +198,9 @@ def mock_boto3_for_remote(monkeypatch):
     monkeypatch.setattr(neurocaas_contrib.remote,"sts",sts)
     instance = ec2_resource.create_instances(MaxCount = 1,MinCount=1)[0]
     ami = ec2_client.create_image(InstanceId=instance.instance_id,Name = "dummy")
+    ec2_resource.create_security_group(GroupName=groupname,Description = "creating security group here")
     yield instance,ami["ImageId"]
+    ec2_client.delete_security_group(GroupName=groupname)
 
 def eprint(result):
     """Takes a result object returned by CliRunner.invoke, and prints full associated stack trace, including chained exceptions. Automatically throws an error if the exit code is not 0 to increase visibility of these errors.. Returns the result take as a parameter so this function can be used to wrap calls to invoke.  

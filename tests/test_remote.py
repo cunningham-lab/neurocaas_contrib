@@ -7,6 +7,7 @@ from testpaths import get_dict_file
 from neurocaas_contrib.remote import NeuroCAASAMI
 import localstack_client.session
 import os
+from test_cli_commands import groupname
 
 filepath = os.path.realpath(__file__)
 testpath = os.path.dirname(filepath)
@@ -28,7 +29,9 @@ def mock_boto3_for_remote(monkeypatch):
     monkeypatch.setattr(neurocaas_contrib.remote,"sts",sts)
     instance = ec2_resource.create_instances(MaxCount = 1,MinCount=1)[0]
     ami = ec2_client.create_image(InstanceId=instance.instance_id,Name = "dummy")
+    ec2_resource.create_security_group(GroupName=groupname,Description = "creating security group here")
     yield ami["ImageId"]
+    ec2_client.delete_security_group(GroupName=groupname)
 
 class Test_NeuroCAASAMI():
     def test_init(self,mock_boto3_for_remote):
