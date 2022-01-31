@@ -41,9 +41,13 @@ class Test_NeuroCAASAMI():
     def test_launch_devinstance(self,mock_boto3_for_remote,test_folder):
         amiid = mock_boto3_for_remote
         ami = NeuroCAASAMI(os.path.join(test_folder))
+        if test_folder.endswith("no_sg"):
+            ec2_resource.create_security_group(GroupName = "testsgstack-SecurityGroupDev-1NQJIDBJG16KK",Description = "add sg for devinstance") 
         ami.config["Lambda"]["LambdaConfig"]["AMI"] = amiid
         ami.launch_devinstance()
         ec2_client.terminate_instances(InstanceIds=[ami.instance.instance_id])
+        if test_folder.endswith("no_sg"):
+            ec2_client.delete_security_group(GroupName = "testsgstack-SecurityGroupDev-1NQJIDBJG16KK") 
         assert ami.instance.image_id == amiid
 
     def test_create_devami(self,mock_boto3_for_remote):
