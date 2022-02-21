@@ -6,6 +6,7 @@
 import numpy as np
 import logging
 import boto3
+import sys
 import localstack_client.session
 from botocore.exceptions import ClientError,NoRegionError
 import json
@@ -215,19 +216,38 @@ def get_user_logs(bucket_name):
     :param bucket_name: the name of the s3 bucket we are looking for
     """
 
+    keepgoing = True
+    list_counter = 0
+    checktruncated = False
+    all_contents = []
     try:
         print(bucket_name)
-        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs")
+        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs",MaxKeys=1000)
+        all_contents+=l["Contents"]
     except ClientError as e:
         print(e.response["Error"])
         raise
-    checktruncated = l["IsTruncated"]
+    
+    while l["IsTruncated"]: 
+        if 'NextContinuationToken' not in l:
+            print(f'NextContinuationToken is not in response while IsTruncated = {l["IsTruncated"]}',
+                 file=sys.stderr)
+            sys.exit(1)
+
+        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs",MaxKeys=1000,
+            ContinuationToken=l['NextContinuationToken'])
+        all_contents+=l["Contents"]
+        list_counter += 1
+        print(f'list {list_counter}', file=sys.stderr)
+
     if checktruncated:
-        print("WARNING: not listing all results.")
+        print("WARNING: not listed all results.")
     else:
-        print("Listing all results.")
+        print("Listed all results.")
 
     ## Get Users
+
+    l["Contents"] = all_contents
     users = get_users(l)
     users_dict = sort_activity_by_users(l,users)
     return users_dict
