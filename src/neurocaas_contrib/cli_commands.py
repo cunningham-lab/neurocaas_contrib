@@ -543,9 +543,17 @@ def monitor(ctx):
         "--path",
         type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
         help = "path to which we should write the resulting graphic.")
+@click.option("-n",
+        "--stackname",
+        type = click.STRING,
+        help = "name of the s3 bucket we want to get data for",
+        default = None)
 @click.pass_obj
-def visualize_parallelism(blueprint,path):
-    analysis_name = blueprint["analysis_name"] 
+def visualize_parallelism(blueprint,path,stackname):
+    if stackname is None:
+        analysis_name = convert_folder_to_stackname(blueprint["location"],blueprint["analysis_name"]) 
+    else:    
+        analysis_name = stackname    
     user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     for user,userinfo in user_dict.items():
         parallelised = blueprint["monitormod"]["calculate_parallelism"](analysis_name,userinfo,user)
