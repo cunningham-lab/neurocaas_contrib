@@ -557,7 +557,8 @@ def visualize_parallelism(blueprint,path,stackname):
     user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     for user,userinfo in user_dict.items():
         parallelised = blueprint["monitormod"]["calculate_parallelism"](analysis_name,userinfo,user)
-        postprocessed = blueprint["monitormod"]["postprocess_jobdict"](parallelised)
+        #postprocessed = blueprint["monitormod"]["postprocess_jobdict"](parallelised)
+        postprocessed = parallelised
         now = str(datetime.datetime.now())
         write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
         with open(write_path,"w") as f:
