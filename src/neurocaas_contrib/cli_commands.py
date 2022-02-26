@@ -1133,6 +1133,18 @@ def get_configpath(obj):
     configpath = ncsm.get_configpath()
     print(configpath)
 
+@workflow.command(help = "get bucket name registered if registered.")    
+@click.pass_obj
+def get_bucket(obj):
+    """Gets the bucket of the dataset. Prints nothing if locally registered data. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    bucketname = ncsm.get_bucket_name()
+    if bucketname is not None:
+        print(bucketname)
+
 @workflow.command(help = "get the path to the file you registered")    
 @click.option("-n",
         "--name",

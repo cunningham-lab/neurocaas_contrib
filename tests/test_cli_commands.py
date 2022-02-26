@@ -780,6 +780,17 @@ class Test_workflow():
             print(dataname.output,"all output")
             assert dataname.output == "file.json\n"
 
+    def test_get_bucket(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-bucket"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            dataname = eprint(runner.invoke(cli,["workflow","get-bucket"]))
+            print(dataname.output,"all output")
+            assert dataname.output == "testinterface\n"
+
     def test_get_configname(self,setup_simple_bucket):            
         runner = CliRunner()
         with runner.isolated_filesystem():
