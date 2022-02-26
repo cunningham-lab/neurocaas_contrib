@@ -1,0 +1,14 @@
+{
+  "instance-id": "i-088037e782d8dfdce",
+  "instance-type": "p3.2xlarge",
+  "spot": true,
+  "price": 1.683,
+  "databucket": "dlc-ncap-web",
+  "datapath": [
+    "bendeskylab/inputs/Mm3_Mm4L.mp4"
+  ],
+  "configpath": "bendeskylab/configs/config_try1.yaml",
+  "jobpath": "bendeskylab/results/job__dlc-ncap-web_1591999650",
+  "start": "2020-06-12T22:08:03Z",
+  "end": "2020-06-12T22:13:20Z"
+}

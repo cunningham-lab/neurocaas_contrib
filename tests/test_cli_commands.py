@@ -18,6 +18,7 @@ import neurocaas_contrib.Interface_S3 as Interface_S3
 
 testdir = os.path.dirname(os.path.abspath(__file__))
 test_log_mats = os.path.join(testdir,"test_mats","test_aws_resource","test_logfolder")
+groupname = "testsgstack-SecurityGroupDeploy-C2Q3PGSF77Y3" ## have the group name here that we're creating. 
 
 session = localstack_client.session.Session()
 ec2_resource = session.resource("ec2")
@@ -81,6 +82,19 @@ def get_paths(rootpath):
                 else:
                     dirpaths.append(localdir)
     return paths,dirpaths            
+
+@pytest.fixture(autouse = True)
+def remote_config_files():
+    ## Removes the file at configpath variable after tests are done. Allows us to write to a single fixed location without fear. 
+    yield 
+    try:
+        os.remove(configpath)
+    except FileNotFoundError:    
+        pass
+    try:
+        os.remove(storagepath)
+    except FileNotFoundError:    
+        pass
 
 @pytest.fixture
 def remove_container(request):
@@ -174,6 +188,7 @@ def setup_simple_bucket(monkeypatch):
         writeobj.put(Body = content)
     return bucketname,username,contents,s3_client,s3_resource    
 
+
 @pytest.fixture
 def mock_boto3_for_remote(monkeypatch):
     monkeypatch.setattr(neurocaas_contrib.remote,"ec2_resource",ec2_resource)
@@ -183,7 +198,9 @@ def mock_boto3_for_remote(monkeypatch):
     monkeypatch.setattr(neurocaas_contrib.remote,"sts",sts)
     instance = ec2_resource.create_instances(MaxCount = 1,MinCount=1)[0]
     ami = ec2_client.create_image(InstanceId=instance.instance_id,Name = "dummy")
+    ec2_resource.create_security_group(GroupName=groupname,Description = "creating security group here")
     yield instance,ami["ImageId"]
+    ec2_client.delete_security_group(GroupName=groupname)
 
 def eprint(result):
     """Takes a result object returned by CliRunner.invoke, and prints full associated stack trace, including chained exceptions. Automatically throws an error if the exit code is not 0 to increase visibility of these errors.. Returns the result take as a parameter so this function can be used to wrap calls to invoke.  
@@ -222,6 +239,60 @@ def test_cli_init_noname(create,created):
     with runner.isolated_filesystem():
         result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,create)))
         assert os.path.exists("./"+name+"/stack_config_template.json") == created
+
+@pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on local storage loc..")
+def test_cli_init_location_memory_default():
+    """If you provide a location once, this should be the default and you should not have to provide it ever again.  
+
+    """
+    runner = CliRunner()
+    name0 = "bare_default"
+
+    with runner.isolated_filesystem():
+        ## bare init run will write to local envs with warning
+        result = eprint(runner.invoke(cli,["init","--analysis-name",name0],input = "Y"))
+
+        assert os.path.exists(os.path.join(default_write_loc,name0,"stack_config_template.json")), "original analysis should exist"
+
+def test_cli_init_location_memory():
+    """If you provide a location once, this should be the default and you should not have to provide it ever again.  
+    Note the difference between liness 263 and 265- providing analysis-name and location direct to cli is a shortcut that frankly we should probably get rid of. 
+
+    """
+    runner = CliRunner()
+    name1 = "configure_memory"
+    name2 = "remember"
+
+    with runner.isolated_filesystem():
+        ## initialized location 
+        result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name1],input = "Y"))
+        ## subequent inits will write to this location. 
+        result = eprint(runner.invoke(cli,["init","--analysis-name",name2],input = "Y"))
+
+        assert os.path.exists(os.path.join(".",name1,"stack_config_template.json")), "original analysis should exist"
+        assert os.path.exists(os.path.join(".",name2,"stack_config_template.json")), "second analysis should be written to same loc. "
+
+
+def test_cli_init_test_mats():    
+    """Check that test materials are copied into a new directory too. 
+
+    """
+    runner = CliRunner()
+    name = "test_mats"
+    with runner.isolated_filesystem():
+        result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name],input = "Y"))
+        assert os.path.exists(os.path.join(".",name,"test_resources"))
+        for f in ["exampledevsubmit.json","s3_putevent.json","main_func_env_vars.json","cloudwatch_startevent.json","cloudwatch_termevent.json","computereport_1234567.json","computereport_2345678.json"]:
+            with open(os.path.join(".",name,"test_resources",f)) as fobj:
+                fileelem = json.load(fobj)
+                if f == "putevent":
+                    assert fileelem["Records"][0]["s3"]["bucket"]["analysis_name"] == analysis_name
+                    assert fileelem["Records"][0]["s3"]["bucket"]["arn"] == "arn:aws:s3:::{}".format(analysis_name)
+                elif f == "main_env_vars":    
+                    assert fileelem["FigLambda"]["BUCKET_NAME"] == analysis_name
+                #if f in {"exampledevsubmit.json":,"main_func_env_vars.json":{"FigLambda":{"BUCKET_NAME":name}},"s3_putevent.json":{"Records":[{"s3":{"bucket":j}}]}}:
+
+
 
 def test_cli_get_blueprint():
     runner = CliRunner()
@@ -402,7 +473,7 @@ def test_read_yaml():
     runner = CliRunner()
     name = "getyaml"
     result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
-    result = eprint(runner.invoke(cli,["scripting","read-yaml","--path","./test_mats/config.yaml","--field","scorer"]))
+    result = eprint(runner.invoke(cli,["scripting","read-yaml","--path",os.path.join(testdir,"test_mats/config.yaml"),"--field","scorer"]))
     assert result.output == "kelly\n"
 
 ### Test monitoring functions. 
@@ -432,8 +503,6 @@ def test_visualize_parallelism(setup_log_bucket):
                 assert count == 132
 
 
-
-
 class Test_workflow():    
     def test_workflow(self):
         runner = CliRunner()
@@ -444,7 +513,7 @@ class Test_workflow():
         runner = CliRunner()
         with runner.isolated_filesystem():
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             assert os.path.exists("./registration.json")
@@ -455,7 +524,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-p","keypath/key.txt"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -480,7 +549,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -505,7 +574,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-b","bucketname","-k","keypath/key.txt"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -530,7 +599,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b","bucketname","-k","keypath/"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -557,7 +626,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","get-data","-o","outputpath","-f","-d"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -600,7 +669,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","get-config","-o","outputpath","-f","-d"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -643,7 +712,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","get-file","-n","filename","-o","outputpath","-f","-d"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -689,7 +758,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","put-result","-r","file.txt","-d"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k","groupname/inputs/loc"]))
@@ -710,6 +779,17 @@ class Test_workflow():
             dataname = eprint(runner.invoke(cli,["workflow","get-dataname"]))
             print(dataname.output,"all output")
             assert dataname.output == "file.json\n"
+
+    def test_get_bucket(self,setup_simple_bucket):            
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with pytest.raises(AssertionError):
+                result = eprint(runner.invoke(cli,["workflow","get-bucket"]))
+            result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","testinterface","-k","user/file.json"]))
+            dataname = eprint(runner.invoke(cli,["workflow","get-bucket"]))
+            print(dataname.output,"all output")
+            assert dataname.output == "testinterface\n"
 
     def test_get_configname(self,setup_simple_bucket):            
         runner = CliRunner()
@@ -819,7 +899,7 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","cleanup"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
-            with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
+            with open(storagepath, "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
@@ -838,13 +918,13 @@ class Test_remote():
         with runner.isolated_filesystem():
             os.mkdir("./logs")
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict = json.load(f)
             assert configdict["develop_dict"] == {}
             #print(configdict)
             #assert 0 
             result = eprint(runner.invoke(cli,["remote","develop-remote"]))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict_full = json.load(f)
             assert type(configdict_full["develop_dict"]["config"]) == dict
 
@@ -855,11 +935,11 @@ class Test_remote():
         with runner.isolated_filesystem():
             os.mkdir("./logs")
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict = json.load(f)
             assert configdict["develop_dict"] == None
             result = eprint(runner.invoke(cli,["remote","develop-remote"]))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict_full = json.load(f)
             assert type(configdict_full["develop_dict"]["config"]) == dict
 
@@ -877,17 +957,77 @@ class Test_remote():
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
             with open(os.path.join("./",bucket_name,"stack_config_template.json")) as f:
                 stackconfig = json.load(f)
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict = json.load(f)
             assert configdict["develop_dict"] == None 
             result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict_full = json.load(f)
      
             ## assert that the development history saved into the cli tool config file is the same that was recorded in the blueprint. 
             assert type(configdict_full["develop_dict"]) == dict
 
         assert configdict_full["develop_dict"]["config"] == stackconfig
+
+    def test_start_session(self,setup_log_bucket,mock_boto3_for_remote):    
+        """Start session is develop-remote v2. 
+
+        """
+        instance,ami = mock_boto3_for_remote
+        amiid = "bs"
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            ## now we have a session with mock instance attached. 
+            eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"] is not None ## starting new session should not have gone through. 
+            ## first pass without forcing: should still have the develop dict attached. 
+            result = eprint(runner.invoke(cli,["remote","start-session"],input = "Y"))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"] is not None ## starting new session should not have gone through. 
+                assert d["develop_dict"]["instance_id"] is not None ## starting new session should not have gone through. 
+            result = eprint(runner.invoke(cli,["remote","start-session","-f"],input = "Y"))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"]["instance_id"] is None ## starting new session should not have gone through. 
+
+    def test_end_session(self,setup_log_bucket,mock_boto3_for_remote):    
+        """end session ends 
+
+        """
+        instance,ami = mock_boto3_for_remote
+        amiid = "bs"
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            ## now we have a session with mock instance attached. 
+            eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"] is not None ## starting new session should not have gone through. 
+            ## first pass without forcing: should still have the develop dict attached. 
+            result = eprint(runner.invoke(cli,["remote","end-session"],input = "Y"))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"] is not None ## starting new session should not have gone through. 
+                assert d["develop_dict"]["instance_id"] is not None ## starting new session should not have gone through. 
+            result = eprint(runner.invoke(cli,["remote","end-session","-f"],input = "Y"))
+            with open(configpath) as f:
+                d = json.load(f)
+                assert d["develop_dict"] is None ## starting new session should not have gone through. 
 
     def test_assign_instance(self,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
@@ -901,7 +1041,7 @@ class Test_remote():
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
             result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict_full = json.load(f)
 
             assert configdict_full["develop_dict"]["instance_id"] == instance.id
@@ -917,7 +1057,7 @@ class Test_remote():
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
             result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","launch-devinstance","--amiid",ami]))
-            with open(".neurocaas_contrib_config_test.json") as f:
+            with open(configpath) as f:
                 configdict_full = json.load(f)
             instance = ec2_resource.Instance(configdict_full["develop_dict"]["instance_id"])    
             assert instance.image_id == ami
@@ -1005,6 +1145,22 @@ class Test_remote():
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
 
     ### Test monitoring functions. 
+
+    def test_convert_folder_to_stackname(self):
+        runner = CliRunner()
+        name = "foldername"
+        with runner.isolated_filesystem():
+            result = eprint(runner.invoke(cli,["init","--location","./","--analysis-name",name],input = "Y"))
+            stackname = "./"+name+"/stack_config_template.json"
+            assert os.path.exists(stackname)==True
+            with open(stackname,"r") as f:
+                stackdict = json.load(f)
+                stackdict["PipelineName"] = "stackname"
+            with open(stackname,"w") as f:    
+                json.dump(stackdict,f)
+            assert convert_folder_to_stackname("./",name) == "stackname"        
+        traceback.print_exception(*result.exc_info) ## this is pretty critical for active debugging. 
+
     @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
     def test_update_blueprint(self,setup_log_bucket,mock_boto3_for_remote,monkeypatch):
         monkeypatch.setattr(neurocaas_contrib.remote,"home_repo","")

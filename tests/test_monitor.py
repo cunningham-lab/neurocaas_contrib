@@ -201,6 +201,15 @@ class Test_JobMonitor():
         jm = monitor.JobMonitor(stackname)
         cert = jm.get_certificate(path)
 
+    def test_get_certificate_values(self,tmp_path):
+        submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        cert = jm.get_certificate_values(submitdict["timestamp"],submitdict["configname"].split("/",1)[0])
+
     def test_get_datasets(self,tmp_path):
         submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
         path = str(tmp_path / "submit.json")
@@ -218,6 +227,16 @@ class Test_JobMonitor():
         stackname = "dgp-refactor"    
         jm = monitor.JobMonitor(stackname)
         status = jm.get_datastatus(path,"fish1_untrained.zip")
+        print(status.rawfile)
+
+    def test_get_datastatus_values(self,tmp_path):
+        submitdict = {"dataname":"reviewers/inputs/fish1_untrained.zip","configname":"reviewers/configs/fake","timestamp":"0513fish1train"}
+        path = str(tmp_path / "submit.json")
+        with open(path, "w") as f:
+            json.dump(submitdict,f)
+        stackname = "dgp-refactor"    
+        jm = monitor.JobMonitor(stackname)
+        status = jm.get_datastatus_values(submitdict["timestamp"],submitdict["configname"].split("/",1)[0],"fish1_untrained.zip")
         print(status.rawfile)
             
 class Test_LogMonitor():

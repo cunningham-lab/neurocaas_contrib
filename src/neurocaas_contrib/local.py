@@ -44,7 +44,7 @@ elif mode == "test":
     default_repo = "bash"
     default_neurocaas_repo = "neurocaas/test"
     default_neurocaas_repo_tag = "base"
-    default_base_command = "ls"
+    default_base_command = "sleep 10"
     default_param_command = "/bin/sh -c {}"
     repo_path = pkg_resources.resource_filename("neurocaas_contrib","docker_mats/test_env/")
 

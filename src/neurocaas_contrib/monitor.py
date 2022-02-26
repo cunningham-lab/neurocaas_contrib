@@ -6,8 +6,9 @@
 import numpy as np
 import logging
 import boto3
+import sys
 import localstack_client.session
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError,NoRegionError
 import json
 from datetime import timedelta
 import time
@@ -17,8 +18,14 @@ from .log import NeuroCAASCertificate,NeuroCAASDataStatusLegacy
 
 s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
-cfn_client = boto3.client("cloudformation")
-logs_client = boto3.client("logs")
+
+try:
+    cfn_client = boto3.client("cloudformation")
+    logs_client = boto3.client("logs")
+except NoRegionError: ## Handle ReadTheDocs Build.    
+    cfn_client = boto3.client("cloudformation",region_name = os.environ["REGION"])
+    logs_client = boto3.client("logs",region_name = os.environ["REGION"])
+
 
 jobprefix = "job__{s}_{t}" # parametrized by stackname, timestamp. 
 
@@ -209,19 +216,38 @@ def get_user_logs(bucket_name):
     :param bucket_name: the name of the s3 bucket we are looking for
     """
 
+    keepgoing = True
+    list_counter = 0
+    checktruncated = False
+    all_contents = []
     try:
         print(bucket_name)
-        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs")
+        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs",MaxKeys=1000)
+        all_contents+=l["Contents"]
     except ClientError as e:
         print(e.response["Error"])
         raise
-    checktruncated = l["IsTruncated"]
+    
+    while l["IsTruncated"]: 
+        if 'NextContinuationToken' not in l:
+            print(f'NextContinuationToken is not in response while IsTruncated = {l["IsTruncated"]}',
+                 file=sys.stderr)
+            sys.exit(1)
+
+        l = s3_client.list_objects_v2(Bucket=bucket_name,Prefix = "logs",MaxKeys=1000,
+            ContinuationToken=l['NextContinuationToken'])
+        all_contents+=l["Contents"]
+        list_counter += 1
+        print(f'list {list_counter}', file=sys.stderr)
+
     if checktruncated:
-        print("WARNING: not listing all results.")
+        print("WARNING: not listed all results.")
     else:
-        print("Listing all results.")
+        print("Listed all results.")
 
     ## Get Users
+
+    l["Contents"] = all_contents
     users = get_users(l)
     users_dict = sort_activity_by_users(l,users)
     return users_dict
@@ -484,16 +510,35 @@ class JobMonitor(LambdaMonitor):
         """
         submitdict = self.register_submit(submitfile)
 
-        groupname = submitdict["dataname"].split("/",1)[0]
+        if type(submitdict["dataname"]) == str:
+            groupname = submitdict["dataname"].split("/",1)[0]
+        elif type(submitdict["dataname"]) == list:
+            groupname = submitdict["dataname"][0].split("/",1)[0]
 
         foldername = jobprefix.format(s=self.stackname,t=submitdict["timestamp"])
         fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
-        cert = NeuroCAASCertificate(fullpath)
+        cert = NeuroCAASCertificate(fullpath,parse = False)
         return cert
 
+    def get_certificate_values(self,timestamp,groupname):
+        """Get the certificate file given only the timestamp and groupname of a job (useful if running as dev). 
+
+        :param groupname: name of the group where we're going look for jobs. 
+        :param timestamp: timestamp field of a submit file. 
+        :returns: a NeuroCAASCertificate object
+        """
+
+        foldername = jobprefix.format(s=self.stackname,t=timestamp)
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","certificate.txt")
+        print(fullpath)
+        cert = NeuroCAASCertificate(fullpath,parse = False)
+        return cert
+        
     def get_datasets(self,submitfile):    
         """Get the list of datasets associated with a given submit file. 
 
+        :param submitfile: path to a submit file. 
+        :returns: dictionary of instances.  
         """
         cert = self.get_certificate(submitfile)
         instance_cert = cert.get_instances()
@@ -502,6 +547,9 @@ class JobMonitor(LambdaMonitor):
     def get_datastatus(self,submitfile,dataset):    
         """Get the datastatus file associated with a given submit file and dataset. 
 
+        :param submitfile: path to a submit file. 
+        :param dataset: basename of the dataset to use.  
+        :returns: dictionary of instances.  
         """
         submitdict = self.register_submit(submitfile)
 
@@ -512,6 +560,19 @@ class JobMonitor(LambdaMonitor):
         status = NeuroCAASDataStatusLegacy(fullpath)
         return status
         
+    def get_datastatus_values(self,groupname,timestamp,dataset):    
+        """Get the datastatus file associated with a given group name, timestamp, and dataset. 
+
+        :param groupname: name of the group where we're going look for jobs. 
+        :param timestamp: timestamp field of a submit file. 
+        :param dataset: basename of the dataset to use.  
+        :returns: a NeuroCAASDataStatusLegacy object
+        """
+
+        foldername = jobprefix.format(s=self.stackname,t=timestamp)
+        fullpath = os.path.join("s3://",self.stackname,groupname,"results",foldername,"logs","DATASET_NAME:{}_STATUS.txt".format(dataset))
+        status = NeuroCAASDataStatusLegacy(fullpath)
+        return status
 
         
 

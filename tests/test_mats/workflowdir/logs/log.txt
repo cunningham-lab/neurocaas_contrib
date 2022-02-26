@@ -1,0 +1,4 @@
+Could not find conda environment: env
+You can list all discoverable environments with `conda info --envs`.
+
+/Users/taigaabe/anaconda3/etc/profile.d/conda.sh: line 55: 1: command not found

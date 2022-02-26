@@ -8,12 +8,13 @@ import json
 import os
 from .blueprint import Blueprint
 from .local import NeuroCAASImage,NeuroCAASLocalEnv
-from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager
+from .scripting import get_yaml_field,parse_zipfile,NeuroCAASScriptManager,mkdir_notexists
 
 ## template location settings:
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 template_dir= os.path.join(dir_loc,"template_mats") 
 default_write_loc = os.path.join(dir_loc,"local_envs")
+testmatdir = os.path.join(dir_loc,"stack_test_mats")
 
 if "pytest" in sys.modules:
     mode = "test"
@@ -22,10 +23,10 @@ else:
 
 if mode == "test":
     configname = ".neurocaas_contrib_config_test.json"
-    configpath = os.path.join(".",configname)
+    configpath = os.path.join(template_dir,configname)
     ## "separate for data storage during actual runs"
     storagename = ".neurocaas_contrib_storageloc_test.json" 
-    storagepath = os.path.join(".",storagename)
+    storagepath = os.path.join(template_dir,storagename)
 
 else:    
     ## configuration file settings:
@@ -37,6 +38,7 @@ else:
 def save_ami_to_cli(ami):
     """Save a dictionary representing the development history to the cli's config file.
 
+    :param ami: NeuroCAAS Ami object
     """
     amiinfo = ami.to_dict()
 
@@ -49,6 +51,104 @@ def save_ami_to_cli(ami):
         raise
     with open(configpath,"w") as f:
         json.dump(config,f,indent = 4)
+        
+
+def delete_ami_from_cli(develop_dict,force = False):
+    """Clears instance and blueprint from cli's config file. 
+    :param develop_dict: the development dictionary that holds details about development you have already done.  
+    :returns: bool- whether or not deletion happened
+    """
+    from .remote import NeuroCAASAMI
+    analysis = develop_dict["config"]["PipelineName"]
+    instance = develop_dict["instance_id"]
+    if instance is not None: 
+        click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(instance, analysis),abort = True)
+        ## delete instance.
+        ami = NeuroCAASAMI.from_dict(develop_dict)
+        message = ami.terminate_devinstance(force)
+        if message == "No state change.":
+            return False
+        else:
+            try:
+                with open(configpath,"r") as f:
+                    config = json.load(f)
+                config["develop_dict"] = None    
+            except FileNotFoundError:    
+                click.echo("NeuroCAAS Contrib config file not found. Exiting.")
+                raise
+            with open(configpath,"w") as f:
+                json.dump(config,f,indent=4)
+            return True    
+    else:     
+        click.echo("No development instance detected. Resetting session.")
+
+def create_ctx(ctx,location,analysis_name,develop_dict):
+    """helper function to attempt to create as much of the context object as is available. 
+
+    :param ctx: click context object, used to pass state to subcommands
+    :param location: path to the base blueprint directory. (or None)
+    :param analysis_name: name of the analysis we want to find in `location`. (or None)
+    :param developdict: dictionary holding details of development (or None)
+    """
+    ctx.obj = {}
+    ctx.obj["location"] = location
+    ctx.obj["analysis_name"] = analysis_name
+    ctx.obj["develop_dict"] = develop_dict
+
+    try:
+        ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
+    except FileNotFoundError as e: ## A note here. Create_CTX is triggered with analysis and location parameters passed directly to the cli command.  
+        raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
+    return ctx
+
+def create_test_dir(path):
+    """Given an analysis location, creates a directory within it with testing resources that are configured correctly. 
+    :param path: path to the analysis folder (location where `stack_config_template.json` files are stored).  
+    """
+    analysis_name = os.path.basename(path) 
+    local_testfolder = os.path.join(path,"test_resources")
+    os.mkdir(local_testfolder)
+    test_filepaths = {"submitfile":os.path.join(testmatdir,"exampledevsubmit.json"),
+                      "putevent":os.path.join(testmatdir,"s3_putevent.json"),
+                      "main_env_vars":os.path.join(testmatdir,"main_func_env_vars.json"),
+                      "cloudwatch_start":os.path.join(testmatdir,"cloudwatch_startevent.json"),
+                      "cloudwatch_end":os.path.join(testmatdir,"cloudwatch_termevent.json"),
+                      "computereport1":os.path.join(testmatdir,"computereport_1234567.json"),
+                      "compuretreport2":os.path.join(testmatdir,"computereport_2345678.json")} 
+    for filetype,filepath in test_filepaths.items():
+        filename = os.path.basename(filepath)
+        destination = os.path.join(local_testfolder,filename)
+        with open(filepath,"r") as f:
+            contents = json.load(f)
+        if filetype == "putevent":
+            contents["Records"][0]["s3"]["bucket"]["name"] = analysis_name
+            contents["Records"][0]["s3"]["bucket"]["arn"] = "arn:aws:s3:::{}".format(analysis_name)
+        elif filetype == "main_env_vars":    
+            contents["FigLambda"]["BUCKET_NAME"] = analysis_name 
+        with open(destination,"w") as f:    
+            json.dump(contents,f)
+                
+def set_important_options(analysis_blueprint):
+    """Given an path to an analysis blueprint, asks the user for values to update that blueprint and updates. . 
+
+    :param analysis_blueprint: path to analysis blueprint. 
+    """
+    with open(analysis_blueprint,"r") as f:
+        blueprint_full = json.load(f)
+    blueprint_defaults = {"Analysis Name":blueprint_full["PipelineName"],
+            "Stage":blueprint_full["STAGE"],
+            "Ami":blueprint_full["Lambda"]["LambdaConfig"]["AMI"],
+            "Instance Type": blueprint_full["Lambda"]["LambdaConfig"]["INSTANCE_TYPE"]}
+    for k,default in blueprint_defaults.items():
+        value = click.prompt("Enter value for parameter {}".format(k),default = default)
+        blueprint_defaults[k] = value
+    blueprint_full["PipelineName"] = blueprint_defaults["Analysis Name"]
+    blueprint_full["STAGE"] = blueprint_defaults["Stage"]
+    blueprint_full["Lambda"]["LambdaConfig"]["AMI"] = blueprint_defaults["Ami"]
+    blueprint_full["Lambda"]["LambdaConfig"]["INSTANCE_TYPE"] = blueprint_defaults["Instance Type"]
+    with open(analysis_blueprint,"w") as f:
+        json.dump(blueprint_full,f,indent = 4)
+
 
 @click.group()
 @click.option(
@@ -68,35 +168,29 @@ def cli(ctx,location,analysis_name):
     """
     ## Determine those commands for which you don't require a specific blueprint.
     no_blueprint = ['init','describe-analyses',"scripting","workflow"]
-    if ctx.invoked_subcommand in no_blueprint:
-        return ## move on and run configure. 
-    else:
+    try:
+        with open(configpath,"r") as f:
+            defaultconfig = json.load(f)
+
         if location is None or analysis_name is None:
-            try:
-                with open(configpath,"r") as f:
-                    defaultconfig = json.load(f)
-            except FileNotFoundError:    
-                raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
             if location is None:
                 location = defaultconfig["location"]
             if analysis_name is None:    
                 analysis_name = defaultconfig["analysis_name"]
             develop_dict = defaultconfig.get("develop_dict",None)
 
-        ctx.obj = {}
-        ctx.obj["location"] = location
-        ctx.obj["analysis_name"] = analysis_name
-        ctx.obj["develop_dict"] = develop_dict
-        try:
-            ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
-        except FileNotFoundError as e:
-            raise click.ClickException("Blueprint for analysis {} not found in location {}. Run `neurocaas_contrib init` first".format(ctx.obj["analysis_name"],ctx.obj["location"]))
+        ctx = create_ctx(ctx,location,analysis_name,develop_dict)
+    except (FileNotFoundError,click.ClickException,KeyError):    
+        if ctx.invoked_subcommand in no_blueprint:
+            return ## move on and run configure. 
+        else:
+            raise click.ClickException("Configuration file not found. Run `neurocaas_contrib init` to initialize the cli.")
 
 @cli.command(help ="configure CLI to work with certain analysis.")
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc,
+    default=None,
     type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True),
         )
 @click.option(
@@ -110,6 +204,13 @@ def init(blueprint,location,analysis_name):
 
     Sets up the command line utility to work with a certain analysis by default. Must be run on first usage of the CLI, and run to create new analysis folders in given locations. If analysis folder does not yet exist, creates it.  
     """
+    ## New Feature 1 (08/18/21): Use defaults for location:  
+    if location is None:
+        try:
+            location = blueprint["location"] ## we expect this to be none if not given. 
+        except (KeyError,TypeError):    
+            click.echo("No location given and no previous location found. Defaulting to {} ".format(default_write_loc))
+            location = default_write_loc
 
     analysis_location = os.path.join(location,analysis_name)
     ## Initialize state variables to determine whether or not we should write to the config file. 
@@ -122,7 +223,12 @@ def init(blueprint,location,analysis_name):
             os.mkdir(analysis_location) 
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
-            shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
+            analysis_blueprint = os.path.join(analysis_location,"stack_config_template.json")
+            shutil.copyfile(template_blueprint,analysis_blueprint)
+            ### add good options: 
+            set_important_options(analysis_blueprint)
+
+            create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
     elif not os.path.exists(os.path.join(analysis_location,"stack_config_template.json")):    
@@ -130,7 +236,11 @@ def init(blueprint,location,analysis_name):
         if initialize:
             ###Setup happens here
             template_blueprint = os.path.join(template_dir,"stack_config_template.json")
-            shutil.copyfile(template_blueprint,os.path.join(analysis_location,"stack_config_template.json"))
+            analysis_blueprint = os.path.join(analysis_location,"stack_config_template.json")
+            shutil.copyfile(template_blueprint,analysis_blueprint)
+            ### add good options: 
+            set_important_options(analysis_blueprint)
+            create_test_dir(analysis_location)
         else:    
             print("Not creating analysis folder at this location.")
     else:        
@@ -162,13 +272,20 @@ def init(blueprint,location,analysis_name):
 @click.option(
     "--location",
     help="Directory where we should store materials to develop this analysis. By default, this is: \n\b\n{}".format(default_write_loc), 
-    default=default_write_loc,
+    default=None,
     type = click.Path(exists = True,file_okay = False,dir_okay = True,readable = True,resolve_path = True)
         )
-def describe_analyses(location):
+@click.pass_obj
+def describe_analyses(context,location):
     """List all of the analyses available to develop on. Takes a location parameter: by default will be the packaged local_envs location. 
 
     """
+    if location is None:
+        try:
+            location = context["location"] ## we expect this to be none if not given. 
+        except (KeyError,TypeError):    
+            click.echo("No location given and no previous location found. Defaulting to {} ".format(default_write_loc))
+            location = default_write_loc
     all_contents = os.listdir(location) 
     dirs = [ac for ac in all_contents if os.path.isdir(os.path.join(location,ac))] 
     ## Add a star for the current one. 
@@ -399,6 +516,16 @@ def run_analysis(blueprint,image,data,config):
 def home():
     subprocess.run(["cd","/Users/taigaabe"])
 
+def convert_folder_to_stackname(location,foldername):
+    """Sometimes, especially for legacy functions there is a foldername as well as a stack name. Get the stack name from the location and foldername. 
+
+    """
+    stackconfig = os.path.join(location,foldername,"stack_config_template.json")
+    ## get contents: 
+    with open(stackconfig,"r") as f:
+        stackdict = json.load(f) 
+    return stackdict["PipelineName"]    
+
 @cli.group()
 @click.pass_context
 def monitor(ctx):
@@ -416,23 +543,40 @@ def monitor(ctx):
         "--path",
         type = click.Path(exists = True,dir_okay = True, file_okay = False,writable = True,resolve_path = True),
         help = "path to which we should write the resulting graphic.")
+@click.option("-n",
+        "--stackname",
+        type = click.STRING,
+        help = "name of the s3 bucket we want to get data for",
+        default = None)
 @click.pass_obj
-def visualize_parallelism(blueprint,path):
-    analysis_name = blueprint["analysis_name"] 
+def visualize_parallelism(blueprint,path,stackname):
+    if stackname is None:
+        analysis_name = convert_folder_to_stackname(blueprint["location"],blueprint["analysis_name"]) 
+    else:    
+        analysis_name = stackname    
     user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     for user,userinfo in user_dict.items():
         parallelised = blueprint["monitormod"]["calculate_parallelism"](analysis_name,userinfo,user)
-        postprocessed = blueprint["monitormod"]["postprocess_jobdict"](parallelised)
+        #postprocessed = blueprint["monitormod"]["postprocess_jobdict"](parallelised)
+        postprocessed = parallelised
         now = str(datetime.datetime.now())
         write_path = os.path.join(path,f"{analysis_name}_{user}_{now}_parallel_logs.json")    
         with open(write_path,"w") as f:
             json.dump(postprocessed,f,indent = 4)
     
 @monitor.command(help = "see users of a given analysis.")
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.pass_obj
-def see_users(blueprint):
-    analysis_name = blueprint["analysis_name"] 
-    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
+def see_users(blueprint,stackname):
+    if stackname is None:
+        analysis_name = blueprint["analysis_name"] 
+    else:
+        analysis_name = convert_folder_to_stackname(blueprint["location"],stackname)    
+    user_dict = get_user_logs(analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
     click.echo(formatted)
@@ -442,7 +586,7 @@ def see_users(blueprint):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-h",
         "--hours",
         type = click.INT,
@@ -460,30 +604,53 @@ def describe_job_manager_request(blueprint,stackname,hours,index):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     jm.print_log(hours=hours,index=index)
 
-@monitor.command(help = "print certificate file for submission")    
+@monitor.command(help = "print certificate file for submission. can give submitpath or groupname and timestamp.")    
 @click.option("-s",
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
         help = "path to submit file",
+        default = None
+        )
+@click.option("-g",
+        "--groupname",
+        type = click.STRING,
+        help = "name of the group we are getting certificate for",
+        default = None
+        )
+@click.option("-t",
+        "--timestamp",
+        type = click.STRING,
+        help = "timestamp of job.",
+        default = None
         )
 @click.pass_obj
-def describe_certificate(blueprint,stackname,submitpath):
+def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
-    cert = jm.get_certificate(submitpath)
-    click.echo(cert.rawfile)
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"], stackname)    
+    assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
+    if submitpath is not None:
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
+        cert = jm.get_certificate(submitpath)
+        click.echo(cert.rawfile)
+    elif (groupname is not None) and (timestamp is not None):     
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
+        cert = jm.get_certificate_values(timestamp,groupname)
+        click.echo(cert.rawfile)
     
     
 @monitor.command(help = "print datasets being analyzed, and instances on which they are being analyzed.")    
@@ -491,7 +658,7 @@ def describe_certificate(blueprint,stackname,submitpath):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
@@ -504,6 +671,8 @@ def describe_datasets(blueprint,stackname,submitpath):
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
+    else:     
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     jm = blueprint["monitormod"]["JobMonitor"](stackname)    
     datasets = jm.get_datasets(submitpath)
     click.echo(datasets)
@@ -513,11 +682,24 @@ def describe_datasets(blueprint,stackname,submitpath):
         "--stackname",
         type = click.STRING,
         default = None,
-        help = "name of the stack that you want to get job manager requests for.")
+        help = "name of the stack folder that you want to get job manager requests for.")
 @click.option("-p",
         "--submitpath",
         type = click.Path(exists = True,dir_okay = False, file_okay = True,writable = True,resolve_path = True),
         help = "path to submit file",
+        default = None
+        )
+@click.option("-g",
+        "--groupname",
+        type = click.STRING,
+        help = "name of the group we are getting certificate for",
+        default = None
+        )
+@click.option("-t",
+        "--timestamp",
+        type = click.STRING,
+        help = "timestamp of job.",
+        default = None
         )
 @click.option("-d",
         "--dataname",
@@ -531,22 +713,32 @@ def describe_datasets(blueprint,stackname,submitpath):
         default = 0
         )
 @click.pass_obj
-def describe_datastatus(blueprint,stackname,submitpath,dataname,cutoff):
+def describe_datastatus(blueprint,stackname,submitpath,groupname,timestamp,dataname,cutoff):
     """UNTESTED
 
     """
     if stackname is None:
         stackname = blueprint["analysis_name"] 
-    jm = blueprint["monitormod"]["JobMonitor"](stackname)    
-    datastatus= jm.get_datastatus(submitpath,dataname)
-    text = datastatus.rawfile.pop("std")
-    list_text = [text[str(i)] for i in range(cutoff,len(text))]
-    formattext = "".join(list_text)
+    else:    
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
+    assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
+    if submitpath is not None:
+        jm = JobMonitor(stackname)    
+        datastatus= jm.get_datastatus(submitpath,dataname)
+    elif (groupname is not None and timestamp is not None):   
+        jm = JobMonitor(stackname)    
+        datastatus= jm.get_datastatus_values(groupname,timestamp,dataname)
+    try:
+        text = datastatus.rawfile.pop("std")
+        list_text = [text[str(i)] for i in range(cutoff,len(text))]
+        formattext = "".join(list_text)
 
-    formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
-    formatted.append("std: "+formattext)
-    lined = "\n".join(formatted)
-    click.echo(lined)
+        formatted = [str(key)+": "+str(value) for key,value in datastatus.rawfile.items()]
+        formatted.append("std: "+formattext)
+        lined = "\n".join(formatted)
+        click.echo(lined)
+    except KeyError: ## file isn't formatted as expected     
+        click.echo(json.dumps(datastatus.rawfile,indent = 4))
 
 ## scripting tools 
 @cli.group()
@@ -941,6 +1133,18 @@ def get_configpath(obj):
     configpath = ncsm.get_configpath()
     print(configpath)
 
+@workflow.command(help = "get bucket name registered if registered.")    
+@click.pass_obj
+def get_bucket(obj):
+    """Gets the bucket of the dataset. Prints nothing if locally registered data. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    bucketname = ncsm.get_bucket_name()
+    if bucketname is not None:
+        print(bucketname)
+
 @workflow.command(help = "get the path to the file you registered")    
 @click.option("-n",
         "--name",
@@ -956,6 +1160,18 @@ def get_filepath(obj,name):
     filepath = ncsm.get_filepath(name)
     print(filepath)
 
+@workflow.command(help = "get the path to a temporary result location")
+@click.pass_obj
+def get_resultpath_tmp(obj):
+    """Creates and returns name of temporary resultpath. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    print(ncsm.get_resultpath_tmp())
+
+
+
 @workflow.command(help = "get the s3 path a local file or directory would be uploaded to")    
 @click.option("-l",
         "--locpath",
@@ -968,6 +1184,24 @@ def get_resultpath(obj,locpath):
     resultpath = ncsm.get_resultpath(locpath)
     print(resultpath)
 
+
+@workflow.command(help = "runs a script with commands, but only locally.")
+@click.option("-c",
+        "--command",
+        help = "the script (with arguments) you want to run.",
+        type = click.STRING)
+@click.pass_obj
+def log_command_local(obj,command,suffix = None):    
+    """Local version of log-command, shown below. Assumes that local resultpath is logged and taht it generates a process results folder., and will write a relevant logs directory within it.  
+
+    UNTESTED, refactor into scripting module.
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    resultpath = os.path.join(os.path.dirname(os.path.dirname(ncsm.get_resultpath("/any_file/txt.txt"))),"logs")
+    mkdir_notexists(resultpath)
+    ncsm.log_command(command,"s3://nonexistent/file",resultpath) 
 
 @workflow.command(help = "runs a script with commands, all specified as a string")
 @click.option("-c",
@@ -1019,6 +1253,7 @@ def remote(ctx):
     ctx.obj["remotemod"] = NeuroCAASAMI
     return 
     
+
 ### cli commands to manage a remote aws resources. 
 ## Initialize a new NeuroCAASAMI object, or get . 
 @remote.command(help = "Initialize a NeuroCAASAMI object")
@@ -1033,7 +1268,7 @@ def develop_remote(blueprint,index):
 
     """
     devhist = blueprint["blueprint"].blueprint_dict.get("develop_history",None)
-    if devhist is not None:
+    if devhist is not None: ## this whole condition is basically useless right now. 
         latest = devhist[index]
         instance = latest.get("instance_id",None)
         amis = latest.get("ami_hist",[])
@@ -1057,6 +1292,54 @@ def develop_remote(blueprint,index):
     ## write out to the remote_hist: 
     save_ami_to_cli(ami)
     
+
+
+@remote.command(help = "Start developing remotely.")
+@click.option("-f",
+        "--force",
+        help = "if true, will delete new instances even if they haven't been saved to amis",
+        is_flag = True)
+@click.pass_obj
+def start_session(blueprint,force):
+    """Essentially a new version of develop_remote above. Does away with the whole develop_history abstraction, and assumes that if you're starting a session the old session should be annihilated. 
+
+    """
+    ### Clear the details found in develop_dict
+    try:
+        dev_dict = blueprint["develop_dict"]
+        assert dev_dict is not None
+        deleted = delete_ami_from_cli(dev_dict,force)
+        if deleted is False:
+            click.echo("Did not delete previous session because instance has not been saved to ami (progress would be LOST). To force pass -f flag.")
+            return 
+    except (KeyError,AssertionError):    
+        click.echo("Initializing from scratch")
+    path = os.path.dirname(blueprint["blueprint"].config_filepath)
+    ami = blueprint["remotemod"](path) 
+    blueprint["blueprint"].blueprint_dict["remote_hist"] = []
+    ## write out to the remote_hist: 
+    save_ami_to_cli(ami)
+
+@remote.command(help = "Finish development session.")
+@click.option("-f",
+        "--force",
+        help = "if true, will delete new instances even if they haven't been saved to amis",
+        is_flag = True)
+@click.pass_obj
+def end_session(blueprint,force):
+    """Turns off development instances once you're done and clears development dictionary. 
+
+    """
+    try:
+        dev_dict = blueprint["develop_dict"]
+        assert dev_dict is not None
+        deleted = delete_ami_from_cli(dev_dict,force)
+        if deleted is False:
+            click.echo("Did not delete previous session due to undeleted instances. To force pass -f flag.")
+            return 
+    except (KeyError,AssertionError):    
+        click.echo("Nothing to delete.")
+
 
 @remote.command(help = "Assign a new instance to a NeuroCAASAMI object")
 @click.option("-i",

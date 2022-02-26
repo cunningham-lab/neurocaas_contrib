@@ -145,4 +145,5 @@ dmypy.json
 
 # Log files
 src/neurocaas_contrib/template_mats/DATASET_NAME-dataset_update.ext_STATUS.txt.json
+logs/*
 

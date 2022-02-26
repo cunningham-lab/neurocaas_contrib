@@ -443,6 +443,7 @@ class NeuroCAASScriptManager(object):
         bucketname, groupname, subkey = contents["s3"].split("s3://")[-1].split("/",2)
         return groupname 
 
+
     def get_path(self,contents):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the local filepath if available. 
         :param contents: a dictionary of structure {"s3":location,"local":location}
@@ -450,11 +451,20 @@ class NeuroCAASScriptManager(object):
         assert contents["local"] is not None, "local path does not exist. "
         return contents["local"]
 
+    def get_bucket_name(self):
+        """Given a generic dictionary of structure self.pathtemplate, correctly returns the bucketname if a dataset is registered.. 
+        """
+        contents = self.registration["data"]
+        assert contents["s3"] is not None, "s3 path does not exist. for data "
+        bucketname, groupname, subkey = contents["s3"].split("s3://")[-1].split("/",2)
+        return bucketname 
+
     def get_dataname(self):
         """Get name of data
 
         """
         return self.get_name(self.registration["data"]) 
+
 
     def get_dataname_remote(self):
         """Get name of data
@@ -491,6 +501,15 @@ class NeuroCAASScriptManager(object):
 
         """
         return self.get_path(self.registration["additional_files"][varname]) 
+
+    def get_resultpath_tmp(self):
+        """Get the local path to a directory where you can write easily erasable data. 
+
+        """
+        datapath = self.get_datapath()
+        resultpath = os.path.abspath(os.path.join(os.path.dirname(datapath),"../results/"))
+        mkdir_notexists(resultpath)
+        return resultpath
     
     def get_resultpath(self,filepath):
         """Given the path to a file or directory locally, give the path we would upload it to in S3 (useful for using aws s3 sync)
@@ -601,6 +620,20 @@ def get_bucket_name(path = None):
     """Get the name of the bucket 
 
     """
+    try:
+        with open(configpath) as f:
+            dataconfig = json.load(f)
+        datapath = dataconfig["datapath"]    
+    except Exception:    
+        print("Registered dataset not found.")
+        raise
+    if datapath.startswith("s3://"):
+        no_s3 = datapath.split("s3://")[-1]
+        bucket_name = no_s3.split("/")[0]
+    else:    
+        bucket_name = None
+    
+    return bucket_name 
 
 def get_datastatus_name(custom=None):   
     """Get the datastatus name by formatting the dataset name. Can have a custom name to format instead if desired. 
