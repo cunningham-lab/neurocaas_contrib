@@ -32,7 +32,8 @@ from caiman.cluster import setup_cluster
 from caiman.source_extraction.cnmf import params as params
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 from caiman.base.movies import from_zipfiles_to_movie_lists
-import tarfile,zipfile
+import tarfile
+import zipfile as zipfilemod
 import shutil
 import json
 import pickle
@@ -76,21 +77,36 @@ num_blocks_per_run = 20
 
 ## Sanitize params. 
 #assert len(zipfile.split(".zip")) == 2, "{} is not properly named zip file.".format(zipfile)
-assert any([zipfile.endswith(ext) for ext in [".zip",".tar",".tar.gz",".gz",".7z"]]), "{} is not a correctly formatted zip file".format(zipfile)
+assert any([zipfile.endswith(ext) for ext in [".zip",".tar.gz"]]), "{} is not a correctly formatted zip file".format(zipfile)
 
+data_dirname = os.path.dirname(zipfile)
+
+if zipfile.endswith(".zip"):
+    ### Now give the path to the file we want to analyze, convert to movie names
+    mov_names = from_zipfiles_to_movie_lists(zipfile)
+ 
+    ## Now give the name that this movie should have.  
+    data_noext = os.path.basename(zipfile).split(".zip")[0]
 ## if ".tar.gz", convert: 
-if zipfile.endswith(".tar.gz"):
-    new_zipname = os.path.join(base_folder,"truezip.zip")
-    tarf = tarfile.open(name = zipfile,model = "r|gz")
-    zipf = zipfile.ZipFile(filename = new_zipname,mode = "a",compression = zipfile.ZIP_DEFLATED)
-    for m in tarf:
-        f = tarf.extractfile(m)
-        fl = f.read()
-        fn = m.name
-        zipf.writestr(fn,fl)
-    tarf.close()    
-    zipf.close()
-    zipfile = new_zipname
+elif zipfile.endswith(".tar.gz"):
+    data_noext = os.path.splitext(os.path.basename(zipfile))[0]
+    with tarfile.open(name = zipfile,mode = "r|gz") as tarf:
+        tarf.extractall(data_dirname)
+    ## what is the directory where this data is stored? 
+    with tarfile.open(name = zipfile,mode = "r|gz") as tarf:
+        tif_dirname = tarf.next().name
+        
+    file_names = [os.path.join(data_dirname,tif_dirname,f) for f in os.listdir(os.path.join(data_dirname,tif_dirname))]    
+    file_names.sort()
+    nb_files = len(file_names)
+    length_file = 100
+    m = cm.load_movie_chain(file_names)
+    mov_names = []
+    for t in np.arange(0,nb_files,length_file):
+        movie_name = os.path.join(data_dirname,data_noext+"fullmovie{}.tif".format(t))        
+        m[t:t+length_file].save(movie_name)
+        mov_names.append(movie_name)
+    
 
 
 
@@ -114,12 +130,6 @@ for key in parameter_dict.keys():
 #c,dview,_ = setup_cluster(
 #        backend=backend_patch,n_processes=8,single_thread = False)
 
-### Now give the path to the file we want to analyze, convert to movie names
-mov_names = from_zipfiles_to_movie_lists(zipfile)
- 
-## Now give the name that this movie should have.  
-data_dirname = os.path.dirname(zipfile)
-data_noext = os.path.basename(zipfile).split(".zip")[0]
 
 
 ## Write this movie and rename:  
