@@ -32,6 +32,7 @@ from caiman.cluster import setup_cluster
 from caiman.source_extraction.cnmf import params as params
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 from caiman.base.movies import from_zipfiles_to_movie_lists
+import tarfile,zipfile
 import shutil
 import json
 import pickle
@@ -75,7 +76,24 @@ num_blocks_per_run = 20
 
 ## Sanitize params. 
 #assert len(zipfile.split(".zip")) == 2, "{} is not properly named zip file.".format(zipfile)
-assert any([zipfile.endswith(ext) for ext in [".zip",".tar",".gz",".7z"]]), "{} is not a correctly formatted zip file".format(zipfile)
+assert any([zipfile.endswith(ext) for ext in [".zip",".tar",".tar.gz",".gz",".7z"]]), "{} is not a correctly formatted zip file".format(zipfile)
+
+## if ".tar.gz", convert: 
+if zipfile.endswith(".tar.gz"):
+    new_zipname = os.path.join(base_folder,"truezip.zip")
+    tarf = tarfile.open(name = zipfile,model = "r|gz")
+    zipf = zipfile.ZipFile(filename = new_zipname,mode = "a",compression = zipfile.ZIP_DEFLATED)
+    for m in tarf:
+        f = tarf.extractfile(m)
+        fl = f.read()
+        fn = m.name
+        zipf.writestr(fn,fl)
+    tarf.close()    
+    zipf.close()
+    zipfile = new_zipname
+
+
+
 ## TODO sanitize dictionary. 
 
 ## Get the parameter dictionary from inputs: 
