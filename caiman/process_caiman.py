@@ -74,7 +74,8 @@ block_size = 5000
 num_blocks_per_run = 20
 
 ## Sanitize params. 
-assert len(zipfile.split(".zip")) == 2, "{} is not properly named zip file.".format(zipfile)
+#assert len(zipfile.split(".zip")) == 2, "{} is not properly named zip file.".format(zipfile)
+assert any([zipfile.endswith(ext) for ext in [".zip",".tar",".gz",".7z"]]), "{} is not a correctly formatted zip file".format(zipfile)
 ## TODO sanitize dictionary. 
 
 ## Get the parameter dictionary from inputs: 
