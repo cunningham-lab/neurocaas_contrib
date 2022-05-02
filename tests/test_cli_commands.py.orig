@@ -356,7 +356,7 @@ def test_cli_setup_inputs():
         assert os.path.exists(os.path.join("setupinputs","io-dir","configs","config.json"))
         with open("./"+name+"/stack_config_template.json") as f: 
             blueprint = json.load(f)
-    assert blueprint["localenv"] == "./setupinputs"      
+        assert blueprint["localenv"] == os.path.abspath("./setupinputs")      
 
 def test_container_singleton(remove_named_container):
     runner = CliRunner()
@@ -398,6 +398,13 @@ def test_cli_setup_development_container_env(remove_named_container):
     assert blueprint["container_history"][-1] == namedcontainername
     assert blueprint["image_history"][-1] == imagename 
 
+def test_read_yaml():    
+    runner = CliRunner()
+    name = "getyaml"
+    result = eprint(runner.invoke(cli,["init","--location","./"],input ="{}\n{}".format(name,"Y")))
+    result = eprint(runner.invoke(cli,["read-yaml","--path","./test_mats/config.yaml","--field","scorer"]))
+    assert result.output == "kelly"
+
 ### Test monitoring functions. 
 @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on logs.")
 def test_visualize_parallelism(setup_log_bucket):
@@ -406,7 +413,7 @@ def test_visualize_parallelism(setup_log_bucket):
     with runner.isolated_filesystem():
         os.mkdir("./logs")
         result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
-        result = eprint(runner.invoke(cli,["visualize-parallelism","-p","./logs"]))
+        result = eprint(runner.invoke(cli,["monitor","visualize-parallelism","-p","./logs"]))
         logfiles = os.listdir("./logs")
         assert len(logfiles) == 2
         labnames = ["bendeskylab","sawtelllab"]
@@ -457,6 +464,15 @@ class Test_workflow():
             with open("./registration.json") as f:
                 reg = json.load(f)
             assert reg["data"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["data"]["localsource"] == "localpath/file.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["data"]["s3"] == "s3://bucketname/keypath/key.txt"    
 
     def test_register_config(self):
         runner = CliRunner()
@@ -468,6 +484,15 @@ class Test_workflow():
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["config"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-config","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["config"]["localsource"] == "localpath/file.txt"    
             result = eprint(runner.invoke(cli,["workflow","register-config","-b","bucketname","-k","keypath/key.txt"]))
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
@@ -489,6 +514,15 @@ class Test_workflow():
             with open("./registration.json") as f:
                 reg = json.load(f)
             assert reg["additional_files"]["filename"]["s3"] == "s3://bucketname/keypath/key.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-l","localpath/file.txt"]))
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["additional_files"]["filename"]["localsource"] == "localpath/file.txt"    
+            result = eprint(runner.invoke(cli,["workflow","register-file","-n","filename","-b","bucketname","-k","keypath/key.txt"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["additional_files"]["filename"]["s3"] == "s3://bucketname/keypath/key.txt"    
             
     def test_register_resultpath(self):
         runner = CliRunner()
@@ -500,11 +534,22 @@ class Test_workflow():
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b","bucketname","-k","groupname/inputs/zz.txt"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b","bucketname","-k","keypath/"]))
             assert os.path.exists("./registration.json")
             with open("./registration.json") as f:
                 reg = json.load(f)
-            assert reg["resultpath"] == "s3://bucketname/keypath/"    
+            assert reg["resultpath"]["s3"] == "s3://bucketname/groupname/keypath/"    
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-l","localoutpath/"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["resultpath"]["localsource"] == "localoutpath/"    
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b","bucketname","-k","keypath/"]))
+            assert os.path.exists("./registration.json")
+            with open("./registration.json") as f:
+                reg = json.load(f)
+            assert reg["resultpath"]["s3"] == "s3://bucketname/groupname/keypath/"    
 
     def test_get_data(self,setup_simple_bucket):
         runner = CliRunner()
@@ -647,9 +692,10 @@ class Test_workflow():
             with open("./.neurocaas_contrib_storageloc_test.json", "r") as f:
                 storage = json.load(f)
             assert storage["path"] == os.path.abspath("./")
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k","groupname/inputs/loc"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","keypath/"]))
             result = eprint(runner.invoke(cli,["workflow","put-result","-r","file.txt","-d"]))
-            config =  s3_client.download_file(bucketname,"keypath/process_results/file.txt","./file.txt")
+            config =  s3_client.download_file(bucketname,"groupname/keypath/process_results/file.txt","./file.txt")
 
     def test_get_dataname(self,setup_simple_bucket):            
         runner = CliRunner()
@@ -744,11 +790,12 @@ class Test_workflow():
             with pytest.raises(AssertionError):
                 result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/file.txt"]))
             result = eprint(runner.invoke(cli,["workflow","initialize-job","-p", "./"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k","groupname/inputs/file.txt"]))
             result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","keypath/"]))
             result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/file.txt"]))
-            assert result.output == os.path.join("s3://",bucketname,"keypath","process_results","file.txt\n")
+            assert result.output == os.path.join("s3://",bucketname,"groupname","keypath","process_results","file.txt\n")
             result = eprint(runner.invoke(cli,["workflow","get-resultpath","-l","local/dir/"]))
-            assert result.output == os.path.join("s3://",bucketname,"keypath","process_results","dir\n")
+            assert result.output == os.path.join("s3://",bucketname,"groupname","keypath","process_results","dir\n")
 
     def test_log_command(self,setup_simple_bucket):       
         runner = CliRunner()
@@ -777,11 +824,244 @@ class Test_workflow():
             assert storage["path"] == os.path.abspath("./")
             print(os.path.abspath("./"))
             result = eprint(runner.invoke(cli,["workflow","register-config","-b",bucketname,"-k",f"{username}/config.json"]))
-            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k",f"{username}/results/"]))
+            result = eprint(runner.invoke(cli,["workflow","register-dataset","-b",bucketname,"-k",f"{username}/input.json"]))
+            result = eprint(runner.invoke(cli,["workflow","register-resultpath","-b",bucketname,"-k","results/"]))
             result = eprint(runner.invoke(cli,["workflow","cleanup"]))
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/config.json","./key.txt")
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/update.txt","./update.txt")
 
+class Test_remote():
+    ### Test remote instance management.  
+    def test_develop_remote(self,setup_log_bucket):
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict = json.load(f)
+            assert configdict["develop_dict"] == {}
+            #print(configdict)
+            #assert 0 
+            result = eprint(runner.invoke(cli,["remote","develop-remote"]))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict_full = json.load(f)
+            assert type(configdict_full["develop_dict"]["config"]) == dict
+
+    ### Test remote instance management when development history exists.  
+    def test_develop_remote(self,setup_log_bucket):
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict = json.load(f)
+            assert configdict["develop_dict"] == None
+            result = eprint(runner.invoke(cli,["remote","develop-remote"]))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict_full = json.load(f)
+            assert type(configdict_full["develop_dict"]["config"]) == dict
+
+    def test_develop_remote_existing(self,setup_log_bucket):
+        """Develop from a blueprint that already exists. 
+        Assert that the develop dictionary you have looks like the stack config you started with, not a bare one. 
+
+        """
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            with open(os.path.join("./",bucket_name,"stack_config_template.json")) as f:
+                stackconfig = json.load(f)
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict = json.load(f)
+            assert configdict["develop_dict"] == None 
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict_full = json.load(f)
+     
+            ## assert that the development history saved into the cli tool config file is the same that was recorded in the blueprint. 
+            assert type(configdict_full["develop_dict"]) == dict
+
+        assert configdict_full["develop_dict"]["config"] == stackconfig
+
+    def test_assign_instance(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        amiid = "bs"
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict_full = json.load(f)
+
+            assert configdict_full["develop_dict"]["instance_id"] == instance.id
+
+    def test_launch_devinstance(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","launch-devinstance","--amiid",ami]))
+            with open(".neurocaas_contrib_config_test.json") as f:
+                configdict_full = json.load(f)
+            instance = ec2_resource.Instance(configdict_full["develop_dict"]["instance_id"])    
+            assert instance.image_id == ami
+
+    def test_instance_lifecycle(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","launch-devinstance","--amiid",ami]))
+            eprint(runner.invoke(cli,["remote","stop-devinstance"]))
+            eprint(runner.invoke(cli,["remote","start-devinstance"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+
+    def test_instance_lifecycle_assigned(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","stop-devinstance"]))
+            eprint(runner.invoke(cli,["remote","start-devinstance"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+
+    def test_submit_job(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with open("./submit.json","w") as f:
+                json.dump({"dataname":os.path.join("bendeskylab","inputs","dummyinput.json"),"configname":os.path.join(bucket_name,"logs","s"),"timestamp":"rr"},f)
+            s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","submit-job", "-s", "./submit.json"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+
+    def test_job_output(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with open("./submit.json","w") as f:
+                json.dump({"dataname":os.path.join("bendeskylab","inputs","dummyinput.json"),"configname":os.path.join(bucket_name,"logs","s"),"timestamp":"rr"},f)
+            s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","submit-job", "-s", "./submit.json"]))
+            eprint(runner.invoke(cli,["remote","job-output"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+
+    def test_create_devami(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with open("./submit.json","w") as f:
+                json.dump({"dataname":os.path.join("bendeskylab","inputs","dummyinput.json"),"configname":os.path.join(bucket_name,"logs","s"),"timestamp":"rr"},f)
+            s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+
+    ### Test monitoring functions. 
+    @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
+    def test_update_blueprint(self,setup_log_bucket,mock_boto3_for_remote,monkeypatch):
+        monkeypatch.setattr(neurocaas_contrib.remote,"home_repo","")
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with open("./submit.json","w") as f:
+                json.dump({"dataname":os.path.join("bendeskylab","inputs","dummyinput.json"),"configname":os.path.join(bucket_name,"logs","s"),"timestamp":"rr"},f)
+            s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
+            stackconfig = os.path.join(here,"test_mats","stack_config_template.json")
+            with open(stackconfig) as f:
+                sc_old = json.load(f)
+                ami_old = sc_old["Lambda"]["LambdaConfig"]["AMI"]
+            repoconfig = os.path.join("./",bucket_name,"stack_config_template.json")
+            shutil.copy(stackconfig,repoconfig)
+            subprocess.call(["git","init","."])
+            os.chdir("./{}".format(bucket_name))
+            subprocess.call(["git","add","stack_config_template.json"])
+            print("added")
+            subprocess.call(["git","commit","-m","initial commit"])
+            os.chdir("../")
+            eprint(runner.invoke(cli,["remote","update-blueprint"]))
+            with open(repoconfig) as f:
+                sc_new = json.load(f)
+                ami_new = sc_new["Lambda"]["LambdaConfig"]["AMI"]
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
+            assert ami_new != ami_old
+            ## todo check that the blueprint is correctly updated.
+
+    @pytest.mark.xfail() # This function is deprecated. 
+    def test_update_history(self,setup_log_bucket,mock_boto3_for_remote):
+        instance,ami = mock_boto3_for_remote
+        bucket_name = setup_log_bucket
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            with open("./submit.json","w") as f:
+                json.dump({"dataname":os.path.join("bendeskylab","inputs","dummyinput.json"),"configname":os.path.join(bucket_name,"logs","s"),"timestamp":"rr"},f)
+            s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
+            os.mkdir("./logs")
+            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
+            
+            stackconfig = os.path.join("./",bucket_name,"stack_config_template.json")
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),stackconfig)
+            with open(stackconfig) as f:
+                sc_old = json.load(f)
+                hist_old = sc_old["develop_history"]
+            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
+            eprint(runner.invoke(cli,["remote","update-history"]))
+            eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
 ### Test remote instance management.  
 def test_develop_remote(setup_log_bucket):
     bucket_name = setup_log_bucket
@@ -1007,3 +1287,4 @@ def test_update_history(setup_log_bucket,mock_boto3_for_remote):
         eprint(runner.invoke(cli,["create-devami","-n","falseami"]))
         eprint(runner.invoke(cli,["update-history"]))
         eprint(runner.invoke(cli,["terminate-devinstance","--force",True]))
+>>>>>>> cd328ad0e195c504b309dc8bd03bf38697e37630

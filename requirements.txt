@@ -1,5 +1,5 @@
-boto3>=1.17.41
-docker==4.2.2
+boto3==1.17.41
+docker==4.2.1
 localstack==0.12.3
 localstack-client==1.10
 localstack-ext==0.12.15.7
