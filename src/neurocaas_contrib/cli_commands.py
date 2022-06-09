@@ -950,7 +950,10 @@ def register_resultpath(obj,bucket,key,localpath):
             group = ncsm.get_group(ncsm.registration["data"])
         except KeyError:    
             raise AssertionError("data must be registered first.")
-        path = os.path.join("s3://",bucket,group,key)
+        if not key.startswith("s3://"):
+            path = os.path.join("s3://",bucket,group,key)
+        else:    
+            path = key
         ncsm.register_resultpath(path)
     elif localpath is not None:    
         ncsm.register_resultpath_local(localpath)
