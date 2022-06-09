@@ -1232,10 +1232,16 @@ def log_command(obj,command,bucket,resultfolder,suffix = None):
     except AssertionError:    
         raise AssertionError("You must run register-dataset first so we know where to log this command.")
 
-    if suffix is not None:
-        logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+suffix+"_STATUS.txt")
+    ## first construct path: 
+    if not resultfolder.startswith("s3://"):
+        path = os.path.join("s3://",bucket,groupname,resultfolder)
     else:    
-        logpath = os.path.join("s3://",bucket,groupname,resultfolder,"logs","DATASET_NAME:"+dataname+"_STATUS.txt")
+        path = resultfolder
+
+    if suffix is not None:
+        logpath = os.path.join(path,"logs","DATASET_NAME:"+dataname+suffix+"_STATUS.txt")
+    else:    
+        logpath = os.path.join(path,"logs","DATASET_NAME:"+dataname+"_STATUS.txt")
     print("Attempting to log at {}".format(os.path.dirname(logpath)))    
         
     ncsm.log_command(command,logpath) 
