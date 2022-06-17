@@ -1,0 +1,19 @@
+{
+    "instance": "i-00000000000000000",
+    "command": "aaaaaaaa-1111-4444-0000-999999999999",
+    "input": "groupname/inputs/dataset.ext",
+    "status": "SUCCESS",
+    "reason": 0,
+    "memory_usage": "8192 MB",
+    "cpu_usage": "12.3 %",
+    "job_start": "2021-05-20T13:09:14Z",
+    "job_finish": "2021-05-20T13:09:15Z",
+    "std": {
+        "0": "Thu May 20 13:09:14 EDT 2021\n",
+        "1": "Thu May 20 13:09:15 EDT 2021\n",
+        "2": "Thu May 20 13:09:15 EDT 2021\n",
+        "3": "Thu May 20 13:09:15 EDT 2021\n",
+        "4": "Thu May 20 13:09:15 EDT 2021\n",
+        "5": "Setting up network. This could take a while. \n"
+    }
+}

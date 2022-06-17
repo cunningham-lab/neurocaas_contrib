@@ -1,0 +1,738 @@
+{
+    "carcealab/results/job__carceamonitored_0120_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-01904567b7628b549",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial28.mpg",
+                "configpath": "carcealab/inputs/TempTrial28config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0120_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            },
+            {
+                "instance-id": "i-0f155dbb5868e0a78",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial28.mpg",
+                "configpath": "carcealab/inputs/TempTrial28config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0120_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            }
+        ],
+        "durations": {
+            "i-01904567b7628b549": 81.0,
+            "i-0f155dbb5868e0a78": 81.0
+        },
+        "laststart": "2020-11-13T21:49:54Z",
+        "firstend": "2020-11-13T21:51:15Z"
+    },
+    "carcealab/results/job__carceamonitored_0101_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-019726f5dee269093",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA23_1_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA23_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0101_12_31_20",
+                "start": "2020-12-31T18:18:48Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-019726f5dee269093": 82.0
+        },
+        "laststart": "2020-12-31T18:18:48Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0106_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-01fe5dbb3b8e66fe5",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA26.mpg",
+                "configpath": "carcealab/inputs/CLZA26config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0106_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-01fe5dbb3b8e66fe5": 81.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0110_10_15_20": {
+        "instances": [
+            {
+                "instance-id": "i-022defea2749ddbbe",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA22_1_Cohousing.mp4",
+                "configpath": "carcealab/inputs/CLZA22_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_10_15_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            },
+            {
+                "instance-id": "i-0625caee44765a9f2",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA22_1_Cohousing.mp4",
+                "configpath": "carcealab/inputs/CLZA22_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_10_15_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            }
+        ],
+        "durations": {
+            "i-022defea2749ddbbe": 81.0,
+            "i-0625caee44765a9f2": 81.0
+        },
+        "laststart": "2020-11-13T21:49:54Z",
+        "firstend": "2020-11-13T21:51:15Z"
+    },
+    "carcealab/results/job__carceamonitored_0112_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-0230c648370958507",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA36.mpg",
+                "configpath": "carcealab/inputs/CLZA36config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0112_12_31_20",
+                "start": "2021-01-03T17:30:46Z",
+                "end": "2021-01-03T17:32:08Z"
+            },
+            {
+                "instance-id": "i-02fe6231b94e703b9",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA35.mpg",
+                "configpath": "carcealab/inputs/CLZA35config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0112_12_31_20",
+                "start": "2021-01-03T17:30:46Z",
+                "end": "2021-01-03T17:32:08Z"
+            },
+            {
+                "instance-id": "i-0fa6dda8aa08931ab",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA35.mpg",
+                "configpath": "carcealab/inputs/CLZA35config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0112_12_31_20",
+                "start": "2021-01-03T17:30:46Z",
+                "end": "2021-01-03T17:32:08Z"
+            }
+        ],
+        "durations": {
+            "i-0230c648370958507": 82.0,
+            "i-02fe6231b94e703b9": 82.0,
+            "i-0fa6dda8aa08931ab": 82.0
+        },
+        "laststart": "2021-01-03T17:30:46Z",
+        "firstend": "2021-01-03T17:32:08Z"
+    },
+    "carcealab/results/job__carceamonitored_1126_10_14_20": {
+        "instances": [
+            {
+                "instance-id": "i-02f6321c67c435156",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial22.mpg",
+                "configpath": "carcealab/inputs/TempTrial22config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1126_10_14_20",
+                "start": "2020-10-15T03:27:12Z",
+                "end": "2020-10-15T03:28:48Z"
+            }
+        ],
+        "durations": {
+            "i-02f6321c67c435156": 96.0
+        },
+        "laststart": "2020-10-15T03:27:12Z",
+        "firstend": "2020-10-15T03:28:48Z"
+    },
+    "carcealab/results/job__carceamonitored_1240_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-035634dd4c4cab28a",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial25.mpg",
+                "configpath": "carcealab/inputs/TempTrial25config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1240_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            },
+            {
+                "instance-id": "i-074351c2bc8699572",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial25.mpg",
+                "configpath": "carcealab/inputs/TempTrial25config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1240_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            }
+        ],
+        "durations": {
+            "i-035634dd4c4cab28a": 81.0,
+            "i-074351c2bc8699572": 81.0
+        },
+        "laststart": "2020-11-13T21:49:54Z",
+        "firstend": "2020-11-13T21:51:15Z"
+    },
+    "carcealab/results/job__carceamonitored_0655_12_01_20": {
+        "instances": [
+            {
+                "instance-id": "i-037ce96dd5b81561d",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA22_1_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA22_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0655_12_01_20",
+                "start": "2020-12-01T20:24:49Z",
+                "end": "2020-12-01T20:26:11Z"
+            },
+            {
+                "instance-id": "i-0aab4ada34d9a0d39",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA22_1_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA22_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0655_12_01_20",
+                "start": "2020-12-01T20:24:49Z",
+                "end": "2020-12-01T20:26:11Z"
+            }
+        ],
+        "durations": {
+            "i-037ce96dd5b81561d": 82.0,
+            "i-0aab4ada34d9a0d39": 82.0
+        },
+        "laststart": "2020-12-01T20:24:49Z",
+        "firstend": "2020-12-01T20:26:11Z"
+    },
+    "carcealab/results/job__carceamonitored_0102_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-03dc5f19aafe1f69d",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA23_2_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA23_2_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0102_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:25Z"
+            }
+        ],
+        "durations": {
+            "i-03dc5f19aafe1f69d": 96.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:25Z"
+    },
+    "carcealab/results/job__carceamonitored_0104_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-041d39252b9c4408b",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA24_2_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA24_2_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0104_12_31_20",
+                "start": "2020-12-31T18:18:48Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-041d39252b9c4408b": 82.0
+        },
+        "laststart": "2020-12-31T18:18:48Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0105_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-04ca68b86fe809a5c",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA25.mpg",
+                "configpath": "carcealab/inputs/CLZA25config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0105_12_31_20",
+                "start": "2020-12-31T18:18:48Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-04ca68b86fe809a5c": 82.0
+        },
+        "laststart": "2020-12-31T18:18:48Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_1250_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-05452d9a6746d7040",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial26.mpg",
+                "configpath": "carcealab/inputs/TempTrial26config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1250_10_26_20",
+                "start": "2021-01-30T01:24:32Z",
+                "end": "2021-01-30T01:25:54Z"
+            },
+            {
+                "instance-id": "i-06d16ce70bcf679e6",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial26.mpg",
+                "configpath": "carcealab/inputs/TempTrial26config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1250_10_26_20",
+                "start": "2021-01-30T01:24:32Z",
+                "end": "2021-01-30T01:25:54Z"
+            },
+            {
+                "instance-id": "i-0bb8f8ca1c1542769",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial26.mpg",
+                "configpath": "carcealab/inputs/TempTrial26config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1250_10_26_20",
+                "start": "2021-01-30T01:24:32Z",
+                "end": "2021-01-30T01:25:54Z"
+            }
+        ],
+        "durations": {
+            "i-05452d9a6746d7040": 82.0,
+            "i-06d16ce70bcf679e6": 82.0,
+            "i-0bb8f8ca1c1542769": 82.0
+        },
+        "laststart": "2021-01-30T01:24:32Z",
+        "firstend": "2021-01-30T01:25:54Z"
+    },
+    "carcealab/results/job__carceamonitored_0113_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-05509b9626228ead2",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA36.mpg",
+                "configpath": "carcealab/inputs/CLZA36config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0113_12_31_20",
+                "start": "2021-01-03T17:30:46Z",
+                "end": "2021-01-03T17:32:08Z"
+            }
+        ],
+        "durations": {
+            "i-05509b9626228ead2": 82.0
+        },
+        "laststart": "2021-01-03T17:30:46Z",
+        "firstend": "2021-01-03T17:32:08Z"
+    },
+    "carcealab/results/job__carceamonitored_0140_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-0594d015773ba064f",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial30.mpg",
+                "configpath": "carcealab/inputs/TempTrial30config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0140_10_26_20",
+                "start": "2020-11-16T22:42:51Z",
+                "end": "2020-11-16T22:44:28Z"
+            },
+            {
+                "instance-id": "i-0a54eb88cb944d45e",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial30.mpg",
+                "configpath": "carcealab/inputs/TempTrial30config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0140_10_26_20",
+                "start": "2020-11-16T22:42:51Z",
+                "end": "2020-11-16T22:44:28Z"
+            }
+        ],
+        "durations": {
+            "i-0594d015773ba064f": 97.0,
+            "i-0a54eb88cb944d45e": 97.0
+        },
+        "laststart": "2020-11-16T22:42:51Z",
+        "firstend": "2020-11-16T22:44:28Z"
+    },
+    "carcealab/results/job__carceamonitored_0610_12_08_20": {
+        "instances": [
+            {
+                "instance-id": "i-068080879674be54a",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA22_2_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA22_2_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0610_12_08_20",
+                "start": "2020-12-31T12:11:42Z",
+                "end": "2020-12-31T12:13:04Z"
+            }
+        ],
+        "durations": {
+            "i-068080879674be54a": 82.0
+        },
+        "laststart": "2020-12-31T12:11:42Z",
+        "firstend": "2020-12-31T12:13:04Z"
+    },
+    "carcealab/results/job__carceamonitored_1230_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-06e3a729ef2959e93",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial24.mpg",
+                "configpath": "carcealab/inputs/TempTrial24config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1230_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:30Z"
+            },
+            {
+                "instance-id": "i-0e8d2af6a4cb11650",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial24.mpg",
+                "configpath": "carcealab/inputs/TempTrial24config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1230_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:30Z"
+            }
+        ],
+        "durations": {
+            "i-06e3a729ef2959e93": 96.0,
+            "i-0e8d2af6a4cb11650": 96.0
+        },
+        "laststart": "2020-11-13T21:49:54Z",
+        "firstend": "2020-11-13T21:51:30Z"
+    },
+    "carcealab/results/job__carceamonitored_0110_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-0780052452f32d6a7",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA33.mpg",
+                "configpath": "carcealab/inputs/CLZA33config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-0780052452f32d6a7": 81.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0103_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-08036b0336d0d7ab8",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA24_1_Cohousing.mpg",
+                "configpath": "carcealab/inputs/CLZA24_1_Cohousingconfig.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0103_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-08036b0336d0d7ab8": 81.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0111_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-080f84302057eb87b",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA34.mpg",
+                "configpath": "carcealab/inputs/CLZA34config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0111_12_31_20",
+                "start": "2020-12-31T18:18:48Z",
+                "end": "2020-12-31T18:20:55Z"
+            }
+        ],
+        "durations": {
+            "i-080f84302057eb87b": 127.0
+        },
+        "laststart": "2020-12-31T18:18:48Z",
+        "firstend": "2020-12-31T18:20:55Z"
+    },
+    "carcealab/results/job__carceamonitored_1258_01_04_21": {
+        "instances": [
+            {
+                "instance-id": "i-08db215da70c70a5a",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial27.mpg",
+                "configpath": "carcealab/inputs/TempTrial27config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1258_01_04_21",
+                "start": "2021-01-04T17:52:17Z",
+                "end": "2021-01-04T17:53:39Z"
+            }
+        ],
+        "durations": {
+            "i-08db215da70c70a5a": 82.0
+        },
+        "laststart": "2021-01-04T17:52:17Z",
+        "firstend": "2021-01-04T17:53:39Z"
+    },
+    "carcealab/results/job__carceamonitored_0110_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-096d328222ff9831c",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial27.mpg",
+                "configpath": "carcealab/inputs/TempTrial27config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_10_26_20",
+                "start": "2021-01-03T18:04:33Z",
+                "end": "2021-01-03T18:05:54Z"
+            },
+            {
+                "instance-id": "i-0b617c47fc6bf83cf",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial27.mpg",
+                "configpath": "carcealab/inputs/TempTrial27config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_10_26_20",
+                "start": "2021-01-03T18:04:33Z",
+                "end": "2021-01-03T18:05:54Z"
+            },
+            {
+                "instance-id": "i-0e7c84d5b7c050546",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial27.mpg",
+                "configpath": "carcealab/inputs/TempTrial27config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0110_10_26_20",
+                "start": "2021-01-03T18:04:33Z",
+                "end": "2021-01-03T18:05:54Z"
+            }
+        ],
+        "durations": {
+            "i-096d328222ff9831c": 81.0,
+            "i-0b617c47fc6bf83cf": 81.0,
+            "i-0e7c84d5b7c050546": 81.0
+        },
+        "laststart": "2021-01-03T18:04:33Z",
+        "firstend": "2021-01-03T18:05:54Z"
+    },
+    "carcealab/results/job__carceamonitored_1127_10_14_20": {
+        "instances": [
+            {
+                "instance-id": "i-0a2927f443547ee39",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial21.mpg",
+                "configpath": "carcealab/inputs/TempTrial21config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1127_10_14_20",
+                "start": "2020-10-15T03:27:11Z",
+                "end": "2020-10-15T03:28:32Z"
+            }
+        ],
+        "durations": {
+            "i-0a2927f443547ee39": 81.0
+        },
+        "laststart": "2020-10-15T03:27:11Z",
+        "firstend": "2020-10-15T03:28:32Z"
+    },
+    "carcealab/results/job__carceamonitored_1259_01_04_21": {
+        "instances": [
+            {
+                "instance-id": "i-0afcf5a59e24f27ea",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial31.mpg",
+                "configpath": "carcealab/inputs/TempTrial31config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_1259_01_04_21",
+                "start": "2021-01-04T17:52:31Z",
+                "end": "2021-01-04T17:54:24Z"
+            }
+        ],
+        "durations": {
+            "i-0afcf5a59e24f27ea": 113.0
+        },
+        "laststart": "2021-01-04T17:52:31Z",
+        "firstend": "2021-01-04T17:54:24Z"
+    },
+    "carcealab/results/job__carceamonitored_0130_10_26_20": {
+        "instances": [
+            {
+                "instance-id": "i-0c4847747ff7d8d61",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial29.mpg",
+                "configpath": "carcealab/inputs/TempTrial29config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0130_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            },
+            {
+                "instance-id": "i-0dc6e270ce7905440",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/TempTrial29.mpg",
+                "configpath": "carcealab/inputs/TempTrial29config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0130_10_26_20",
+                "start": "2020-11-13T21:49:54Z",
+                "end": "2020-11-13T21:51:15Z"
+            }
+        ],
+        "durations": {
+            "i-0c4847747ff7d8d61": 81.0,
+            "i-0dc6e270ce7905440": 81.0
+        },
+        "laststart": "2020-11-13T21:49:54Z",
+        "firstend": "2020-11-13T21:51:15Z"
+    },
+    "carcealab/results/job__carceamonitored_0108_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-0d7ed369a586fcb15",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA31.mpg",
+                "configpath": "carcealab/inputs/CLZA31config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0108_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-0d7ed369a586fcb15": 81.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    },
+    "carcealab/results/job__carceamonitored_0107_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-0e30a68618ee40a6a",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA27.mpg",
+                "configpath": "carcealab/inputs/CLZA27config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0107_12_31_20",
+                "start": "2020-12-31T18:18:49Z",
+                "end": "2020-12-31T18:20:14Z"
+            }
+        ],
+        "durations": {
+            "i-0e30a68618ee40a6a": 85.0
+        },
+        "laststart": "2020-12-31T18:18:49Z",
+        "firstend": "2020-12-31T18:20:14Z"
+    },
+    "carcealab/results/job__carceamonitored_0109_12_31_20": {
+        "instances": [
+            {
+                "instance-id": "i-0f229d848caaed7b6",
+                "instance-type": "p3.2xlarge",
+                "spot": false,
+                "price": 3.06,
+                "databucket": "carceamonitored",
+                "datapath": "carcealab/inputs/CLZA32.mpg",
+                "configpath": "carcealab/inputs/CLZA32config.yaml",
+                "jobpath": "carcealab/results/job__carceamonitored_0109_12_31_20",
+                "start": "2020-12-31T18:18:48Z",
+                "end": "2020-12-31T18:20:10Z"
+            }
+        ],
+        "durations": {
+            "i-0f229d848caaed7b6": 82.0
+        },
+        "laststart": "2020-12-31T18:18:48Z",
+        "firstend": "2020-12-31T18:20:10Z"
+    }
+}

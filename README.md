@@ -1,8 +1,9 @@
-# NeuroCAAS Remote
-## A repository to assist the creation of new pipelines on the NeuroCAAS platform. 
+![rtd](https://readthedocs.org/projects/pip/badge/?version=latest&style=plastic) 
+![example workflow](https://github.com/cunningham-lab/neurocaas_contrib/actions/workflows/test_ci.yml/badge.svg)
+![DOI](https://zenodo.org/badge/217151292.svg)
+# NeuroCAAS Contrib
+# 
 
-This repository contains scripts that coordinate analyses that we built and host on NeuroCAAS. It serves to provide transparency for the analyses that we provide (all analysis code for NeuroCAAS is contained in this repo or the original analysis repo), and as a template for developers who would like to offer their analyses on NeuroCAAS. For these developers, this repo houses a collection of utilities that automate the process of coordinating logs and system monitoring with the NeuroCAAS platform and the web frontend. 
-
-To get started, the script "run_main.sh" runs all of the setup and cleanup required by NeuroCAAS, as well as declaring useful variables to streamline data transfer and directory navigation. Take a look at how it calls analysis-specific scripts within it, and consider how that can be adapted for your pipeline. See the epi, dlc, caiman, locanmf, and pmd subfolders to see how other analyses function within this framework. To see how these analyses perform, see the NeuroCAAS [website](http://www.neurocaas.org).
-
+## A repository to assist the creation of new analysis pipelines on the NeuroCAAS platform. 
+This repository contains tools for development and maintenance of analyses to be used through the NeuroCAAS platform. It allows developers to first build their analyses on a docker container hosted on their local machine, then gradually transition it for use via drag-and-drop data upload, hosted on the cloud. Please see the docs [here](https://neurocaas-contrib.readthedocs.io/en/latest/Introduction.html) for more info, and the source repository [here](https://github.com/cunningham-lab/neurocaas) for a full developer guide.
 

@@ -35,7 +35,7 @@ errorlog_init () {
     writepath="$abspath/ncap_utils/statusdict.json"
 
     ## Get the status file
-    aws s3 cp  "$homepath" "$writepath" 
+    aws s3 cp  "$homepath" "$writepath" || cp "$abspath/ncap_utils/statusdict_template.json" "$writepath"
     chmod 777 "$writepath"
 
     ## Write to the status file    
