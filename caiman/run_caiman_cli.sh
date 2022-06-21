@@ -39,12 +39,14 @@ export CAIMAN_DATA="/home/ubuntu/caiman_data"
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 CAIMAN_DATA="$userhome/caiman_data"
-python "$neurocaasrootdir"/caiman/parse_config_caiman.py "$bucketname" "$configpath" "$userhome/$configstore"
+python "$neurocaasrootdir"/caiman/parse_config_caiman.py "$bucketname" "$userhome/$configstore/$configname" "$userhome/$configstore"
 echo "----PARAMETERS PARSED. STARTING ANALYSIS----"
-python "$neurocaasrootdir"/caiman/process_caiman.py "$configstore/final_pickled_new" "$datapath" "$userhome/$outstore" "$configpath"
+python "$neurocaasrootdir"/caiman/process_caiman.py "$userhome/$configstore/final_pickled_new" "$datapath" "$userhome/$outstore" "$userhome/$configstore/$configname"
 echo "----ANALYSIS FINISHED. GENERATING VIDEO----"
 python "$neurocaasrootdir/caiman/make_videos.py" --dirpath "$userhome/$outstore" --dataname "$dataname"
 ###############################################################################################
 ## Stereotyped upload script for the data
 echo "----UPLOADING RESULTS----"
-neurocaas-contrib workflow put-result -r "$userhome/$outstore"
+
+resultpath=$(dirname $(neurocaas-contrib workflow get-resultpath -l "$userhome/check_vars.txt"))
+aws s3 sync "$userhome/$outstore" $resultpath
