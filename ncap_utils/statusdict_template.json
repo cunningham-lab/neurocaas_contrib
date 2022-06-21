@@ -1,0 +1,16 @@
+{
+    "status": "IN_PROGRESS", 
+    "cpu_usage": [
+        "0"
+    ], 
+    "stdout": {
+        "0": "/home/ubuntu/neurocaas_remote/pmd/run.sh workflow dirname\n", 
+    }, 
+    "instance": "i-012345667", 
+    "reason": [
+        "aws s3 sync $OUTDIR s3://$1/$processdir/"
+    ], 
+    "command": "8b589b34-91e3-4a4e-b53d-7dfb2e14d2fe", 
+    "stderr": {}, 
+    "input": "reviewers/inputs/input.npy"
+}
