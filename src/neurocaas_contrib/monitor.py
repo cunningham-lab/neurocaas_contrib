@@ -14,6 +14,7 @@ from datetime import timedelta
 import time
 from datetime import datetime as datetime
 import os
+import polling2
 from .log import NeuroCAASCertificate,NeuroCAASDataStatusLegacy
 
 s3_client = boto3.client("s3")
@@ -574,7 +575,99 @@ class JobMonitor(LambdaMonitor):
         status = NeuroCAASDataStatusLegacy(fullpath)
         return status
 
-        
+def get_logfiles(bucketname,pathprefix,outputpath):        
+    """Given a path to a directory, get the logfiles contained in "s3://bucketname/pathprefix/logs/{certificate.txt,DATASET_NAME:{}_STATUS.txt}", and write them to "outputpath/logs/{}". 
+
+    :param bucketname: name of the bucket to get logs from. 
+    :param pathprefix: the path identifying job logs: exclude logs. 
+    :param outputpath: the path to an existing directory on the local machine. Will create a logs subdirectory if does not exist, and write logs there. 
+    """
+    filenames = ls_name(bucketname,os.path.join(pathprefix,"logs/"))
+    local_logs = os.path.join(outputpath,"logs/")
+    if not os.path.exists(local_logs):
+        os.mkdir(local_logs)
+    for filepath in filenames:    
+        try:
+            filename = os.path.basename(filepath)
+            s3_client.download_file(bucketname,filepath,os.path.join(local_logs,filename))
+        except IsADirectoryError:    
+            pass
+
+def get_end(bucketname,pathprefix):
+    """Given a path to a directory, look for an "endfile" contained in "s3://bucketname/pathprefix/process_results/end.txt"
+
+    :param bucketname: name of the bucket to get endfile. 
+    :param pathprefix: the path identifying job: exclude process_results. 
+    """
+    path = os.path.join(pathprefix,"process_results","end.txt")
+    endfiles = ls_name(bucketname,path)
+    if path in endfiles:
+        return True
+    else:
+        return False
+
+def get_results(bucketname,pathprefix,outputpath):        
+    """Given a path to a directory, get the result files contained in "s3://bucketname/pathprefix/process_results/", and write them to "outputpath/process_results". 
+
+    :param bucketname: name of the bucket to get results from. 
+    :param pathprefix: the path identifying job process_results: exclude process_results. 
+    :param outputpath: the path to an existing directory on the local machine. Will create a process_results subdirectory if does not exist, and write results there. 
+    """
+    filenames = ls_name(bucketname,os.path.join(pathprefix,"process_results/"))
+    local_results = os.path.join(outputpath,"process_results/")
+    if not os.path.exists(local_results):
+        os.mkdir(local_results)
+    for filepath in filenames:    
+        try:
+            filename = os.path.basename(filepath)
+            s3_client.download_file(bucketname,filepath,os.path.join(local_results,filename))
+        except IsADirectoryError:    
+            pass
+
+    
+def poll(bucketname,pathprefix,output):
+    """One round of polling a job for logging output. Returns true or false based on the output of get_end.  
+    :param bucketname: name of the bucket to get logs from. 
+    :param pathprefix: the path identifying job logs: exclude logs. 
+    :param outputpath: the path to an existing directory on the local machine. Will create a logs subdirectory if does not exist, and write logs there. 
+    """
+    get_logfiles(bucketname,pathprefix,output)
+    return get_end(bucketname,pathprefix)
+
+def setup_polling(bucketname,pathprefix,output,step = 60,timeout = 60*15):
+    """Set up polling function 
+
+    :param bucketname: name of the bucket to get logs from. 
+    :param pathprefix: the path identifying job logs: exclude logs. 
+    :param outputpath: the path to an existing directory on the local machine. Will create a logs subdirectory if does not exist, and write logs there. 
+    :param step: number of seconds to wait before querying again. Default 60
+    :param timeout: timeout for the poll in seconds. Default 15 mins
+    :returns: returns an exit code: 0: success, 1: timeout, 2: uncaught exception. 
+    """
+    def ended(response):
+        return response == True
+    try:
+        polling2.poll(
+            lambda : poll(bucketname,pathprefix,output),
+            check_success = ended,
+            step = step,
+            timeout = timeout,
+            log = logging.INFO)
+        get_results(bucketname,pathprefix,output)
+        return 0
+
+    except polling2.TimeoutException as te:    
+        return 1
+
+    except Exception:
+        return 2
+     
+
+
+
+    
+
+
 
 
         

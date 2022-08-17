@@ -532,8 +532,8 @@ def monitor(ctx):
     """Job monitoring functions.
     """
 
-    from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor
-    moddict = {"calculate_parallelism":calculate_parallelism,"get_user_logs":get_user_logs,"postprocess_jobdict":postprocess_jobdict,"JobMonitor":JobMonitor}
+    from .monitor import calculate_parallelism, get_user_logs, postprocess_jobdict, JobMonitor,setup_polling
+    moddict = {"calculate_parallelism":calculate_parallelism,"get_user_logs":get_user_logs,"postprocess_jobdict":postprocess_jobdict,"JobMonitor":JobMonitor,"setup_polling":setup_polling}
     ctx.obj["monitormod"] = moddict 
     return
 
@@ -576,7 +576,8 @@ def see_users(blueprint,stackname):
         analysis_name = blueprint["analysis_name"] 
     else:
         analysis_name = convert_folder_to_stackname(blueprint["location"],stackname)    
-    user_dict = get_user_logs(analysis_name)
+    #user_dict = get_user_logs(analysis_name)
+    user_dict = blueprint["monitormod"]["get_user_logs"](analysis_name)
     userlist = [u+ ": "+str(us) for u,us in user_dict.items()]
     formatted = "\n".join(userlist)
     click.echo(formatted)
@@ -652,6 +653,44 @@ def describe_certificate(blueprint,stackname,submitpath,groupname,timestamp):
         cert = jm.get_certificate_values(timestamp,groupname)
         click.echo(cert.rawfile)
     
+@monitor.command(help = "poll an ongoing analysis for results.")    
+@click.option("-s",
+        "--stackname",
+        type = click.STRING,
+        default = None,
+        help = "name of the stack folder that you want to get job manager requests for.")
+@click.option("-p",
+        "--pathprefix",
+        type = click.STRING,
+        help = "path to S3 ")
+@click.option("-l",
+        "--localpath",
+        type = click.Path(dir_okay = True,file_okay =False),
+        help = "local file path where you want to dump these results and logs."
+        )
+@click.option("-i",
+        "--interval",
+        type = click.INT,
+        help = "interval (in seconds) between polls (default 1 min)",
+        default = 60)
+@click.option("-t",
+        "--timeout",
+        type = click.INT,
+        help = "timeout in seconds at which to quit polling (default 15 mins)",
+        default = 60*15)
+@click.pass_obj
+def poll_analysis(blueprint,stackname,pathprefix,localpath,interval,timeout):
+    if stackname is None:
+        stackname = blueprint["analysis_name"] 
+    else:     
+        stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
+    output = blueprint["monitormod"]["setup_polling"](stackname,pathprefix,localpath,interval,timeout)     
+    if output == 0:
+        click.echo("Finished polling.")
+    elif output == 1:    
+        click.echo("Polling timeout.")
+    else:    
+        click.echo("Unhandled error.")
     
 @monitor.command(help = "print datasets being analyzed, and instances on which they are being analyzed.")    
 @click.option("-s",
@@ -723,10 +762,10 @@ def describe_datastatus(blueprint,stackname,submitpath,groupname,timestamp,datan
         stackname = convert_folder_to_stackname(blueprint["location"],stackname)    
     assert (submitpath is not None) or (groupname is not None and timestamp is not None), "must give certificate specs from submit or timestamp/groupname"     
     if submitpath is not None:
-        jm = JobMonitor(stackname)    
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
         datastatus= jm.get_datastatus(submitpath,dataname)
     elif (groupname is not None and timestamp is not None):   
-        jm = JobMonitor(stackname)    
+        jm = blueprint["monitormod"]["JobMonitor"](stackname)    
         datastatus= jm.get_datastatus_values(groupname,timestamp,dataname)
     try:
         text = datastatus.rawfile.pop("std")
