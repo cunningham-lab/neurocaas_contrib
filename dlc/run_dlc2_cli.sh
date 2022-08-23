@@ -28,6 +28,7 @@ then
     source deactivate DEEPLABCUT	
     source activate pickleenv
     python "$userhome/neurocaas_contrib/dlc/convert_h5.py" "$datadir/$taskname"	
+    source deactivate pickleenv
     source activate DEEPLABCUT
     if [ $debug == "True" ]
     then
@@ -37,7 +38,7 @@ then
     elif [ $debug == "False" ]    
     then 	
         echo "----STARTING TRAINING; SETTING UP NETWORK----"
-	python -m pdb "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" --windows $windows
+	python "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" --windows $windows
         #TODO python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datadir/$taskname/"
     else    
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	

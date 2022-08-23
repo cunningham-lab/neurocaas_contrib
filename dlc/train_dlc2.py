@@ -7,7 +7,7 @@ import yaml
 @click.command(help = "train network")
 @click.option("--config-file","-c",type = click.Path(file_okay = True,exists=True))
 @click.option("--test","-t",type=click.BOOL,is_flag = True)
-@click.option("--windows","-w",type=click.BOOL,is_flag = True,default = False)
+@click.option("--windows","-w",type=click.BOOL,default = False)
 def train(config_file,test,windows):
     """Runs training given a configuration file and labeled data- steps F,G,H,I of DLC guide. (https://github.com/DeepLabCut/DeepLabCut/blob/master/docs/standardDeepLabCut_UserGuide.md) 
 
