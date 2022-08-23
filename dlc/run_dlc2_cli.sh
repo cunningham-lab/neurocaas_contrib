@@ -25,7 +25,10 @@ echo "----RUNNING ANALYSIS IN MODE: $mode----"
 
 if [ $mode == "train" ]
 then
-    python "$userhome/neurocaas_contrib/dlc/convert_h5.py" "$datadir/$taskname/config.yaml"	
+    source deactivate DEEPLABCUT	
+    source activate pickleenv
+    python "$userhome/neurocaas_contrib/dlc/convert_h5.py" "$datadir/$taskname"	
+    source activate DEEPLABCUT
     if [ $debug == "True" ]
     then
         echo "----STARTING TRAINING; SETTING UP DEBUG NETWORK----"
