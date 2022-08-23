@@ -18,21 +18,23 @@ echo "----DATA DOWNLOADED: $datapath. PARSING PARAMETERS.----"
 
 mode=$(neurocaas-contrib scripting read-yaml -p $configpath -f mode -d predict)
 debug=$(neurocaas-contrib scripting read-yaml -p $configpath -f testing -d False)
+windows=$(neurocaas-contrib scripting read-yaml -p $configpath -f windows -d False)
 
 echo "----RUNNING ANALYSIS IN MODE: $mode----"
 #TODO cd "$userhome/deepgraphpose"
 
 if [ $mode == "train" ]
 then
+    python "$userhome/neurocaas_contrib/dlc/convert_h5.py" "$datadir/$taskname/config.yaml"	
     if [ $debug == "True" ]
     then
         echo "----STARTING TRAINING; SETTING UP DEBUG NETWORK----"
-	python "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" --test
+	python "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" --test --windows $windows
         #TODO python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datadir/$taskname/" --test
     elif [ $debug == "False" ]    
     then 	
         echo "----STARTING TRAINING; SETTING UP NETWORK----"
-	python "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" 
+	python -m pdb "$userhome/neurocaas_contrib/dlc/train_dlc2.py" --config-file "$datadir/$taskname/config.yaml" --windows $windows
         #TODO python "demo/run_dgp_demo.py" --dlcpath "$userhome/$datadir/$taskname/"
     else    
         echo "Debug setting $debug not recognized. Valid options are "True" or "False". Exiting."	

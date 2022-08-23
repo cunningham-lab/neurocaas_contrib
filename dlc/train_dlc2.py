@@ -7,7 +7,8 @@ import yaml
 @click.command(help = "train network")
 @click.option("--config-file","-c",type = click.Path(file_okay = True,exists=True))
 @click.option("--test","-t",type=click.BOOL,is_flag = True)
-def train(config_file,test):
+@click.option("--windows","-w",type=click.BOOL,is_flag = True,default = False)
+def train(config_file,test,windows):
     """Runs training given a configuration file and labeled data- steps F,G,H,I of DLC guide. (https://github.com/DeepLabCut/DeepLabCut/blob/master/docs/standardDeepLabCut_UserGuide.md) 
 
     :param config_file: Configuration file path
@@ -21,7 +22,7 @@ def train(config_file,test):
         print("DLC config.yaml file not found in model folder. Exiting.")
         raise
     # F
-    deeplabcut.create_training_dataset(config_file,windows2linux=True)
+    deeplabcut.create_training_dataset(config_file,windows2linux=windows)
     # G 
     if test:
         deeplabcut.train_network(config_file,maxiters=2)
