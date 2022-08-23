@@ -7,6 +7,7 @@ from testpaths import get_dict_file
 from neurocaas_contrib.remote import NeuroCAASAMI
 import localstack_client.session
 import os
+from test_cli_commands import groupname
 
 filepath = os.path.realpath(__file__)
 testpath = os.path.dirname(filepath)
@@ -28,18 +29,25 @@ def mock_boto3_for_remote(monkeypatch):
     monkeypatch.setattr(neurocaas_contrib.remote,"sts",sts)
     instance = ec2_resource.create_instances(MaxCount = 1,MinCount=1)[0]
     ami = ec2_client.create_image(InstanceId=instance.instance_id,Name = "dummy")
+    ec2_resource.create_security_group(GroupName=groupname,Description = "creating security group here")
     yield ami["ImageId"]
+    ec2_client.delete_security_group(GroupName=groupname)
 
 class Test_NeuroCAASAMI():
     def test_init(self,mock_boto3_for_remote):
         ami = NeuroCAASAMI(os.path.join(test_mats))
 
-    def test_launch_devinstance(self,mock_boto3_for_remote):
+    @pytest.mark.parametrize("test_folder",[test_mats,os.path.join(test_mats,"no_sg")])
+    def test_launch_devinstance(self,mock_boto3_for_remote,test_folder):
         amiid = mock_boto3_for_remote
-        ami = NeuroCAASAMI(os.path.join(test_mats))
+        ami = NeuroCAASAMI(os.path.join(test_folder))
+        if test_folder.endswith("no_sg"):
+            ec2_resource.create_security_group(GroupName = "testsgstack-SecurityGroupDev-1NQJIDBJG16KK",Description = "add sg for devinstance") 
         ami.config["Lambda"]["LambdaConfig"]["AMI"] = amiid
         ami.launch_devinstance()
         ec2_client.terminate_instances(InstanceIds=[ami.instance.instance_id])
+        if test_folder.endswith("no_sg"):
+            ec2_client.delete_security_group(GroupName = "testsgstack-SecurityGroupDev-1NQJIDBJG16KK") 
         assert ami.instance.image_id == amiid
 
     def test_create_devami(self,mock_boto3_for_remote):

@@ -163,6 +163,9 @@ class NeuroCAASAMI(object):
         except ClientError:
             print("Instance with id {} can't be loaded".format(instance_id))
             raise
+        except AttributeError: ## instance.instance_id attribute will not exist.   
+            print("Instance with id {} does not exist.".format(instance_id))
+
         self.instance = instance
     
 
@@ -213,7 +216,7 @@ class NeuroCAASAMI(object):
                  "MaxCount":1,
                  "DryRun":DryRun,
                  "KeyName":self.config["Lambda"]["LambdaConfig"]["KEY_NAME"],
-                 "SecurityGroups":[gpdict["securitygroupdevname"]],
+                 "SecurityGroups":[self.config["Lambda"]["LambdaConfig"].get("SECURITY_GROUPS",gpdict["securitygroupdevname"])],#[],
                  "IamInstanceProfile":{'Name':self.config["Lambda"]["LambdaConfig"]["IAM_ROLE"]},
                  "TagSpecifications" : return_tags(timeout)
                  }

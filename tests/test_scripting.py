@@ -433,6 +433,18 @@ class Test_NeuroCAASScriptManager():
             ncsm.get_file(name)
             assert ncsm.get_filepath(name) == os.path.join(subdir,"inputs",os.path.basename(contentkey))
 
+    def test_get_bucket_name(self,tmp_path,setup_full_bucket):
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()    
+        ncsm = scripting.NeuroCAASScriptManager(subdir)
+
+        bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
+        contentkey = "inputs/file.json"
+        s3path = f"s3://{bucketname}/{username}/{contentkey}"
+        ncsm.register_data(s3path)
+        ncsm.get_data()
+        assert ncsm.get_bucket_name() == bucketname 
+
     def test_get_resultpath(self,tmp_path,setup_full_bucket):
         bucketname,username,contents,s3_client,s3_resource = setup_full_bucket
         subdir = tmp_path / "subdir"

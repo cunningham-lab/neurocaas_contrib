@@ -191,16 +191,18 @@ class NeuroCAASCertificate(NeuroCAASLogObject):
     """Per-submission log file that captures the setup of resources on neurocaas, and provides basic summary information about each instance started by the job as it runs. Captures the git commit of the neurocaas blueprint version to ensure reproducibility. 
 
     """
-    def __init__(self,s3_path,write_localpath=localdata_dict["certificate_update"]):
+    def __init__(self,s3_path,write_localpath=localdata_dict["certificate_update"],parse = True):
         """Given an s3 uri to a certificate file, initializes from that certificate file. If not given or not accessible/ load in a default certificate and fill in as we go (some information will be missing)
 
         :param s3_path: the path to an s3 object, given as an s3 uri (s3://bucketname/keyname). 
         :param write_localpath: the localpath that we will write to. This should be passed defaults from global variables declared in this module. 
+        :param parse: boolean flag to indicate if we should parse the raw file for locations to write to. Assumes that certificate records a successfully initiated job. 
 
         """
         super().__init__(s3_path,write_localpath)
         self.assign_template()
-        self.certdict,self.writedict,self.writearea = self.process_rawcert(self.rawfile)
+        if parse:
+            self.certdict,self.writedict,self.writearea = self.process_rawcert(self.rawfile)
 
     def load_init_s3(self,bucketname,path):
         """Load in file to use as initialization for this logging object.   
