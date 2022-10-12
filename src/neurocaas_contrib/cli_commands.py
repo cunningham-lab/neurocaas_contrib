@@ -311,6 +311,13 @@ def get_blueprint(blueprint):
     string = json.dumps(blueprint["blueprint"].blueprint_dict,indent = 2)
     click.echo(string)
 
+@cli.group(help = "analyze data with neurocaas from the cli.")
+def analyze():
+    pass
+
+#@local.command("upload data")
+
+
 @cli.group(help = "develop locally in a docker container.")
 def local():
     pass 
