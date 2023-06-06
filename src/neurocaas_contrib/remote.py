@@ -335,6 +335,7 @@ class NeuroCAASAMI(object):
         ## Get the datasets we want to use.
         data_allname = submit_config['dataname']
         config_name = submit_config['configname']
+        analysis_script_path = submit_config['analysis_script_path']
 
         ## Now get the command we want to send properly formatted:
         command_unformatted = self.config['Lambda']['LambdaConfig']['COMMAND']
@@ -349,16 +350,22 @@ class NeuroCAASAMI(object):
         data_filename = file_list[0]
 
 
-        command_formatted = [command_unformatted.format(bucketname_test,data_filename,outdir,config_name)]
+        command_formatted = command_unformatted.format(
+            bucketname_test,
+            data_filename,
+            outdir,
+            config_name,
+            analysis_script_path,
+        )
         working_directory = [self.config['Lambda']['LambdaConfig']['WORKING_DIRECTORY']]
         timeout = [str(self.config['Lambda']['LambdaConfig']['SSM_TIMEOUT'])]
 
-        print('sending command: '+command_formatted[0] +' to instance '+self.instance.instance_id)
+        print('sending command: '+command_formatted +' to instance '+self.instance.instance_id)
         ## Get the ssm client:
         #ssm_client = boto3.client('ssm',region_name = self.config['Lambda']['LambdaConfig']['REGION'])
         response = ssm_client.send_command(
             DocumentName="AWS-RunShellScript", # One of AWS' preconfigured documents
-            Parameters={'commands': command_formatted,
+            Parameters={'commands': [command_formatted],
                         "workingDirectory":working_directory,
                         "executionTimeout":timeout},
             InstanceIds=[self.instance.instance_id],
