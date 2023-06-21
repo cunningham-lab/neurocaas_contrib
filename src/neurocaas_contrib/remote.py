@@ -148,6 +148,11 @@ class NeuroCAASAMI(object):
         self.ami_hist = []
         self.instance_saved = False
 
+    def list_instances(self):
+        """Edit: we're going to allow multiple instances. 
+
+        """
+
     def assign_instance(self,instance_id):
         """Add a method to assign instances instances as the indicated development instance.  
 
