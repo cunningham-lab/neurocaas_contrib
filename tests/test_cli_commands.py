@@ -83,6 +83,20 @@ def get_paths(rootpath):
                     dirpaths.append(localdir)
     return paths,dirpaths            
 
+@pytest.fixture
+def create_instance_profile():
+    profilename = "SSMRole"
+    iam_resource = localstack_client.session.resource('iam')
+    iam_client = localstack_client.session.client('iam')
+    instance_profile = iam_resource.create_instance_profile(
+    InstanceProfileName=profilename,
+    Path='string'
+    )
+    yield instance_profile
+    iam_client.delete_instance_profile(
+    InstanceProfileName=profilename,
+    )
+
 @pytest.fixture(autouse = True)
 def remote_config_files():
     ## Removes the file at configpath variable after tests are done. Allows us to write to a single fixed location without fear. 
@@ -1046,7 +1060,7 @@ class Test_remote():
 
             assert configdict_full["develop_dict"]["instance_id"] == instance.id
 
-    def test_launch_devinstance(self,setup_log_bucket,mock_boto3_for_remote):
+    def test_launch_devinstance(self,create_instance_profile,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
         bucket_name = setup_log_bucket
         runner = CliRunner()
@@ -1077,7 +1091,7 @@ class Test_remote():
             eprint(runner.invoke(cli,["remote","start-devinstance"]))
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
 
-    def test_instance_lifecycle_assigned(self,setup_log_bucket,mock_boto3_for_remote):
+    def test_instance_lifecycle_assigned(self,create_instance_profile,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
         bucket_name = setup_log_bucket
         runner = CliRunner()
