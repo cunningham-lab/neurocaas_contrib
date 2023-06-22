@@ -1076,7 +1076,7 @@ class Test_remote():
             instance = ec2_resource.Instance(configdict_full["develop_dict"]["instance_id"])    
             assert instance.image_id == ami
 
-    def test_instance_lifecycle(self,setup_log_bucket,mock_boto3_for_remote):
+    def test_instance_lifecycle(self,create_instance_profile,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
         bucket_name = setup_log_bucket
         runner = CliRunner()
