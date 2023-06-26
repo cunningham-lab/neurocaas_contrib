@@ -35,22 +35,18 @@ else:
     storagename = ".neurocaas_contrib_storageloc.json" 
     storagepath = os.path.join(os.path.expanduser("~"),storagename)
 
-def save_ami_to_cli(ami):
+def save_ami_to_cli(ami,ctx):
     """Save a dictionary representing the development history to the cli's config file.
 
     :param ami: NeuroCAAS Ami object
     """
     amiinfo = ami.to_dict()
+    # Where should we write the develop_dict?
+    path_write = os.path.join(ctx["location"],ctx["analysis_name"])
+    writepath = os.path.join(path_write,"develop_dict.json")
 
-    try:
-        with open(configpath,"r") as f:
-            config = json.load(f)
-        config["develop_dict"] = amiinfo
-    except FileNotFoundError:
-        click.echo("NeuroCAAS Contrib config file not found. Exiting.")
-        raise
-    with open(configpath,"w") as f:
-        json.dump(config,f,indent = 4)
+    with open(writepath,"w") as f:
+        json.dump(amiinfo,f,indent = 4)
         
 
 def delete_ami_from_cli(develop_dict,force = False):
@@ -65,24 +61,30 @@ def delete_ami_from_cli(develop_dict,force = False):
         click.confirm("Detected an existing development session with instance {} for analysis {}. Delete session?".format(instance, analysis),abort = True)
         ## delete instance.
         ami = NeuroCAASAMI.from_dict(develop_dict)
+        ## write develop instance.
+        amiinfo = ami.to_dict()
+        # Where should we write the develop_dict?
+        path_write = os.path.dirname(amiinfo["config_fullpath"])
+        writepath = os.path.join(path_write,"develop_dict.json")
+
         message = ami.terminate_devinstance(force)
         if message == "No state change.":
             return False
         else:
             try:
-                with open(configpath,"r") as f:
+                with open(writepath,"r") as f:
                     config = json.load(f)
-                config["develop_dict"] = None    
+                config = None    
             except FileNotFoundError:    
                 click.echo("NeuroCAAS Contrib config file not found. Exiting.")
                 raise
-            with open(configpath,"w") as f:
+            with open(writepath,"w") as f:
                 json.dump(config,f,indent=4)
             return True    
     else:     
         click.echo("No development instance detected. Resetting session.")
 
-def create_ctx(ctx,location,analysis_name,develop_dict):
+def create_ctx(ctx,location,analysis_name,developdict):
     """helper function to attempt to create as much of the context object as is available. 
 
     :param ctx: click context object, used to pass state to subcommands
@@ -93,7 +95,7 @@ def create_ctx(ctx,location,analysis_name,develop_dict):
     ctx.obj = {}
     ctx.obj["location"] = location
     ctx.obj["analysis_name"] = analysis_name
-    ctx.obj["develop_dict"] = develop_dict
+    ctx.obj["develop_dict"] = developdict
 
     try:
         ctx.obj["blueprint"] = Blueprint(os.path.join(location,analysis_name,"stack_config_template.json")) ## we can now reference the context object with the decorator pass_obj, as below. 
@@ -177,7 +179,15 @@ def cli(ctx,location,analysis_name):
                 location = defaultconfig["location"]
             if analysis_name is None:    
                 analysis_name = defaultconfig["analysis_name"]
-            develop_dict = defaultconfig.get("develop_dict",None)
+
+            #develop_dict = defaultconfig.get("develop_dict",None)
+
+        ### revision: develop_dict must be per-analysis. 
+        try: 
+            with open(os.path.join(location,analysis_name,"develop_dict"),"r") as f:
+                develop_dict = json.load(f)
+        except FileNotFoundError:        
+            develop_dict = None
 
         ctx = create_ctx(ctx,location,analysis_name,develop_dict)
     except (FileNotFoundError,click.ClickException,KeyError):    
@@ -1306,6 +1316,20 @@ def remote(ctx):
     """
     from .remote import NeuroCAASAMI
     ctx.obj["remotemod"] = NeuroCAASAMI
+    analysis_path = os.path.join(ctx.obj["location"],ctx.obj["analysis_name"])
+    dev_path = os.path.join(analysis_path,"develop_dict.json")
+
+    try: ## try to load previous develop dict. 
+        with open(dev_path,"r") as f: 
+            dev_dict = json.load(f)
+            d = ctx.obj["remotemod"].from_dict(dev_dict).to_dict()
+        click.echo("Previous development session found. loading progress.")
+    except FileNotFoundError:     
+
+        d = ctx.obj["remotemod"](analysis_path).to_dict()
+        click.echo("No previous development session found. starting from scratch.")
+    ctx.obj["develop_dict"] = d    
+
     return 
     
 
@@ -1345,7 +1369,7 @@ def develop_remote(blueprint,index):
         ami = blueprint["remotemod"](path) 
         blueprint["blueprint"].blueprint_dict["remote_hist"] = []
     ## write out to the remote_hist: 
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
     
 
 
@@ -1373,7 +1397,7 @@ def start_session(blueprint,force):
     ami = blueprint["remotemod"](path) 
     blueprint["blueprint"].blueprint_dict["remote_hist"] = []
     ## write out to the remote_hist: 
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "Finish development session.")
 @click.option("-f",
@@ -1401,16 +1425,24 @@ def end_session(blueprint,force):
         "--instance",
         type = click.STRING,
         help = "instance id to assign to this instance. ")
+@click.option("-n",
+        "--name",
+        type = click.STRING,
+        help = "name for this assigned instance")
+@click.option("-d",
+        "--description",
+        type = click.STRING,
+        help = "description of this instance.")
 @click.pass_obj
-def assign_instance(blueprint,instance):    
+def assign_instance(blueprint,instance,name,description):    
     """Assign an existing instance from its instance ID to a blueprint["remotemod"] object so you can start developing on it. 
 
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
-    ami.assign_instance(instance)
-    save_ami_to_cli(ami)
+    ami.assign_instance(instance,name,description)
+    save_ami_to_cli(ami,blueprint)
         
 @remote.command(help = "Launch a new instance from an ami")
 @click.option("-a",
@@ -1418,6 +1450,16 @@ def assign_instance(blueprint,instance):
         type = click.STRING,
         help = "AMI id. ",
         default = None)
+@click.option("-n",
+        "--name",
+        type = click.STRING,
+        help = "Name of instance",
+        )
+@click.option("-d",
+        "--description",
+        type = click.STRING,
+        help = "Description for instance",
+        )
 @click.option("-v",
         "--volumesize",
         type = click.INT,
@@ -1429,15 +1471,15 @@ def assign_instance(blueprint,instance):
         help = "length of timeout to associate with this instance",
         default = 60)
 @click.pass_obj
-def launch_devinstance(blueprint,amiid,volumesize,timeout):
+def launch_devinstance(blueprint,name,description,amiid,volumesize,timeout):
     """Launch a new instance. 
 
     """
     devdict = blueprint["develop_dict"]
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
-    ami.launch_devinstance(ami = amiid,volume_size = volumesize,timeout = timeout)
-    save_ami_to_cli(ami)
+    ami.launch_devinstance(name = name, description = description,ami = amiid,volume_size = volumesize,timeout = timeout)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "Start the current instance")
 @click.option("-t",
@@ -1454,7 +1496,7 @@ def start_devinstance(blueprint,timeout):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.start_devinstance(timeout = timeout)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "Stop the current instance")
 @click.pass_obj
@@ -1466,7 +1508,7 @@ def stop_devinstance(blueprint):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.stop_devinstance()
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "Terminate the current development instance")
 @click.option("-f",
@@ -1483,7 +1525,7 @@ def terminate_devinstance(blueprint,force):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.terminate_devinstance(force = force)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "Get the ip address of the instance.")
 @click.pass_obj
@@ -1559,7 +1601,7 @@ def submit_job(blueprint,submitpath,data,config):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.submit_job(submitpath)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "get the status from the most recently run job.")
 @click.option("-j",
@@ -1576,7 +1618,7 @@ def job_status(blueprint,jobind):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.job_status(jobind)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "get the output from the most recently run job.")
 @click.option("-j",
@@ -1593,7 +1635,24 @@ def job_output(blueprint,jobind):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.job_output(jobind)
-    save_ami_to_cli(ami)
+    
+
+@remote.command(help = "get the output from the most recently run job.")
+@click.option("-j",
+        "--jobind",
+        help = "index of job to get the output for",
+        type = click.INT,
+        default = -1)
+@click.pass_obj
+def job_output(blueprint,jobind):    
+    """Read stdout and stderr from the instance you're developing on.  
+
+    """
+    devdict = blueprint["develop_dict"]
+    assert devdict is not None, "Development dict must exist. Run develop-remote"
+    ami = blueprint["remotemod"].from_dict(devdict)
+    ami.job_output(jobind)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "save the current development instance into an ami.")
 @click.option("-n",
@@ -1610,7 +1669,7 @@ def create_devami(blueprint,name):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.create_devami(name)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 @remote.command(help = "update the blueprint with most recently developed amis.")
 @click.option("-a",
@@ -1634,7 +1693,7 @@ def update_blueprint(blueprint,amiid,message):
     assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.update_blueprint(amiid,message)
-    save_ami_to_cli(ami)
+    save_ami_to_cli(ami,blueprint)
 
 #@remote.command(help = "save to development history")
 #@click.pass_obj

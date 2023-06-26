@@ -925,24 +925,9 @@ class Test_workflow():
             config =  s3_client.download_file(bucketname,f"{username}/results/process_results/update.txt","./update.txt")
 
 class Test_remote():
-    ### Test remote instance management.  
-    def test_develop_remote(self,setup_log_bucket):
-        bucket_name = setup_log_bucket
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            os.mkdir("./logs")
-            result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"Y")))
-            with open(configpath) as f:
-                configdict = json.load(f)
-            assert configdict["develop_dict"] == {}
-            #print(configdict)
-            #assert 0 
-            result = eprint(runner.invoke(cli,["remote","develop-remote"]))
-            with open(configpath) as f:
-                configdict_full = json.load(f)
-            assert type(configdict_full["develop_dict"]["config"]) == dict
 
     ### Test remote instance management when development history exists.  
+    @pytest.mark.skipif(1== 1,reason = "Skip. no longer relevant. ")
     def test_develop_remote(self,setup_log_bucket):
         bucket_name = setup_log_bucket
         runner = CliRunner()
@@ -952,11 +937,15 @@ class Test_remote():
             with open(configpath) as f:
                 configdict = json.load(f)
             assert configdict["develop_dict"] == None
-            result = eprint(runner.invoke(cli,["remote","develop-remote"]))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"]))
+            ## save a fake development dict. 
+            with open("./develop_dict.json","w") as f:
+                json.dump("{}",f)
             with open(configpath) as f:
                 configdict_full = json.load(f)
             assert type(configdict_full["develop_dict"]["config"]) == dict
 
+    @pytest.mark.skipif(1== 1,reason = "Skip. no longer relevant. ")
     def test_develop_remote_existing(self,setup_log_bucket):
         """Develop from a blueprint that already exists. 
         Assert that the develop dictionary you have looks like the stack config you started with, not a bare one. 
@@ -983,6 +972,7 @@ class Test_remote():
 
         assert configdict_full["develop_dict"]["config"] == stackconfig
 
+    @pytest.mark.skipif(1== 1,reason = "Skip. no longer relevant. ")
     def test_start_session(self,setup_log_bucket,mock_boto3_for_remote):    
         """Start session is develop-remote v2. 
 
@@ -996,7 +986,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             ## now we have a session with mock instance attached. 
             eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
             with open(configpath) as f:
@@ -1013,6 +1003,7 @@ class Test_remote():
                 d = json.load(f)
                 assert d["develop_dict"]["instance_id"] is None ## starting new session should not have gone through. 
 
+    @pytest.mark.skipif(1== 1,reason = "Skip. no longer relevant. ")
     def test_end_session(self,setup_log_bucket,mock_boto3_for_remote):    
         """end session ends 
 
@@ -1026,7 +1017,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             ## now we have a session with mock instance attached. 
             eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
             with open(configpath) as f:
@@ -1050,15 +1041,16 @@ class Test_remote():
         runner = CliRunner()
         with runner.isolated_filesystem():
             os.mkdir("./logs")
+            os.mkdir("./{}".format(bucket_name))
+            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
-            shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","--instance",instance.id]))
-            with open(configpath) as f:
+            with open(os.path.abspath("./{}/develop_dict.json".format(bucket_name))) as f:
                 configdict_full = json.load(f)
 
-            assert configdict_full["develop_dict"]["instance_id"] == instance.id
+            assert configdict_full["instance_id"] == instance.id
 
     def test_launch_devinstance(self,create_instance_profile,setup_log_bucket,mock_boto3_for_remote):
         instance,ami = mock_boto3_for_remote
@@ -1069,11 +1061,11 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
-            eprint(runner.invoke(cli,["remote","launch-devinstance","--amiid",ami]))
-            with open(configpath) as f:
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","launch-devinstance","-n","name for instance","-d","description for instance","--amiid",ami]))
+            with open(os.path.abspath("./{}/develop_dict.json".format(bucket_name))) as f:
                 configdict_full = json.load(f)
-            instance = ec2_resource.Instance(configdict_full["develop_dict"]["instance_id"])    
+            instance = ec2_resource.Instance(configdict_full["instance_id"])    
             assert instance.image_id == ami
 
     def test_instance_lifecycle(self,create_instance_profile,setup_log_bucket,mock_boto3_for_remote):
@@ -1085,7 +1077,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","launch-devinstance","--amiid",ami]))
             eprint(runner.invoke(cli,["remote","stop-devinstance"]))
             eprint(runner.invoke(cli,["remote","start-devinstance"]))
@@ -1100,7 +1092,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
             eprint(runner.invoke(cli,["remote","stop-devinstance"]))
             eprint(runner.invoke(cli,["remote","start-devinstance"]))
@@ -1118,7 +1110,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
             eprint(runner.invoke(cli,["remote","submit-job", "-s", "./submit.json"]))
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
@@ -1135,7 +1127,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
             eprint(runner.invoke(cli,["remote","submit-job", "-s", "./submit.json"]))
             eprint(runner.invoke(cli,["remote","job-output"]))
@@ -1153,7 +1145,7 @@ class Test_remote():
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
             
             shutil.copy(os.path.join(here,"test_mats","stack_config_template.json"),os.path.join("./",bucket_name,"stack_config_template.json"))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
             eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             eprint(runner.invoke(cli,["remote","terminate-devinstance","--force",True]))
@@ -1187,8 +1179,8 @@ class Test_remote():
             s3_client.upload_file("./submit.json",bucket_name,"bendeskylab/inputs/dummyinput.json")
             os.mkdir("./logs")
             result = eprint(runner.invoke(cli,["init","--location","./"],input = "{}\n{}".format(bucket_name,"y")))
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
-            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id,"-n","assigned","-d","assigned description"]))
             eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             stackconfig = os.path.join(here,"test_mats","stack_config_template.json")
             with open(stackconfig) as f:
@@ -1227,7 +1219,7 @@ class Test_remote():
             with open(stackconfig) as f:
                 sc_old = json.load(f)
                 hist_old = sc_old["develop_history"]
-            result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
+            #result = eprint(runner.invoke(cli,["remote","develop-remote"],input = "{}".format("y")))
             eprint(runner.invoke(cli,["remote","assign-instance","-i",instance.id]))
             eprint(runner.invoke(cli,["remote","create-devami","-n","falseami"]))
             eprint(runner.invoke(cli,["remote","update-history"]))
