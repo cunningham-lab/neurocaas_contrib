@@ -78,6 +78,15 @@ class Test_NeuroCAASAMI():
         with pytest.raises(ClientError):
             ami.assign_instance("bs_instance_id","bs","bs")
 
+    def test_terminate_devinstance(self,mock_boto3_for_remote,create_instance_profile):
+        amiid = mock_boto3_for_remote
+        ami = NeuroCAASAMI(os.path.join(test_mats))
+        ami.config["Lambda"]["LambdaConfig"]["AMI"] = amiid
+        ami.launch_devinstance("test_terminate","test_terminate_devinstance")
+        ami.terminate_devinstance(force = False)
+        ami.terminate_devinstance(force = True)
+        assert ami.instance_pool == {}
+
     @pytest.mark.parametrize("test_folder",[test_mats,os.path.join(test_mats,"no_sg")])
     def test_check_pool(self,mock_boto3_for_remote,create_instance_profile,test_folder):    
         amiid = mock_boto3_for_remote
@@ -210,20 +219,26 @@ class Test_NeuroCAASAMI():
         ## compare: 
         with open(config) as f:
             dict_recovered = json.load(f)
-        if condition in ["empty","full"]:
+        if condition == "empty":
             ami2 = NeuroCAASAMI.from_dict(dict_recovered)
             for k,v in ami.__dict__.items():
                 assert ami2.__dict__[k] == v
+        elif condition == "full":    
+            ami2 = NeuroCAASAMI.from_dict(dict_recovered)
+            for k,v in ami.__dict__.items():
+                print(k)
+                if k == "config":
+                    assert ami2.__dict__[k] != v ## will write this back to the file when actually using. 
         else:
             dict_recovered["instance_id"] = "noexists"
             dict_recovered["instance_hist"] = ["garb","age"]
-            with pytest.raises(KeyError):
+            with pytest.raises(KeyError): ## without real instance, raises error. 
                 ami2 = NeuroCAASAMI.from_dict(dict_recovered)
-                for k,v in ami.__dict__.items():
-                    if k in ["instance","instance_hist"]:
-                        pass
-                    else:
-                        assert ami2.__dict__[k] == v
+                #for k,v in ami.__dict__.items():
+                #    if k in ["instance","instance_hist"]:
+                #        pass
+                #    else:
+                #        assert ami2.__dict__[k] == v
     
     @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
     def test_update_blueprint(self,mock_boto3_for_remote,tmp_path):

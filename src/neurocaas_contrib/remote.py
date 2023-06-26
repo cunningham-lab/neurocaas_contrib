@@ -118,7 +118,7 @@ class NeuroCAASAMI(object):
 
     Example Usage:
     ```python
-    devenv = NeuroCaaSAMI("../../sam_example_stack/") ## Declare in reference to a particular NCAP pipeline
+    devenv = NeuroCaaSAMI("../../sam_example_stack/") ## Declare in reference to a particular NeuroCAAS pipeline
     devenv.launch_ami() ## function 1 referenced above
     ### Do some development on the remote instance
     devenv.submit_job("/path/to/submit/file") ## function 2 referenced above
@@ -135,7 +135,7 @@ class NeuroCAASAMI(object):
         path = os.path.dirname(d["config_fullpath"])
         inst = cls(path)
         #TODO FInish implementing this. You need to initialize, then assign the new config, then assign the instance + ami and command histories. 
-        inst.config = d["config"]
+        #inst.config = d["config"]
         if d["instance_id"] is not None:
             try:
                 inst.assign_instance(d["instance_id"],d["instance_pool"][d["instance_id"]]["name"],d["instance_pool"][d["instance_id"]]["description"])
@@ -143,7 +143,7 @@ class NeuroCAASAMI(object):
                 print("Instance {} does not exist, not assigning ".format(d["instance_id"]))
             inst.ip = d.get("ip",None)
         inst.instance_hist = [ec2_resource.Instance(i) for i in d["instance_hist"]]
-        inst.instance_pool = d["instance_pool"]
+        inst.instance_pool = d["instance_pool"] ## this will replace the assign, but the info is the same anyway. 
         inst.ami_hist = d["ami_hist"]
         inst.commands = d["commands"]
         inst.instance_saved = d["instance_saved"]
@@ -564,18 +564,20 @@ class NeuroCAASAMI(object):
 
         if proceed == True:
             response = ec2_client.terminate_instances(InstanceIds = [self.instance.instance_id])
-            print("Instance {} is terminating".format(self.instance.instance_id))
+            message = "Instance {} is terminating. Safe to start new instance.".format(self.instance.instance_id)
+            self.instance_pool.pop(self.instance.instance_id)
+            self.instance = None
+            
             ## Now wait until terminated:
-            waiter = ec2_client.get_waiter('instance_terminated')
-            waiter.wait(InstanceIds = [self.instance.instance_id])
-            self.instance.load()
-            message = "Instance is now in state: {}".format(self.instance.state["Name"])
-            print(message)
-            return message 
+            #waiter = ec2_client.get_waiter('instance_terminated')
+            #waiter.wait(InstanceIds = [self.instance.instance_id])
+            #self.instance.load()
+            #message = "Instance is now in state: {}".format(self.instance.state["Name"])
+            #print(message)
         else:
             message = "No state change."
             print(message)
-            return message 
+        return message 
 
     def create_devami(self,name):
         """
