@@ -138,7 +138,7 @@ class NeuroCAASAMI(object):
         inst.config = d["config"]
         if d["instance_id"] is not None:
             try:
-                inst.assign_instance(d["instance_id"])
+                inst.assign_instance(d["instance_id"],d["instance_pool"][d["instance_id"]]["name"],d["instance_pool"][d["instance_id"]]["description"])
             except ClientError as e:    
                 print("Instance {} does not exist, not assigning ".format(d["instance_id"]))
             inst.ip = d.get("ip",None)
@@ -212,12 +212,13 @@ class NeuroCAASAMI(object):
             status_msgs.append(template.format(inst.instance_id,name,state,time,description))    
         return status_msgs    
                 
-    def assign_instance(self,instance_id):
+    def assign_instance(self,instance_id,name,description):
         """Add a method to assign instances instances as the indicated development instance.  
 
         :param instance_id: takes the instance id as a string.
 
         """
+        assert self.check_clear(),"Instance pool full."
         if self.instance is not None:
             self.instance_hist.append(self.instance)
             self.instance_saved = False ## Defaults to assuming the instance has not been saved. 
@@ -231,6 +232,8 @@ class NeuroCAASAMI(object):
             print("Instance with id {} does not exist.".format(instance_id))
 
         self.instance = instance
+        ami_instance_id = self.instance.instance_id
+        self.instance_pool[ami_instance_id] = {"name":name,"description":description}
     
     def launch_devinstance(self,name,description,ami = None,volume_size = None,timeout = 60,DryRun = False):
         """
@@ -272,7 +275,7 @@ class NeuroCAASAMI(object):
 
         ## Get default instance type:
         instance_type = self.config['Lambda']['LambdaConfig']['INSTANCE_TYPE']
-        assert self.check_clear(),"Instance pool okay."
+        assert self.check_clear(),"Instance pool full."
         argdict = {
                  "ImageId":ami_id,
                  "InstanceType":instance_type,

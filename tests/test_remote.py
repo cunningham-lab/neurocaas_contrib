@@ -1,6 +1,7 @@
 import pytest 
 import datetime
 import pdb
+from botocore.exceptions import ClientError
 import json
 import neurocaas_contrib
 from testpaths import get_dict_file 
@@ -67,6 +68,15 @@ class Test_NeuroCAASAMI():
         assert ami.instance.instance_id in ami.instance_pool.keys()
         assert ami.instance_pool[ami.instance.instance_id]["name"]== "test_launch"
         assert ami.instance_pool[ami.instance.instance_id]["description"]== "test_launch_devinstance"
+
+    def test_assign_instance(self,mock_boto3_for_remote,create_instance_profile):
+        amiid = mock_boto3_for_remote
+        ami = NeuroCAASAMI(os.path.join(test_mats))
+        ami.config["Lambda"]["LambdaConfig"]["AMI"] = amiid
+        instance = ec2_resource.create_instances(ImageId=amiid,MinCount=1,MaxCount=1)[0]
+        ami.assign_instance(instance.instance_id,"assigned_inst","created assigned instance")
+        with pytest.raises(ClientError):
+            ami.assign_instance("bs_instance_id","bs","bs")
 
     @pytest.mark.parametrize("test_folder",[test_mats,os.path.join(test_mats,"no_sg")])
     def test_check_pool(self,mock_boto3_for_remote,create_instance_profile,test_folder):    
@@ -207,12 +217,13 @@ class Test_NeuroCAASAMI():
         else:
             dict_recovered["instance_id"] = "noexists"
             dict_recovered["instance_hist"] = ["garb","age"]
-            ami2 = NeuroCAASAMI.from_dict(dict_recovered)
-            for k,v in ami.__dict__.items():
-                if k in ["instance","instance_hist"]:
-                    pass
-                else:
-                    assert ami2.__dict__[k] == v
+            with pytest.raises(KeyError):
+                ami2 = NeuroCAASAMI.from_dict(dict_recovered)
+                for k,v in ami.__dict__.items():
+                    if k in ["instance","instance_hist"]:
+                        pass
+                    else:
+                        assert ami2.__dict__[k] == v
     
     @pytest.mark.skipif(get_dict_file() == "ci",reason = "Skipping test that relies on github creds")
     def test_update_blueprint(self,mock_boto3_for_remote,tmp_path):
