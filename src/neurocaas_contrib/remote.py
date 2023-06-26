@@ -29,7 +29,7 @@ srcdir = pathlib.Path(__file__).parent.absolute()
 with open(os.path.join(srcdir,"template_mats","global_params_initialized.json")) as gp:
     gpdict = json.load(gp)
 
-def get_lifetime_generic(self,instance):
+def get_lifetime_generic(instance):
     """Describe the amount of time remaining on this instance. 
 
     """
@@ -143,6 +143,7 @@ class NeuroCAASAMI(object):
                 print("Instance {} does not exist, not assigning ".format(d["instance_id"]))
             inst.ip = d.get("ip",None)
         inst.instance_hist = [ec2_resource.Instance(i) for i in d["instance_hist"]]
+        inst.instance_pool = d["instance_pool"]
         inst.ami_hist = d["ami_hist"]
         inst.commands = d["commands"]
         inst.instance_saved = d["instance_saved"]
@@ -181,11 +182,13 @@ class NeuroCAASAMI(object):
             assert instance_id in self.instance_pool.keys(), "Instance with given ID not in instance pool"
             self.instance = ec2_resource.Instance(instance_id)
         elif instance_name is not None:
+            prev_inst = self.instance
             for id_,data in self.instance_pool.items():
                 if data["name"] == instance_name:
                     self.instance = ec2_resource.Instance(id_)
             ## if not in list:
-            if self.instance is None:    
+            print(self.instance)
+            if self.instance == prev_inst:    
                 raise Exception("Instance with given name not in instance pool")
         else:
             raise Exception("Name or ID of instance must be given.")
@@ -196,16 +199,17 @@ class NeuroCAASAMI(object):
         """
         status_msgs = []
         template = "\n\nID: {} | Name: {} | Status: {} | Lifetime: {} | Description: {}\n\n"
-        for instance,data in self.instance_pool:
-            state = instance.state["Name"]
+        for instance,data in self.instance_pool.items():
+            inst = ec2_resource.Instance(instance)
+            state = inst.state["Name"]
             name = data["name"]
-            description = data["descrption"]
+            description = data["description"]
             if state == "running":
-                mins,secs = get_lifetime_generic(instance)
+                mins,secs = get_lifetime_generic(inst)
                 time = "{}m{}s".format(mins,secs)
             else:    
                 time = "N/A"
-            status_msgs.append(template.format(instance.instance_id,state,time,description))    
+            status_msgs.append(template.format(inst.instance_id,name,state,time,description))    
         return status_msgs    
                 
     def assign_instance(self,instance_id):
@@ -691,11 +695,12 @@ class NeuroCAASAMI(object):
         active_instances = 4
         running = 0
         for inst in self.instance_pool.keys():
-            inst.load()
-            if inst.state["Name"] == "stopped":
+            insta = ec2_resource.Instance(inst)
+            insta.load()
+            if insta.state["Name"] == "running":
                 running +=1
-            active = running < active_instances    
-            print("{} of {} possible active instances.".format(running,active_instances))
+        active = running < active_instances    
+        print("{} of {} possible active instances.".format(running,active_instances))
         total_pool = len(self.instance_pool)<total_instances
         print("{} instances in pool".format(len(self.instance_pool)))
         return active,total_pool
