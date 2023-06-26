@@ -198,7 +198,7 @@ class NeuroCAASAMI(object):
 
         """
         status_msgs = []
-        template = "\n\nID: {} | Name: {} | Status: {} | Lifetime: {} | Description: {}\n\n"
+        template = "ID: {} | Name: {} | Status: {} | Lifetime: {} | Description: {}\n\n"
         for instance,data in self.instance_pool.items():
             inst = ec2_resource.Instance(instance)
             state = inst.state["Name"]
@@ -209,7 +209,10 @@ class NeuroCAASAMI(object):
                 time = "{}m{}s".format(mins,secs)
             else:    
                 time = "N/A"
-            status_msgs.append(template.format(inst.instance_id,name,state,time,description))    
+            message = template.format(inst.instance_id,name,state,time,description)
+            if self.instance.instance_id == inst.instance_id:
+                message = "*"+message
+            status_msgs.append(message)    
         return status_msgs    
                 
     def assign_instance(self,instance_id,name,description):
@@ -705,9 +708,9 @@ class NeuroCAASAMI(object):
             if insta.state["Name"] == "running":
                 running +=1
         active = running < active_instances    
-        print("{} of {} possible active instances.".format(running,active_instances))
+        #print("{} of {} possible active instances.".format(running,active_instances))
         total_pool = len(self.instance_pool)<total_instances
-        print("{} instances in pool".format(len(self.instance_pool)))
+        #print("{} instances in pool".format(len(self.instance_pool)))
         return active,total_pool
 
     def check_clear(self):

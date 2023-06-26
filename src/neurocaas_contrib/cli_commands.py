@@ -1386,7 +1386,6 @@ def start_session(blueprint,force):
     ### Clear the details found in develop_dict
     try:
         dev_dict = blueprint["develop_dict"]
-        assert dev_dict is not None
         deleted = delete_ami_from_cli(dev_dict,force)
         if deleted is False:
             click.echo("Did not delete previous session because instance has not been saved to ami (progress would be LOST). To force pass -f flag.")
@@ -1411,7 +1410,6 @@ def end_session(blueprint,force):
     """
     try:
         dev_dict = blueprint["develop_dict"]
-        assert dev_dict is not None
         deleted = delete_ami_from_cli(dev_dict,force)
         if deleted is False:
             click.echo("Did not delete previous session due to undeleted instances. To force pass -f flag.")
@@ -1439,11 +1437,44 @@ def assign_instance(blueprint,instance,name,description):
 
     """
     devdict = blueprint["develop_dict"]
-    assert devdict is not None, "Development dict must exist. Run develop-remote"
     ami = blueprint["remotemod"].from_dict(devdict)
     ami.assign_instance(instance,name,description)
     save_ami_to_cli(ami,blueprint)
         
+@remote.command(help = "Select instance from pool.")
+@click.option("-i",
+        "--instance_id",
+        type = click.STRING,
+        help = "Instance ID. Must give ID or name.",
+        default = None      
+              )
+@click.option("-n",
+        "--name",
+        type = click.STRING,
+        help = "Instance name. Must give id or name.",
+        default = None      
+              )
+@click.pass_obj
+def select_instance(blueprint,instance_id,name):    
+    """Select an instance from the instance pool 
+
+    """
+    devdict = blueprint["develop_dict"]
+    ami = blueprint["remotemod"].from_dict(devdict)
+    ami.select_instance(instance_id,name)
+    save_ami_to_cli(ami,blueprint)
+
+@remote.command(help = "Describe instances in pool")
+@click.pass_obj
+def list_instances(blueprint):    
+    """List the instances available for selection.
+    """
+    devdict = blueprint["develop_dict"]
+    ami = blueprint["remotemod"].from_dict(devdict)
+    list_of_instances = ami.list_instances()
+    click.echo("".join(list_of_instances))
+    save_ami_to_cli(ami,blueprint)
+
 @remote.command(help = "Launch a new instance from an ami")
 @click.option("-a",
         "--amiid",
