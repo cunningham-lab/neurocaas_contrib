@@ -761,6 +761,8 @@ class NeuroCAASAMI(object):
             elif k == "instance_hist":    
                 attdict["instance_hist"] = [vi.instance_id for vi in v]
 
+            elif k == "config":
+                pass ## don't save the config- we will reload from the path given every time. 
             else:    
                 attdict[k] = v
         return attdict
