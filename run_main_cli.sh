@@ -1,9 +1,9 @@
 #!/bin/bash
 source "/home/ubuntu/.dlamirc"
 export PATH="/home/ubuntu/anaconda3/bin:$PATH"
-source activate caiman
+source activate neurocaas ## or update with your preferred analysis path here. 
 
-neurocaas-contrib workflow initialize-job -p /home/ubuntu/ncapdata
+neurocaas-contrib workflow initialize-job -p /home/ubuntu/contribdata ## note you will have to make a directory called contribdata. 
 
 neurocaas-contrib workflow register-dataset -b "$1" -k "$2"
 neurocaas-contrib workflow register-config -b "$1" -k "$4"
