@@ -1323,7 +1323,7 @@ def remote(ctx):
         with open(dev_path,"r") as f: 
             dev_dict = json.load(f)
             d = ctx.obj["remotemod"].from_dict(dev_dict).to_dict()
-        click.echo("Previous development session found. loading progress.")
+        #click.echo("Previous development session found. loading progress.")
     except FileNotFoundError:     
 
         d = ctx.obj["remotemod"](analysis_path).to_dict()

@@ -210,8 +210,11 @@ class NeuroCAASAMI(object):
             else:    
                 time = "N/A"
             message = template.format(inst.instance_id,name,state,time,description)
-            if self.instance.instance_id == inst.instance_id:
-                message = "*"+message
+            try:
+                if self.instance.instance_id == inst.instance_id:
+                    message = "*"+message
+            except AttributeError:        
+                pass ## if no current instance, then indicate so. 
             status_msgs.append(message)    
         return status_msgs    
                 
@@ -568,6 +571,7 @@ class NeuroCAASAMI(object):
         if proceed == True:
             response = ec2_client.terminate_instances(InstanceIds = [self.instance.instance_id])
             message = "Instance {} is terminating. Safe to start new instance.".format(self.instance.instance_id)
+            print(message)
             self.instance_pool.pop(self.instance.instance_id)
             self.instance = None
             
