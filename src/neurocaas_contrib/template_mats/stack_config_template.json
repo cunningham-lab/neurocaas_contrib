@@ -1,7 +1,7 @@
 {
     "PipelineName": "templatestack",
     "REGION": "us-east-1",
-    "STAGE": "websubstack",
+    "STAGE": "webdev",
     "Lambda": {
         "CodeUri": "../../protocols",
         "Handler": "submit_start.handler_develop",
@@ -13,7 +13,9 @@
             "IAM_ROLE": "SSMRole",
             "KEY_NAME": "testkeystack-custom-dev-key-pair",
             "WORKING_DIRECTORY": "~/bin",
-            "COMMAND": "cd /home/ubuntu; neurocaas_remote/run_main.sh \"{}\" \"{}\" \"{}\" \"{}\"; . neurocaas_remote/ncap_utils/workflow.sh; cleanup"
+            "COMMAND": "cd /home/ubuntu; sudo -u ubuntu neurocaas_contrib/run_main_cli.sh \"{}\" \"{}\" \"{}\" \"{}\" {write analysis_script_here}; . neurocaas_contrib/ncap_utils/workflow.sh; cleanup",
+            "EXECUTION_TIMEOUT": 900,
+            "SSM_TIMEOUT": 172000
         }
     },
     "UXData": {
