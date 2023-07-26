@@ -29,6 +29,30 @@ srcdir = pathlib.Path(__file__).parent.absolute()
 with open(os.path.join(srcdir,"template_mats","global_params_initialized.json")) as gp:
     gpdict = json.load(gp)
 
+def get_lifetime_generic(instance):
+    """Describe the amount of time remaining on this instance. 
+
+    """
+    instance_info = ec2_client.describe_instances(InstanceIds=[instance.instance_id])
+    info_dict = instance_info["Reservations"][0]["Instances"][0]
+    launch_time = info_dict["LaunchTime"]
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+    ## get current elapsed time. 
+    diff = current_time-launch_time
+    seconds_in_day = 24 * 60 * 60
+    currmins,currsecs = divmod(diff.days*seconds_in_day+diff.seconds,60)
+    ## get assigned time: 
+    try:
+        tags = info_dict["Tags"]
+        tagdict = {d["Key"]:d["Value"] for d in tags}
+        timeout = tagdict["Timeout"]
+    except KeyError:    
+        raise Exception("Timeout not give; not a valid development instance.")
+    expiretime = launch_time + datetime.timedelta(minutes=int(timeout))
+    tildiff = expiretime - current_time 
+    tilmins,tilsecs = divmod(tildiff.days*seconds_in_day+tildiff.seconds,60)
+    return tilmins,tilsecs 
+
 def return_tags(timeout):    
     """Formats tags to launch instances in a way that will not be shut down by neurocaas AWS account monitoring. 
 
@@ -94,7 +118,7 @@ class NeuroCAASAMI(object):
 
     Example Usage:
     ```python
-    devenv = NeuroCaaSAMI("../../sam_example_stack/") ## Declare in reference to a particular NCAP pipeline
+    devenv = NeuroCaaSAMI("../../sam_example_stack/") ## Declare in reference to a particular NeuroCAAS pipeline
     devenv.launch_ami() ## function 1 referenced above
     ### Do some development on the remote instance
     devenv.submit_job("/path/to/submit/file") ## function 2 referenced above
@@ -111,14 +135,15 @@ class NeuroCAASAMI(object):
         path = os.path.dirname(d["config_fullpath"])
         inst = cls(path)
         #TODO FInish implementing this. You need to initialize, then assign the new config, then assign the instance + ami and command histories. 
-        inst.config = d["config"]
+        #inst.config = d["config"]
         if d["instance_id"] is not None:
             try:
-                inst.assign_instance(d["instance_id"])
+                inst.assign_instance(d["instance_id"],d["instance_pool"][d["instance_id"]]["name"],d["instance_pool"][d["instance_id"]]["description"])
             except ClientError as e:    
                 print("Instance {} does not exist, not assigning ".format(d["instance_id"]))
             inst.ip = d.get("ip",None)
         inst.instance_hist = [ec2_resource.Instance(i) for i in d["instance_hist"]]
+        inst.instance_pool = d["instance_pool"] ## this will replace the assign, but the info is the same anyway. 
         inst.ami_hist = d["ami_hist"]
         inst.commands = d["commands"]
         inst.instance_saved = d["instance_saved"]
@@ -138,6 +163,7 @@ class NeuroCAASAMI(object):
         ## Initialize dev state variables.
         ## Active instance:
         self.instance = None
+        self.instance_pool = {} ## list of active instances. entries look like: {id:{name:name,description:description}}
         ## Instance history:
         self.instance_hist = []
 
@@ -148,12 +174,57 @@ class NeuroCAASAMI(object):
         self.ami_hist = []
         self.instance_saved = False
 
-    def assign_instance(self,instance_id):
+    def select_instance(self,instance_id=None,instance_name = None):
+        """Select a new instance from the pool of available ones. The simplest way to allow multiple active instances.   
+
+        """
+        if instance_id is not None:
+            assert instance_id in self.instance_pool.keys(), "Instance with given ID not in instance pool"
+            self.instance = ec2_resource.Instance(instance_id)
+        elif instance_name is not None:
+            prev_inst = self.instance
+            for id_,data in self.instance_pool.items():
+                if data["name"] == instance_name:
+                    self.instance = ec2_resource.Instance(id_)
+            ## if not in list:
+            print(self.instance)
+            if self.instance == prev_inst:    
+                raise Exception("Instance with given name not in instance pool")
+        else:
+            raise Exception("Name or ID of instance must be given.")
+
+    def list_instances(self):    
+        """List information about the instances available in the instance pool. Gives useful metadata about the instances beyond their ids. 
+
+        """
+        status_msgs = []
+        template = "ID: {} | Name: {} | Status: {} | Lifetime: {} | Description: {}\n\n"
+        for instance,data in self.instance_pool.items():
+            inst = ec2_resource.Instance(instance)
+            state = inst.state["Name"]
+            name = data["name"]
+            description = data["description"]
+            if state == "running":
+                mins,secs = get_lifetime_generic(inst)
+                time = "{}m{}s".format(mins,secs)
+            else:    
+                time = "N/A"
+            message = template.format(inst.instance_id,name,state,time,description)
+            try:
+                if self.instance.instance_id == inst.instance_id:
+                    message = "*"+message
+            except AttributeError:        
+                pass ## if no current instance, then indicate so. 
+            status_msgs.append(message)    
+        return status_msgs    
+                
+    def assign_instance(self,instance_id,name,description):
         """Add a method to assign instances instances as the indicated development instance.  
 
         :param instance_id: takes the instance id as a string.
 
         """
+        assert self.check_clear(),"Instance pool full."
         if self.instance is not None:
             self.instance_hist.append(self.instance)
             self.instance_saved = False ## Defaults to assuming the instance has not been saved. 
@@ -167,13 +238,16 @@ class NeuroCAASAMI(object):
             print("Instance with id {} does not exist.".format(instance_id))
 
         self.instance = instance
+        ami_instance_id = self.instance.instance_id
+        self.instance_pool[ami_instance_id] = {"name":name,"description":description}
     
-
-    def launch_devinstance(self,ami = None,volume_size = None,timeout = 60,DryRun = False):
+    def launch_devinstance(self,name,description,ami = None,volume_size = None,timeout = 60,DryRun = False):
         """
         Launches an instance from an ami. If ami is not given, launches the default ami of the pipeline as indicated in the stack configuration file. Launches on the instance type given in this same stack configuration file.
 
         Inputs:
+        :param name (str): Name of the instance to launch.
+        :param description (str): Description of the instance to launch. 
         :param ami (str): (Optional) if not given, will be the default ami of the path. This has several text options to be maximally useful. 
             [amis recent as of 3/16]
             ubuntu18: ubuntu linux 18.06, 64 bit x86 (ami-07ebfd5b3428b6f4d)
@@ -192,7 +266,6 @@ class NeuroCAASAMI(object):
                 "dlami16":"ami-0a79b70001264b442"
                 }
 
-
         if ami is None:
             ami_id = self.config['Lambda']['LambdaConfig']['AMI']
             print("checking image is available...")
@@ -208,7 +281,7 @@ class NeuroCAASAMI(object):
 
         ## Get default instance type:
         instance_type = self.config['Lambda']['LambdaConfig']['INSTANCE_TYPE']
-        assert self.check_clear()
+        assert self.check_clear(),"Instance pool full."
         argdict = {
                  "ImageId":ami_id,
                  "InstanceType":instance_type,
@@ -241,6 +314,7 @@ class NeuroCAASAMI(object):
         ## Add to the history:
         self.instance_hist.append(out[0])
         ami_instance_id = self.instance.instance_id
+        self.instance_pool[ami_instance_id] = {"name":name,"description":description}
 
         ## Wait until this thing is started:
         waiter = ec2_client.get_waiter('instance_status_ok')
@@ -496,18 +570,21 @@ class NeuroCAASAMI(object):
 
         if proceed == True:
             response = ec2_client.terminate_instances(InstanceIds = [self.instance.instance_id])
-            print("Instance {} is terminating".format(self.instance.instance_id))
-            ## Now wait until terminated:
-            waiter = ec2_client.get_waiter('instance_terminated')
-            waiter.wait(InstanceIds = [self.instance.instance_id])
-            self.instance.load()
-            message = "Instance is now in state: {}".format(self.instance.state["Name"])
+            message = "Instance {} is terminating. Safe to start new instance.".format(self.instance.instance_id)
             print(message)
-            return message 
+            self.instance_pool.pop(self.instance.instance_id)
+            self.instance = None
+            
+            ## Now wait until terminated:
+            #waiter = ec2_client.get_waiter('instance_terminated')
+            #waiter.wait(InstanceIds = [self.instance.instance_id])
+            #self.instance.load()
+            #message = "Instance is now in state: {}".format(self.instance.state["Name"])
+            #print(message)
         else:
             message = "No state change."
             print(message)
-            return message 
+        return message 
 
     def create_devami(self,name):
         """
@@ -622,6 +699,24 @@ class NeuroCAASAMI(object):
                 print("Instance {} is {}, not safe to test.".format(self.instance.instance_id,self.instance.state["Name"]))
         return condition
 
+    def check_pool(self):
+        """Checks the capactity of the instance pool, and number of active instances in the pool.  
+
+        """
+        total_instances = 4
+        active_instances = 4
+        running = 0
+        for inst in self.instance_pool.keys():
+            insta = ec2_resource.Instance(inst)
+            insta.load()
+            if insta.state["Name"] == "running":
+                running +=1
+        active = running < active_instances    
+        #print("{} of {} possible active instances.".format(running,active_instances))
+        total_pool = len(self.instance_pool)<total_instances
+        #print("{} instances in pool".format(len(self.instance_pool)))
+        return active,total_pool
+
     def check_clear(self):
         """
         A function to check if the current instance is live and can be actively developed. Prevents rampant instance propagation. Related to check_running, but not direct negations of each other.
@@ -630,29 +725,33 @@ class NeuroCAASAMI(object):
         (bool): a boolean representing if the current instance is inactive, and can be replaced by an active one.
         """
 
-        if self.instance is None:
+
+        active,total_pool = self.check_pool()
+        if active and total_pool:
             condition = True
-            print("No instance declared, safe to deploy.")
-        else:
-            self.instance.load()
-            try:
-                if self.instance.state["Name"] == "stopped" or self.instance.state["Name"] == "terminated" or self.instance.state["Name"] == "shutting-down":
-                    condition = True
-                    print("Instance {} exists, but is not active, safe to deploy".format(self.instance.instance_id))
-                else:
-                    condition = False
-                    print("Instance {} is {}, not safe to deploy another.".format(self.instance.instance_id,self.instance.state["Name"]))
+        else:    
+            condition = False
+        #if self.instance is None:
+        #    condition = True
+        #    print("No instance declared.")
+        #else:
+        #    self.instance.load()
+        #    try:
+        #        if self.instance.state["Name"] == "stopped" or self.instance.state["Name"] == "terminated" or self.instance.state["Name"] == "shutting-down":
+        #            condition = True
+        #            print("Instance {} exists, but is not active, safe to deploy".format(self.instance.instance_id))
+        #        else:
+        #            condition = False
+        #            print("Instance {} is {}, not safe to deploy another.".format(self.instance.instance_id,self.instance.state["Name"]))
 
-            ## Handle the case where the instance is terminated and cannot be gotten. 
-            except AttributeError as atterr: 
-                if str(atterr) == "'NoneType' object has no attribute 'get'":
-                    print("Instance is terminated and no trace exists")
-                    condition = True
-                else:
-                    print("Unknown error. Try again. ")
-                    condition = False
-                
-
+        #    ## Handle the case where the instance is terminated and cannot be gotten. 
+        #    except AttributeError as atterr: 
+        #        if str(atterr) == "'NoneType' object has no attribute 'get'":
+        #            print("Instance is terminated and no trace exists")
+        #            condition = True
+        #        else:
+        #            print("Unknown error. Try again. ")
+        #            condition = False
         return condition
 
     def to_dict(self):
@@ -669,6 +768,8 @@ class NeuroCAASAMI(object):
             elif k == "instance_hist":    
                 attdict["instance_hist"] = [vi.instance_id for vi in v]
 
+            elif k == "config":
+                pass ## don't save the config- we will reload from the path given every time. 
             else:    
                 attdict[k] = v
         return attdict
