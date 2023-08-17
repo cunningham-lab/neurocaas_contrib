@@ -200,22 +200,26 @@ class NeuroCAASAMI(object):
         status_msgs = []
         template = "ID: {} | Name: {} | Status: {} | Lifetime: {} | Description: {}\n\n"
         for instance,data in self.instance_pool.items():
-            inst = ec2_resource.Instance(instance)
-            state = inst.state["Name"]
-            name = data["name"]
-            description = data["description"]
-            if state == "running":
-                mins,secs = get_lifetime_generic(inst)
-                time = "{}m{}s".format(mins,secs)
-            else:    
-                time = "N/A"
-            message = template.format(inst.instance_id,name,state,time,description)
             try:
-                if self.instance.instance_id == inst.instance_id:
-                    message = "*"+message
-            except AttributeError:        
-                pass ## if no current instance, then indicate so. 
-            status_msgs.append(message)    
+                inst = ec2_resource.Instance(instance)
+                state = inst.state["Name"]
+                name = data["name"]
+                description = data["description"]
+                if state == "running":
+                    mins,secs = get_lifetime_generic(inst)
+                    time = "{}m{}s".format(mins,secs)
+                else:    
+                    time = "N/A"
+                message = template.format(inst.instance_id,name,state,time,description)
+                try:
+                    if self.instance.instance_id == inst.instance_id:
+                        message = "*"+message
+                except AttributeError:        
+                    pass ## if no current instance, then indicate so. 
+                status_msgs.append(message)    
+            except ClientError:
+                message = template.format(instance,data["name"],"DELETED","N/A",data["description"]) 
+                status_msgs.append(message)    
         return status_msgs    
                 
     def assign_instance(self,instance_id,name,description):
@@ -707,10 +711,13 @@ class NeuroCAASAMI(object):
         active_instances = 4
         running = 0
         for inst in self.instance_pool.keys():
-            insta = ec2_resource.Instance(inst)
-            insta.load()
-            if insta.state["Name"] == "running":
-                running +=1
+            try:
+                insta = ec2_resource.Instance(inst)
+                insta.load()
+                if insta.state["Name"] == "running":
+                    running +=1
+            except ClientError:        
+                continue ## if instance can't be accessed, doesn't count as running.
         active = running < active_instances    
         #print("{} of {} possible active instances.".format(running,active_instances))
         total_pool = len(self.instance_pool)<total_instances
