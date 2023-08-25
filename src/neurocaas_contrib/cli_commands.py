@@ -1042,6 +1042,35 @@ def get_data(obj,outputpath,force,display):
     kwargs["display"] = display   
     ncsm.get_data(**kwargs)
 
+
+@workflow.command(help = "get multiple registered datasets from S3")
+@click.option("-o",
+        "--outputpath",
+        help = "path to write output to.",
+        default = None)
+@click.option("-f",
+        "--force",
+        help = "if true, will redownload even if exists at intended output location",
+        is_flag = True)
+@click.option("-d",
+        "--display",
+        help = "if true, will show download progress",
+        is_flag = True)
+@click.pass_obj
+def get_data_multi(obj,outputpath,force,display):
+    """Gets multiple registered datasets from S3. 
+
+    """
+    path = obj["storage"]["path"]
+    ncsm = NeuroCAASScriptManager.from_registration(path)
+    kwargs = {}
+    if outputpath is not None:
+        kwargs["path"] = outputpath
+    kwargs["force"] = force   
+    kwargs["display"] = display   
+    ncsm.get_data_multi(**kwargs)
+
+
 @workflow.command(help = "get a registered config from S3")
 @click.option("-o",
         "--outputpath",

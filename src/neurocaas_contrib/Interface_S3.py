@@ -91,6 +91,37 @@ def download(s3path,localpath,display = False):
         else:
             raise
 
+def download_multi(s3path,localpath,display = False):
+    """Download function. Takes an s3 path to an object, and local object path as input.   
+    :param s3path: full path to an object in s3. Assumes the s3://bucketname/key syntax. 
+    :param localpath: full path to the object name locally (i.e. with basename attached). 
+    :param display: (optional) Defaults to false. If true, displays a progress bar. 
+
+
+
+    """
+    ## TODO: CHANGE THE PARAMS
+    assert s3path.startswith("s3://")
+    bucketname,keyname = s3path.split("s3://")[-1].split("/",1)
+
+    try:
+        transfer = S3Transfer(s3_client)
+        
+        
+        # adapted from https://stackoverflow.com/questions/49772151/download-a-folder-from-s3-using-boto3
+        bucket = s3.Bucket(bucketname)
+        for obj in bucket.objects.filter(Prefix = keyname):
+            obj_keyname = obj.key
+            progress = ProgressPercentage_d(transfer._manager._client,bucketname,obj_keyname,display = display)
+            transfer.download_file(bucketname,obj_keyname,os.path.join(localpath,os.path.basename(obj_keyname)),callback = progress)
+            
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            raise
+        else:
+            raise
+
 def upload(localpath,s3path,display = False):
     """Upload function. Takes a local object paht and s3 path to the desired key as input. 
     :param localpath: full path to the object name locally (i.e. with basename attached). 

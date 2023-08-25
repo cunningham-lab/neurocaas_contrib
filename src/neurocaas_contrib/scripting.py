@@ -10,7 +10,7 @@ import yaml
 import json
 import zipfile
 from .log import NeuroCAASCertificate,NeuroCAASDataStatus,NeuroCAASDataStatusLegacy
-from .Interface_S3 import download,upload
+from .Interface_S3 import download,upload,download_multi
 
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 
@@ -324,6 +324,45 @@ class NeuroCAASScriptManager(object):
                 pass
         if source == "s3":   
             download(data_s3path,data_localpath,display)    
+        elif source == "local":   
+            shutil.copy(data_localsource,data_localpath)
+        self.registration["data"]["local"] = data_localpath
+        self.write()
+        return 1
+    
+    def get_data_multi(self,path = None,force = False,display = False):    
+        """Get currently registered data. If desired, you can pass a path where you would like data to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
+        :param path: (optional) the location you want to write data to. 
+        :param force: (optional) by default, will not redownload if data of the same name already lives here. Can override with force = True
+        :param display: (optional) by default, will not display downlaod progress. 
+        :return: bool (True if downloaded, False if not)
+
+        """
+        try:
+            data_s3path = self.registration["data"]["s3"]
+            source = "s3"
+        except KeyError:     
+            try:
+                data_localsource = self.registration["data"]["localsource"]
+                source = "local"
+            except:    
+                raise AssertionError("Data not registered. Run register_data first.") 
+
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["data"])
+            mkdir_notexists(path)
+        #pass the local directory instead of a filename -- will populate with all files in remote dir
+        data_localpath = path 
+
+        #check to see if localpath is contains any files
+        if not force: 
+            if os.path.listdir(data_localpath):
+                print("Data already exists at this location. Set force = true to overwrite")
+                return 0
+            else:   
+                pass
+        if source == "s3":   
+            download_multi(data_s3path,data_localpath,display)    
         elif source == "local":   
             shutil.copy(data_localsource,data_localpath)
         self.registration["data"]["local"] = data_localpath
