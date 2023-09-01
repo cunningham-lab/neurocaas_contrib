@@ -101,7 +101,6 @@ def download_multi(s3path,localpath,force,display = False):
 
 
     """
-    ## TODO: CHANGE THE PARAMS (already got the return value)
     assert s3path.startswith("s3://")
     bucketname,keyname = s3path.split("s3://")[-1].split("/",1)
 
