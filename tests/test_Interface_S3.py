@@ -106,13 +106,20 @@ def test_download_multi_complex(setup_complex_bucket,tmp_path):
     download_loc.mkdir()
     bucket,username,data_dir,config_dir,s3_client,s3_resource = setup_complex_bucket
     s3path = f"s3://{bucket}/{username}/{data_dir}"
-    Interface_S3.download_multi(s3path,str(download_loc))
-    # Interface_S3.download_multi(s3path,str(download_loc),display = True)
-    for obj in s3_resource.Bucket(bucket).objects.all():
-        print("\n" + str(obj))
-    print("\n\n\n\n")
-    for item in os.listdir(download_loc):
-        print("\n" + str(download_loc) + "/" + str(item))
+    assert Interface_S3.download_multi(s3path,str(download_loc))
+    for item in download_loc.iterdir():
+        item.unlink()
+    # for item in os.listdir(download_loc):
+    #     print("\n" + str(download_loc) + "/" + str(item))
+    assert Interface_S3.download_multi(s3path,str(download_loc),display = True)
+    assert not Interface_S3.download_multi(s3path,str(download_loc))
+    
+    # for obj in s3_resource.Bucket(bucket).objects.all():
+    #     print("\n" + str(obj))
+    # print("\n\n\n\n")
+    # for item in os.listdir(download_loc):
+    #     print("\n" + str(download_loc) + "/" + str(item))
+    
     s3_resource.Bucket("testinterface").objects.all().delete()
 
 

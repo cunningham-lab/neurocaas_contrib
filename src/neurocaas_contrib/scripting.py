@@ -178,6 +178,7 @@ class NeuroCAASScriptManager(object):
             self.write()
 
     def write(self):        
+        print("\n\n\n\n" + str(self.path) + "\n\n\n\n")
         with open(os.path.join(self.path,"registration.json"),"w") as reg: 
             json.dump(self.registration,reg)
 
@@ -354,18 +355,21 @@ class NeuroCAASScriptManager(object):
         #pass the local directory instead of a filename -- will populate with all files in remote dir
         data_localpath = path 
 
-        #check to see if localpath is contains any files
-        if not force: 
-            if os.path.listdir(data_localpath):
-                print("Data already exists at this location. Set force = true to overwrite")
-                return 0
-            else:   
-                pass
         if source == "s3":   
-            download_multi(data_s3path,data_localpath,display)    
+            download_success = download_multi(data_s3path,data_localpath,force,display)    
+            if not download_success:
+                return 0
         elif source == "local":   
-            shutil.copy(data_localsource,data_localpath)
-        self.registration["data"]["local"] = data_localpath
+            for filename in os.listdir(data_localsource):
+                source_name = os.path.join(data_localsource,filename)
+                dest_name = os.path.join(data_localpath,filename)
+
+                if os.path.exists(dest_name) and not force:
+                    print(f"{filename} already exists at this location. Set force = true to overwrite")
+                    return 0
+
+                shutil.copy(source_name,dest_name)
+        self.registration["data"]["local"] = str(data_localpath)
         self.write()
         return 1
 

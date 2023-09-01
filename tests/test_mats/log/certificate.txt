@@ -1,6 +1,6 @@
 PER ENVIRONMENT MONITORING:
 ================
-DATANAME: groupname/inputs/dataset.ext | STATUS: SUCCESS | TIME: 2021_05_20_13_09_16 (finished) | LAST COMMAND: Thu May 20 13:09:14 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Thu May 20 13:09:15 EDT 2021 Setting up network. This could take a while.   | CPU_USAGE: 12.3 %
+DATANAME: groupname/inputs/dataset.ext | STATUS: SUCCESS | TIME: 2023_08_25_12_15_00 (finished) | LAST COMMAND: /home/cbwash2/neurocaas_contrib/tests/test_mats/sendtime.sh: line 4: activate: No such file or directory Fri 25 Aug 2023 12:14:59 PM EDT Fri 25 Aug 2023 12:14:59 PM EDT Fri 25 Aug 2023 12:14:59 PM EDT Fri 25 Aug 2023 12:14:59 PM EDT Fri 25 Aug 2023 12:14:59 PM EDT Setting up network. This could take a while.   | CPU_USAGE: 11.7 %
 ================
 Once jobs start, these logs will be updated regularly. Allow some time [~1 minute] after all jobs finish for results to appear.
 For more information, see DATASET_NAME: files for stdout and stderr output.
