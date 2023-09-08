@@ -92,7 +92,7 @@ def download(s3path,localpath,display = False):
             raise
 
 def download_multi(s3path,localpath,force,display = False):
-    """Download function. Takes an s3 path to an object, and local object path as input.   
+    """Download function. Takes an s3 path to a "folder" (path prefix that ends with backslack), and local object path as input. Will attempt to download all data at the given location to the local path.
     :param s3path: full path to an object in s3. Assumes the s3://bucketname/key syntax. 
     :param localpath: full path to the object name locally (i.e. with basename attached). 
     :param force: will not redownload if data of the same name already lives here
