@@ -97,7 +97,7 @@ def download_multi(s3path,localpath,force,display = False):
     :param localpath: full path to the object name locally (i.e. with basename attached). 
     :param force: will not redownload if data of the same name already lives here
     :param display: (optional) Defaults to false. If true, displays a progress bar. 
-    :return: bool (True if successful download, False otherwise)
+    :return: bool (True if successful download for all files, False otherwise)
 
 
     """
@@ -110,14 +110,16 @@ def download_multi(s3path,localpath,force,display = False):
         
         # adapted from https://stackoverflow.com/questions/49772151/download-a-folder-from-s3-using-boto3
         bucket = s3.Bucket(bucketname)
+        encountered_duplicate = 0
         for obj in bucket.objects.filter(Prefix = keyname):
             obj_keyname = obj.key
             if (os.path.basename(obj_keyname) in os.listdir(localpath)) and (not force):
                 print("Data already exists at this location. Set force = true to overwrite")
-                return 0
-            progress = ProgressPercentage_d(transfer._manager._client,bucketname,obj_keyname,display = display)
-            transfer.download_file(bucketname,obj_keyname,os.path.join(localpath,os.path.basename(obj_keyname)),callback = progress)
-        return 1
+                encountered_duplicate = 1
+            else:
+                progress = ProgressPercentage_d(transfer._manager._client,bucketname,obj_keyname,display = display)
+                transfer.download_file(bucketname,obj_keyname,os.path.join(localpath,os.path.basename(obj_keyname)),callback = progress)
+        return encountered_duplicate
             
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":

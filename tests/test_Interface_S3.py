@@ -72,34 +72,34 @@ def setup_complex_bucket(monkeypatch):
     return bucketname,username,data_dirname,config_dirname,s3_client,s3_resource    
 
 
-# def test_download(setup_simple_bucket,tmp_path):
-#     download_loc = tmp_path / "downloc"
-#     download_loc.mkdir()
-#     bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
-#     s3path = f"s3://{bucket}/{username}/file.json"
-#     Interface_S3.download(s3path,str(download_loc / "config.json"))
-#     Interface_S3.download(s3path,str(download_loc / "config.json"),display = True)
-#     for obj in s3_resource.Bucket(bucket).objects.all():
-#         print("\n" + str(obj))
-#     print("\n\n\n\n")
-#     for item in os.listdir(download_loc):
-#         print("\n" + str(download_loc) + "/" + str(item))
-#     s3_resource.Bucket("testinterface").objects.all().delete()
+def test_download(setup_simple_bucket,tmp_path):
+    download_loc = tmp_path / "downloc"
+    download_loc.mkdir()
+    bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
+    s3path = f"s3://{bucket}/{username}/file.json"
+    Interface_S3.download(s3path,str(download_loc / "config.json"))
+    Interface_S3.download(s3path,str(download_loc / "config.json"),display = True)
+    for obj in s3_resource.Bucket(bucket).objects.all():
+        print("\n" + str(obj))
+    print("\n\n\n\n")
+    for item in os.listdir(download_loc):
+        print("\n" + str(download_loc) + "/" + str(item))
+    s3_resource.Bucket("testinterface").objects.all().delete()
 
 
-# def test_download_multi_simple(setup_simple_bucket,tmp_path):
-#     download_loc = tmp_path / "downloc"
-#     download_loc.mkdir()
-#     bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
-#     s3path = f"s3://{bucket}/{username}"
-#     Interface_S3.download_multi(s3path,str(download_loc))
-#     # Interface_S3.download_multi(s3path,str(download_loc),display = True)
-#     for obj in s3_resource.Bucket(bucket).objects.all():
-#         print("\n" + str(obj))
-#     print("\n\n\n\n")
-#     for item in os.listdir(download_loc):
-#         print("\n" + str(download_loc) + "/" + str(item))
-#     s3_resource.Bucket("testinterface").objects.all().delete()
+def test_download_multi_simple(setup_simple_bucket,tmp_path):
+    download_loc = tmp_path / "downloc"
+    download_loc.mkdir()
+    bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
+    s3path = f"s3://{bucket}/{username}"
+    Interface_S3.download_multi(s3path,str(download_loc))
+    # Interface_S3.download_multi(s3path,str(download_loc),display = True)
+    for obj in s3_resource.Bucket(bucket).objects.all():
+        print("\n" + str(obj))
+    print("\n\n\n\n")
+    for item in os.listdir(download_loc):
+        print("\n" + str(download_loc) + "/" + str(item))
+    s3_resource.Bucket("testinterface").objects.all().delete()
 
 def test_download_multi_complex(setup_complex_bucket,tmp_path):
     download_loc = tmp_path / "downloc"
@@ -123,17 +123,17 @@ def test_download_multi_complex(setup_complex_bucket,tmp_path):
     s3_resource.Bucket("testinterface").objects.all().delete()
 
 
-# def test_upload(setup_simple_bucket,tmp_path):    
-#     upload_loc = tmp_path / "uploc"
-#     upload_loc.mkdir()
-#     bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
-#     s3path = f"s3://{bucket}/{username}/up.json"
-#     upload_file = str(os.path.join(upload_loc,"up.json"))
-#     with open(upload_file,"w") as f:
-#         json.dump({"up1":"item"},f)
-#     Interface_S3.upload(upload_file,s3path)    
-#     Interface_S3.upload(upload_file,s3path,display = True)    
-#     Interface_S3.download(s3path,upload_file)
+def test_upload(setup_simple_bucket,tmp_path):    
+    upload_loc = tmp_path / "uploc"
+    upload_loc.mkdir()
+    bucket,username,contents,s3_client,s3_resource = setup_simple_bucket
+    s3path = f"s3://{bucket}/{username}/up.json"
+    upload_file = str(os.path.join(upload_loc,"up.json"))
+    with open(upload_file,"w") as f:
+        json.dump({"up1":"item"},f)
+    Interface_S3.upload(upload_file,s3path)    
+    Interface_S3.upload(upload_file,s3path,display = True)    
+    Interface_S3.download(s3path,upload_file)
         
 
 
