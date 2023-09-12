@@ -178,7 +178,7 @@ class NeuroCAASScriptManager(object):
             self.write()
 
     def write(self):        
-        print("\n\n\n\n" + str(self.path) + "\n\n\n\n")
+        print("\n\n\n\n" + "Registering at {}".format(str(self.path)) + "\n\n\n\n")
         with open(os.path.join(self.path,"registration.json"),"w") as reg: 
             json.dump(self.registration,reg)
 
