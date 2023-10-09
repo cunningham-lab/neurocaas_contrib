@@ -491,8 +491,8 @@ class NeuroCAASScriptManager(object):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the local filepath if available. 
         :param contents: a dictionary of structure {"s3":location,"local":location}
         """
-        assert contents["local"] is not None, "local path does not exist. "
-        return contents["local"]
+        assert contents["localsource"] is not None, "local path does not exist. "
+        return contents["localsource"]
 
     def get_bucket_name(self):
         """Given a generic dictionary of structure self.pathtemplate, correctly returns the bucketname if a dataset is registered.. 
