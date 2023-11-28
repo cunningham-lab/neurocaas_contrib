@@ -91,6 +91,43 @@ def download(s3path,localpath,display = False):
         else:
             raise
 
+def download_multi(s3path,localpath,force,display = False):
+    """Download function. Takes an s3 path to a "folder" (path prefix that ends with backslack), and local object path as input. Will attempt to download all data at the given location to the local path.
+    :param s3path: full path to an object in s3. Assumes the s3://bucketname/key syntax. 
+    :param localpath: full path to the object name locally (i.e. with basename attached). 
+    :param force: will not redownload if data of the same name already lives here
+    :param display: (optional) Defaults to false. If true, displays a progress bar. 
+    :return: bool (True if successful download for all files, False otherwise)
+
+
+    """
+    assert s3path.startswith("s3://")
+    bucketname,keyname = s3path.split("s3://")[-1].split("/",1)
+
+    try:
+        transfer = S3Transfer(s3_client)
+        
+        
+        # adapted from https://stackoverflow.com/questions/49772151/download-a-folder-from-s3-using-boto3
+        bucket = s3.Bucket(bucketname)
+        no_duplicate = 1
+        for obj in bucket.objects.filter(Prefix = keyname):
+            obj_keyname = obj.key
+            if (os.path.basename(obj_keyname) in os.listdir(localpath)) and (not force):
+                print("Data already exists at this location. Set force = true to overwrite")
+                no_duplicate = 0
+            else:
+                progress = ProgressPercentage_d(transfer._manager._client,bucketname,obj_keyname,display = display)
+                transfer.download_file(bucketname,obj_keyname,os.path.join(localpath,os.path.basename(obj_keyname)),callback = progress)
+        return no_duplicate
+            
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            raise
+        else:
+            raise
+
 def upload(localpath,s3path,display = False):
     """Upload function. Takes a local object paht and s3 path to the desired key as input. 
     :param localpath: full path to the object name locally (i.e. with basename attached). 

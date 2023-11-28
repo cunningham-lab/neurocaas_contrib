@@ -1,6 +1,7 @@
-Thu May 20 13:09:14 EDT 2021
-Thu May 20 13:09:15 EDT 2021
-Thu May 20 13:09:15 EDT 2021
-Thu May 20 13:09:15 EDT 2021
-Thu May 20 13:09:15 EDT 2021
+/home/cbwash2/neurocaas_contrib/tests/test_mats/sendtime.sh: line 4: activate: No such file or directory
+Fri 25 Aug 2023 12:14:59 PM EDT
+Fri 25 Aug 2023 12:14:59 PM EDT
+Fri 25 Aug 2023 12:14:59 PM EDT
+Fri 25 Aug 2023 12:14:59 PM EDT
+Fri 25 Aug 2023 12:14:59 PM EDT
 Setting up network. This could take a while. 

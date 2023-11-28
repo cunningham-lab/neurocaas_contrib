@@ -10,7 +10,7 @@ import yaml
 import json
 import zipfile
 from .log import NeuroCAASCertificate,NeuroCAASDataStatus,NeuroCAASDataStatusLegacy
-from .Interface_S3 import download,upload
+from .Interface_S3 import download,upload,download_multi
 
 dir_loc = os.path.abspath(os.path.dirname(__file__))
 
@@ -166,7 +166,7 @@ class NeuroCAASScriptManager(object):
         self.path = path
         ## The subdirectories to expect/create at the given location. 
         self.subdirs = {"data":"inputs","config":"configs","results":"results","logs":"logs"}
-        #self.pathtemplate = {"s3":None,"localsource":None,"local":None}
+        #self.pathtemplate = {"s3":None,"local":None,"local":None}
         self.registration = {
                 "data":{},
                 "config":{},
@@ -178,6 +178,7 @@ class NeuroCAASScriptManager(object):
             self.write()
 
     def write(self):        
+        print("\n\n\n\n" + "Registering at {}".format(str(self.path)) + "\n\n\n\n")
         with open(os.path.join(self.path,"registration.json"),"w") as reg: 
             json.dump(self.registration,reg)
 
@@ -205,7 +206,7 @@ class NeuroCAASScriptManager(object):
         ## canc check existence later. 
         assert str(s3path).startswith("s3://"), "must be given in s3 form"
         self.registration["data"]["s3"] = str(s3path)
-        self.registration["data"].pop("localsource","False")
+        self.registration["data"].pop("local","False")
         self.registration["data"].pop("local","False")
         self.write()
 
@@ -215,7 +216,7 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["data"]["localsource"] = str(localpath)
+        self.registration["data"]["local"] = str(localpath)
         self.registration["data"].pop("s3","False")
         self.registration["data"].pop("local","False")
         self.write()
@@ -228,7 +229,7 @@ class NeuroCAASScriptManager(object):
         ## canc check existence later. 
         assert str(s3path).startswith("s3://"), "must be given in s3 form"
         self.registration["config"]["s3"] = str(s3path)
-        self.registration["config"].pop("localsource","False")
+        self.registration["config"].pop("local","False")
         self.registration["config"].pop("local","False")
         self.write()
 
@@ -238,7 +239,7 @@ class NeuroCAASScriptManager(object):
 
         """
         ## canc check existence later. 
-        self.registration["config"]["localsource"] = str(localpath)
+        self.registration["config"]["local"] = str(localpath)
         self.registration["config"].pop("s3","False")
         self.registration["config"].pop("local","False")
         self.write()
@@ -255,7 +256,7 @@ class NeuroCAASScriptManager(object):
         self.registration["additional_files"][name] = {} 
         ## populate
         self.registration["additional_files"][name]["s3"] = str(s3path)
-        self.registration["additional_files"][name].pop("localsource","False")
+        self.registration["additional_files"][name].pop("local","False")
         self.registration["additional_files"][name].pop("local","False")
         self.write()
 
@@ -269,7 +270,7 @@ class NeuroCAASScriptManager(object):
         #self.registration["additional_files"][name] = {k:v for k,v in self.pathtemplate.items()} 
         self.registration["additional_files"][name] = {} 
         ## populate
-        self.registration["additional_files"][name]["localsource"] = str(localpath)
+        self.registration["additional_files"][name]["local"] = str(localpath)
         self.registration["additional_files"][name].pop("s3","False")
         self.registration["additional_files"][name].pop("local","False")
         self.write()
@@ -280,14 +281,14 @@ class NeuroCAASScriptManager(object):
         """
         assert s3path.startswith("s3://"), "must be given in s3 form"
         self.registration["resultpath"]["s3"] = str(s3path)
-        self.registration["resultpath"].pop("localsource","False")
+        self.registration["resultpath"].pop("local","False")
         self.write()
 
     def register_resultpath_local(self,localpath):    
         """Given an local path, registers that as the location where we will upload job data. Give a folder, where you want to generate two subdirectories, "logs", and "process_results". Logs and analysis results will be sent to these respective locations.  
 
         """
-        self.registration["resultpath"]["localsource"] = str(localpath)
+        self.registration["resultpath"]["local"] = str(localpath)
         self.registration["resultpath"].pop("s3","False")
         self.write()
 
@@ -305,8 +306,8 @@ class NeuroCAASScriptManager(object):
             source = "s3"
         except KeyError:     
             try:
-                data_localsource = self.registration["data"]["localsource"]
-                data_name = os.path.basename(data_localsource)
+                data_local = self.registration["data"]["local"]
+                data_name = os.path.basename(data_local)
                 source = "local"
             except:    
                 raise AssertionError("Data not registered. Run register_data first.") 
@@ -325,8 +326,50 @@ class NeuroCAASScriptManager(object):
         if source == "s3":   
             download(data_s3path,data_localpath,display)    
         elif source == "local":   
-            shutil.copy(data_localsource,data_localpath)
+            shutil.copy(data_local,data_localpath)
         self.registration["data"]["local"] = data_localpath
+        self.write()
+        return 1
+    
+    def get_data_multi(self,path = None,force = False,display = False):    
+        """Get currently registered data. If desired, you can pass a path where you would like data to be moved. Otherwise, it will be moved to self.path/self.subdirs[data]
+        :param path: (optional) the location you want to write data to. 
+        :param force: (optional) by default, will not redownload if data of the same name already lives here. Can override with force = True
+        :param display: (optional) by default, will not display downlaod progress. 
+        :return: bool (True if downloaded, False if not)
+
+        """
+        try:
+            data_s3path = self.registration["data"]["s3"]
+            source = "s3"
+        except KeyError:     
+            try:
+                data_local = self.registration["data"]["local"]
+                source = "local"
+            except:    
+                raise AssertionError("Data not registered. Run register_data first.") 
+
+        if path is None: 
+            path = os.path.join(self.path,self.subdirs["data"])
+            mkdir_notexists(path)
+        #pass the local directory instead of a filename -- will populate with all files in remote dir
+        data_localpath = path 
+
+        if source == "s3":   
+            download_success = download_multi(data_s3path,data_localpath,force,display)    
+            if not download_success:
+                return 0
+        elif source == "local":   
+            for filename in os.listdir(data_local):
+                source_name = os.path.join(data_local,filename)
+                dest_name = os.path.join(data_localpath,filename)
+
+                if os.path.exists(dest_name) and not force:
+                    print(f"{filename} already exists at this location. Set force = true to overwrite")
+                    return 0
+
+                shutil.copy(source_name,dest_name)
+        self.registration["data"]["local"] = str(data_localpath)
         self.write()
         return 1
 
@@ -344,8 +387,8 @@ class NeuroCAASScriptManager(object):
             source = "s3"
         except KeyError:     
             try:
-                config_localsource = self.registration["config"]["localsource"]
-                config_name = os.path.basename(config_localsource)
+                config_local = self.registration["config"]["local"]
+                config_name = os.path.basename(config_local)
                 source = "local"
             except:    
                 raise AssertionError("Config not registered. Run register_config first.") 
@@ -364,7 +407,7 @@ class NeuroCAASScriptManager(object):
         if source == "s3":    
             download(config_s3path,config_localpath,display)    
         elif source == "local":    
-            shutil.copy(config_localsource,config_localpath)
+            shutil.copy(config_local,config_localpath)
         self.registration["config"]["local"] = config_localpath
         self.write()
         return 1
@@ -385,8 +428,8 @@ class NeuroCAASScriptManager(object):
             source = "s3"
         except KeyError:    
             try:
-                file_localsource = self.registration["additional_files"][varname]["localsource"]
-                file_name = os.path.basename(file_localsource)
+                file_local = self.registration["additional_files"][varname]["local"]
+                file_name = os.path.basename(file_local)
                 source = "local"
             except:    
                 raise AssertionError("File not registered. Run register_file first.") 
@@ -405,7 +448,7 @@ class NeuroCAASScriptManager(object):
         if source == "s3":    
             download(file_s3path,file_localpath,display)    
         elif source == "local":    
-            shutil.copy(file_localsource,file_localpath)
+            shutil.copy(file_local,file_localpath)
         self.registration["additional_files"][varname]["local"] = file_localpath
         self.write()
         return 1
@@ -422,7 +465,7 @@ class NeuroCAASScriptManager(object):
             upload(localfile,fullpath,display)
         except KeyError: 
             try:
-                fullpath = os.path.join(self.registration["resultpath"]["localsource"],"process_results",filename)
+                fullpath = os.path.join(self.registration["resultpath"]["local"],"process_results",filename)
                 os.makedirs(os.path.dirname(fullpath),exist_ok = True)
                 shutil.copy(localfile,fullpath)
             except:    
@@ -521,7 +564,7 @@ class NeuroCAASScriptManager(object):
             resultpath =  os.path.join(self.registration["resultpath"]["s3"],"process_results",basename)
         except KeyError:    
             try:
-                resultpath =  os.path.join(self.registration["resultpath"]["localsource"],"process_results",basename)
+                resultpath =  os.path.join(self.registration["resultpath"]["local"],"process_results",basename)
             except KeyError:    
                 raise KeyError("Not registered.")
         return resultpath    
