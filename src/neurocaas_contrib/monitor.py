@@ -582,6 +582,8 @@ def get_logfiles(bucketname,pathprefix,outputpath):
     :param pathprefix: the path identifying job logs: exclude logs. 
     :param outputpath: the path to an existing directory on the local machine. Will create a logs subdirectory if does not exist, and write logs there. 
     """
+    if not os.path.exists(outputpath):
+        print("Output path {} does not exist".format(outputpath))
     filenames = ls_name(bucketname,os.path.join(pathprefix,"logs/"))
     local_logs = os.path.join(outputpath,"logs/")
     if not os.path.exists(local_logs):
@@ -659,7 +661,8 @@ def setup_polling(bucketname,pathprefix,output,step = 60,timeout = 60*15):
     except polling2.TimeoutException as te:    
         return 1
 
-    except Exception:
+    except Exception as e:
+        print(e)
         return 2
      
 

@@ -57,6 +57,7 @@ sum_intervals = [[bins[i],bins[i+1]] for i in range(len(bins)-1)]
 analyses = {
         "epi-ncap-web":{"dev":"internal","name":"Emergent Property Inference (public)"},
         "dlc-ncap-web":{"dev":"internal","name":"DeepLabCut (public)"}, 
+        "dlc2-ncap-web":{"dev":"internal","name":"DeepLabCut v2 (public)"}, 
         "pmd-ncap-web":{"dev":"internal","name":"PMD (public)"}, 
         "caiman-ncap-web":{"dev":"internal","name":"CaImAn (public)"}, 
         "locanmf-ncap-web":{"dev":"internal","name":"LocaNMF (public)"}, 
@@ -73,6 +74,8 @@ analyses = {
         "dgp-refactor":{"dev":"internal","name":"DeepGraphPose (public)"}, 
         "ensemble-dgp":{"dev":"native","name":"Ensemble DeepGraphPose (public)"}, 
         "label-job-create-web":{"dev":"external","name":"Labeling GUI (public)"}, 
+        "autolfads-torch":{"dev":"external","name":"AutoLFADS"}, 
+        "radical-snel":{"dev":"external","name":"RADICaL"}, 
     }
 analysiscolors = {"internal":"#1f78b4","external":"#b2df8a","custom":"#a6cee3","native":"#33a02c"}
 
@@ -277,6 +280,7 @@ if __name__ == "__main__":
                     Line2D([0],[0],color = analysiscolors["native"],lw=4),
                     Line2D([0],[0],color = analysiscolors["custom"],lw=4)]
     ax[0].legend(custom_lines,["Internal","External","Native","Custom"])
+    print(sorted_all_data_durations.values())
 
 
     ax[0].barh(range(len(datasets)),sorted_all_data.values(),log = True,color = [analysiscolors[analyses[f]["dev"]] for f in sorted_all_data.keys()])
