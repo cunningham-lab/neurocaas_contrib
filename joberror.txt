@@ -1,3 +1,52 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/anaconda3/envs/dgp/bin/neurocaas-contrib", line 33, in <module>
+    sys.exit(load_entry_point('neurocaas-contrib', 'console_scripts', 'neurocaas-contrib')())
+  File "/home/ubuntu/anaconda3/envs/dgp/bin/neurocaas-contrib", line 25, in importlib_load_entry_point
+    return next(matches).load()
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/importlib_metadata/__init__.py", line 96, in load
+    module = import_module(match.group('module'))
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 994, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 971, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 955, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 665, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 678, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/home/ubuntu/neurocaas_contrib/src/neurocaas_contrib/main.py", line 1, in <module>
+    from .cli_commands import cli
+  File "/home/ubuntu/neurocaas_contrib/src/neurocaas_contrib/cli_commands.py", line 12, in <module>
+    from .remote import NeuroCAASAMI
+  File "/home/ubuntu/neurocaas_contrib/src/neurocaas_contrib/remote.py", line 13, in <module>
+    ec2_resource = boto3.resource('ec2')
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/boto3/__init__.py", line 100, in resource
+    return _get_default_session().resource(*args, **kwargs)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/boto3/session.py", line 389, in resource
+    aws_session_token=aws_session_token, config=config)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/boto3/session.py", line 263, in client
+    aws_session_token=aws_session_token, config=config)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/session.py", line 838, in create_client
+    client_config=config, api_version=api_version)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/client.py", line 85, in create_client
+    verify, credentials, scoped_config, client_config, endpoint_bridge)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/client.py", line 308, in _get_client_args
+    verify, credentials, scoped_config, client_config, endpoint_bridge)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/args.py", line 73, in get_client_args
+    endpoint_url, is_secure, scoped_config)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/args.py", line 153, in compute_client_args
+    s3_config=s3_config,
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/args.py", line 218, in _compute_endpoint_config
+    return self._resolve_endpoint(**resolve_endpoint_kwargs)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/args.py", line 301, in _resolve_endpoint
+    service_name, region_name, endpoint_url, is_secure)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/client.py", line 382, in resolve
+    service_name, region_name)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/regions.py", line 134, in construct_endpoint
+    partition, service_name, region_name)
+  File "/home/ubuntu/anaconda3/envs/dgp/lib/python3.6/site-packages/botocore/regions.py", line 148, in _endpoint_for_partition
+    raise NoRegionError()
+botocore.exceptions.NoRegionError: You must specify a region.
+=======
 /home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
   _np_qint8 = np.dtype([("qint8", np.int8, 1)])
 /home/ubuntu/anaconda3/envs/caiman/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
