@@ -425,6 +425,8 @@ class NeuroCAASAMI(object):
         objgen = bucket.objects.filter(Prefix = data_allname)
         file_list = [obj.key for obj in objgen if obj.key[-1]!="/"]
         data_filename = file_list[0]
+        ## Hotfix: to pass the directory name appropriately, use exactly what's passed by the user. 
+        data_filename = data_allname
 
 
         command_formatted = [command_unformatted.format(bucketname_test,data_filename,outdir,config_name)]
